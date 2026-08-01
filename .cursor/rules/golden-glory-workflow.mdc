@@ -1,0 +1,15 @@
+---
+description: Source-backed audit and data workflow for Golden Glory Lab.
+globs:
+  - "docs/**"
+  - "data/**"
+  - "fixtures/**"
+  - "scripts/**"
+alwaysApply: false
+---
+
+Before audit, source, data, fixture, or workflow work, read AGENTS.md.
+For AUDIT and data work, also read docs/SOURCE_POLICY.md and
+docs/AUDIT_WORKFLOW.md. Keep direct evidence separate from inference, retain
+unknown status where warranted, and do not treat fixtures or historical
+reference material as general reference authority.
