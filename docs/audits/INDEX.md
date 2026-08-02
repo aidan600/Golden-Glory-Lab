@@ -9,20 +9,20 @@ current.
 
 | Order | Audit | Status | Dependency-aware intent |
 | --- | --- | --- | --- |
-| 1 | AUD-001 — PoB item-set import contract | planned | Establishes neutral, reviewable import and explicit loadout mapping before importer or parser decisions. |
+| 1 | [AUD-001 — PoB item-set import contract](AUD-001.md) | supported | Establishes a pinned neutral import contract and explicit loadout mapping before a parser proof. |
 | 2 | AUD-002 — Permanent Mercenary passive-sheet fields | planned | Can gather evidence alongside AUD-001; blocks reliable Mercenary instance inputs and may require human in-game evidence. |
 | 3 | AUD-003 — Light Radius source coverage | planned | Establishes the versioned player-source catalog before a Flame Link calculation claim. |
 | 4 | AUD-004 — Flame Link | planned | Depends on the relevant Light Radius and Link-effect evidence from AUD-003. |
 | 5 | AUD-005 — Enmity's Embrace | planned | Uses the Mercenary-field contract from AUD-002; preserves arbitrary observed values and excludes Volatile crafting simulation. |
 | 6 | AUD-006 — Critical strikes | planned | Deferred until the Flame Link and Enmity paths are established; remains a separate, ability-dependent audit. |
 
-### AUD-001 — PoB item-set import contract
+### [AUD-001 — PoB item-set import contract](AUD-001.md)
 
-Later prove that Golden Glory Lab can accept a PoB share code or XML, enumerate
-all item sets, preserve set names and IDs, preserve full item text, map slots
-and relevant child sockets, allow explicit player/Mercenary mapping, avoid set
-order as ownership, emit a neutral import report, preserve unrecognized
-material, and support reviewable reimport.
+Status: supported. Current and historical source evidence establishes a pinned
+contract for enumerating and preserving PoB item sets, item text, references,
+alternate weapons, and relevant child sockets. A later PROOF must implement and
+test the neutral loader. Player and Mercenary ownership always requires an
+explicit user mapping; source order is never ownership evidence.
 
 ### AUD-002 — Permanent Mercenary passive-sheet fields
 

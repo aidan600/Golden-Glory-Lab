@@ -1,4 +1,124 @@
 {
   "schemaVersion": "1.0",
-  "sources": []
+  "sources": [
+    {
+      "id": "pob-release-2-66-2",
+      "title": "Path of Building Community 2.66.2 source snapshot",
+      "sourceClass": "pob-source",
+      "url": "https://github.com/PathOfBuildingCommunity/PathOfBuilding/tree/b23da8f841e4b0bc167b0b4401ea002d7d45f807",
+      "publisherOrRepository": "PathOfBuildingCommunity/PathOfBuilding",
+      "gameOrSoftwareVersion": "Path of Building Community 2.66.2 (tag v2.66.2)",
+      "accessedDate": "2026-08-01",
+      "supportedClaimsOrRecords": [
+        "Pins the current public release used as the primary AUD-001 format profile.",
+        "Provides the release implementation for share-code intake, XML loading and saving, item pools, item sets, slots, jewels, and item-set cross-references."
+      ],
+      "verificationStatus": "confirmed",
+      "limitations": "This is an implementation snapshot, not a formal or forward-compatible serialization specification. The XML does not embed this application version.",
+      "commitSha": "b23da8f841e4b0bc167b0b4401ea002d7d45f807",
+      "notes": "Release page: https://github.com/PathOfBuildingCommunity/PathOfBuilding/releases/tag/v2.66.2. Relevant paths were compared with the separately pinned dev snapshot."
+    },
+    {
+      "id": "pob-dev-format-ef4c584",
+      "title": "Path of Building Community current item-set and import implementation",
+      "sourceClass": "pob-source",
+      "url": "https://github.com/PathOfBuildingCommunity/PathOfBuilding/commit/ef4c5848fad33190f730cebaedff4b5831d0c88d",
+      "publisherOrRepository": "PathOfBuildingCommunity/PathOfBuilding",
+      "gameOrSoftwareVersion": "dev at 2026-08-01; manifest version 2.66.2",
+      "accessedDate": "2026-08-01",
+      "supportedClaimsOrRecords": [
+        "Defines current share-code Base64 substitutions and the calls to host Deflate and Inflate.",
+        "Defines the PathOfBuilding root loader and saver plus current item-pool, item-set, slot, active-set, alternate-weapon, Abyssal-slot, passive-jewel, and minion item-set-reference behavior.",
+        "Shows that item and item-set IDs are local numeric keys, item-set order is mutable, item text can contain a Unique ID line, and API reimport currently matches that value when present.",
+        "Shows current legacy handling for top-level Item/Slot assignments and current normalization or omission behavior that Golden Glory Lab must not treat as preservation guarantees."
+      ],
+      "verificationStatus": "confirmed",
+      "limitations": "The source is a moving development snapshot and not a formal schema. Current PoB ignores some unknown structures, can reset invalid references, and rebuilds item text when saving.",
+      "commitSha": "ef4c5848fad33190f730cebaedff4b5831d0c88d",
+      "notes": "Inspected exact paths and symbols: src/Classes/ImportTab.lua (self.controls.generateCode callback, local importCodeHandle callback, ImportItem, ImportSocketedItems, GetOrCreateGuardianItemSet, AssignGuardianItemSet); src/Modules/Build.lua (buildMode:LoadDB, buildMode:SaveDB); src/Classes/ItemsTab.lua (Load, Save, NewItemSet, SetActiveItemSet, AddItem, IsItemValidForSlot); src/Classes/ItemSlotControl.lua (SetSelItemId, Populate); src/Classes/PassiveSpec.lua (Load, Save); src/Classes/TreeTab.lua (Load, Save); src/Classes/SkillsTab.lua (LoadSkill, Save); src/Classes/Item.lua (ParseRaw, BuildRaw, BuildAndParseRaw); src/Classes/ItemSetListControl.lua; runtime/lua/base64.lua; src/GameVersions.lua."
+    },
+    {
+      "id": "pob-itemsets-1-4-37",
+      "title": "Path of Building 1.4.37 item-set introduction",
+      "sourceClass": "pob-source",
+      "url": "https://github.com/PathOfBuildingCommunity/PathOfBuilding/blob/9f981583f7c721917124d604cddf0e8102e62714/Classes/ItemsTab.lua",
+      "publisherOrRepository": "PathOfBuildingCommunity/PathOfBuilding",
+      "gameOrSoftwareVersion": "Path of Building 1.4.37",
+      "accessedDate": "2026-08-01",
+      "supportedClaimsOrRecords": [
+        "Introduces ItemSet elements with numeric IDs, titles, per-set alternate-weapon state, and nested Slot references.",
+        "Demonstrates a transitional saver that writes both the active legacy top-level Slot representation and nested ItemSet representations."
+      ],
+      "verificationStatus": "confirmed",
+      "limitations": "This historical implementation does not establish the current format or a permanent compatibility guarantee.",
+      "commitSha": "9f981583f7c721917124d604cddf0e8102e62714",
+      "notes": "The changelog at the same commit was also inspected: https://github.com/PathOfBuildingCommunity/PathOfBuilding/blob/9f981583f7c721917124d604cddf0e8102e62714/changelog.txt. It describes item sets as switchable gear configurations and selectable for minions."
+    },
+    {
+      "id": "pob-pre-itemsets-1-4-36",
+      "title": "Path of Building 1.4.36 pre-item-set serialization",
+      "sourceClass": "pob-source",
+      "url": "https://github.com/PathOfBuildingCommunity/PathOfBuilding/blob/69d4e4d4e4cfb82ccca0ebf609d6673e347a98dc/Classes/ItemsTab.lua",
+      "publisherOrRepository": "PathOfBuildingCommunity/PathOfBuilding",
+      "gameOrSoftwareVersion": "Path of Building 1.4.36",
+      "accessedDate": "2026-08-01",
+      "supportedClaimsOrRecords": [
+        "Shows the legacy Items representation with a document item pool, top-level Slot elements, and Items/useSecondWeaponSet before ItemSet elements existed."
+      ],
+      "verificationStatus": "confirmed",
+      "limitations": "This historical implementation only supports the bounded legacy profile; it is not evidence for current slot vocabulary or current item parsing.",
+      "commitSha": "69d4e4d4e4cfb82ccca0ebf609d6673e347a98dc",
+      "notes": "Commit subject is Release 1.4.36. Exact Load and Save implementations in Classes/ItemsTab.lua were inspected."
+    },
+    {
+      "id": "pob-reimport-tests-ef4c584",
+      "title": "Path of Building API import and reimport tests",
+      "sourceClass": "pob-source",
+      "url": "https://github.com/PathOfBuildingCommunity/PathOfBuilding/blob/ef4c5848fad33190f730cebaedff4b5831d0c88d/spec/System/TestImportReimport_spec.lua",
+      "publisherOrRepository": "PathOfBuildingCommunity/PathOfBuilding",
+      "gameOrSoftwareVersion": "dev at ef4c5848fad33190f730cebaedff4b5831d0c88d",
+      "accessedDate": "2026-08-01",
+      "supportedClaimsOrRecords": [
+        "Provides current regression evidence that API reimport preserves a selected minion item-set reference in its covered case.",
+        "Provides synthetic API import/reimport examples relevant to the boundary around item Unique ID matching."
+      ],
+      "verificationStatus": "confirmed",
+      "limitations": "The tests do not define the complete XML grammar, malformed-input behavior, Golden Glory Lab preservation behavior, or cross-document identifier stability.",
+      "commitSha": "ef4c5848fad33190f730cebaedff4b5831d0c88d",
+      "notes": "Used only to bound direct test coverage; implementation claims are tied to the source snapshot record."
+    },
+    {
+      "id": "pob-simplegraphic-codec-3b1a346",
+      "title": "Path of Building SimpleGraphic zlib host functions",
+      "sourceClass": "pob-source",
+      "url": "https://github.com/PathOfBuildingCommunity/PathOfBuilding-SimpleGraphic/blob/3b1a3468223d0ebd4042d6ce76fc6144718ef79b/ui_api.cpp",
+      "publisherOrRepository": "PathOfBuildingCommunity/PathOfBuilding-SimpleGraphic",
+      "gameOrSoftwareVersion": "master at 3b1a3468223d0ebd4042d6ce76fc6144718ef79b",
+      "accessedDate": "2026-08-01",
+      "supportedClaimsOrRecords": [
+        "Defines the host l_Deflate and l_Inflate functions called by Path of Building's share-code implementation.",
+        "Shows that those functions initialize zlib streams and documents their current size checks, including the ineffective oversized-input branch in l_Inflate."
+      ],
+      "verificationStatus": "confirmed",
+      "limitations": "Host limits and implementation details can change. In this snapshot l_Inflate pushes an error for input over 128 MiB but does not return. Its initial output allocation is not capped by the nominal output threshold, and its later growth check can grow once beyond that threshold. These checks do not define or satisfy Golden Glory Lab's future safety limits.",
+      "commitSha": "3b1a3468223d0ebd4042d6ce76fc6144718ef79b",
+      "notes": "Relevant symbols are l_Deflate and l_Inflate in ui_api.cpp; the main PoB repository supplies the Base64 and URL-safe substitution steps."
+    },
+    {
+      "id": "pob-testbuilds-3-13-ef4c584",
+      "title": "Path of Building committed 3.13 build fixtures",
+      "sourceClass": "pob-source",
+      "url": "https://github.com/PathOfBuildingCommunity/PathOfBuilding/tree/ef4c5848fad33190f730cebaedff4b5831d0c88d/spec/TestBuilds/3.13",
+      "publisherOrRepository": "PathOfBuildingCommunity/PathOfBuilding",
+      "gameOrSoftwareVersion": "Historical 3.13 fixtures retained at dev commit ef4c5848fad33190f730cebaedff4b5831d0c88d",
+      "accessedDate": "2026-08-01",
+      "supportedClaimsOrRecords": [
+        "Provides committed examples of copied-item text, item-pool references, empty nested item-set slots, legacy top-level slots, passive-tree jewel references, and a minion item-set reference."
+      ],
+      "verificationStatus": "confirmed",
+      "limitations": "Only five old fixtures are present. Each has one unnamed item set; they do not cover named multiple sets, active alternate weapons, non-empty Abyssal equipment slots, malformed input, or all current fields.",
+      "commitSha": "ef4c5848fad33190f730cebaedff4b5831d0c88d",
+      "notes": "These are incidental implementation fixtures, not a formal schema or Path of Exile mechanics authority."
+    }
+  ]
 }
