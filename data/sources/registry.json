@@ -97,10 +97,10 @@
       "accessedDate": "2026-08-01",
       "supportedClaimsOrRecords": [
         "Defines the host l_Deflate and l_Inflate functions called by Path of Building's share-code implementation.",
-        "Shows that those functions initialize zlib streams and that the current host applies input and output size guards."
+        "Shows that those functions initialize zlib streams and documents their current size checks, including the ineffective oversized-input branch in l_Inflate."
       ],
       "verificationStatus": "confirmed",
-      "limitations": "Host limits and implementation details can change; this source does not define Golden Glory Lab's future safety limits.",
+      "limitations": "Host limits and implementation details can change. In this snapshot l_Inflate pushes an error for input over 128 MiB but does not return. Its initial output allocation is not capped by the nominal output threshold, and its later growth check can grow once beyond that threshold. These checks do not define or satisfy Golden Glory Lab's future safety limits.",
       "commitSha": "3b1a3468223d0ebd4042d6ce76fc6144718ef79b",
       "notes": "Relevant symbols are l_Deflate and l_Inflate in ui_api.cpp; the main PoB repository supplies the Base64 and URL-safe substitution steps."
     },
