@@ -23,12 +23,16 @@ granted is not labelled as DPS without a later audited combat model.
 
 ## Intended product flows
 
-The initial player path is:
+The initial player-side product flow has two separate contributing paths:
 
     Luminary equipment, passives, ascendancy, and conditions
         -> increased and reduced Light Radius
         -> Golden Glory contribution
+
+    Direct Link Skill Buff Effect sources
         -> direct Link Skill Buff Effect
+
+    Golden Glory contribution and direct Link Skill Buff Effect
         -> Flame Link damage granted to the Mercenary
 
 The initial Mercenary path is:
