@@ -9,7 +9,8 @@ chat summary.
 1. [Repository agent guide](../AGENTS.md)
 2. [Specification status and authority](SPEC_STATUS.md)
 3. [Current product direction](PRODUCT_DIRECTION.md)
-4. The mode-specific route below
+4. [Product roadmap](PRODUCT_ROADMAP.md)
+5. The mode-specific route below
 
 ## Task-mode routes
 
@@ -17,7 +18,7 @@ chat summary.
 | --- | --- | --- |
 | AUDIT | [Source policy](SOURCE_POLICY.md), [Audit workflow](AUDIT_WORKFLOW.md), [audit index](audits/INDEX.md) | An audit record and any justified source-registry updates |
 | PROOF | [Audit workflow](AUDIT_WORKFLOW.md), relevant open question, fixtures and scripts guidance | A bounded proof, its evidence, and stated non-proof |
-| BUILD | [Product direction](PRODUCT_DIRECTION.md), [Audit workflow](AUDIT_WORKFLOW.md), relevant decisions and data docs | A coherent user-facing, data-pipeline, or repository outcome |
+| BUILD | [Product direction](PRODUCT_DIRECTION.md), [product roadmap](PRODUCT_ROADMAP.md), [Audit workflow](AUDIT_WORKFLOW.md), relevant decisions and data docs | A coherent user-facing, data-pipeline, or repository outcome |
 | REPAIR | [Audit workflow](AUDIT_WORKFLOW.md), relevant defect context, fixtures and scripts guidance | The correction and an appropriate regression guard |
 
 ## Records and backlogs
