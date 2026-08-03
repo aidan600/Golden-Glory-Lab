@@ -1,0 +1,109 @@
+{
+  "schemaVersion": "1.0",
+  "artifactId": "aud-005-enmitys-embrace-reference-v1",
+  "artifactType": "mechanic-reference",
+  "auditId": "AUD-005",
+  "contractVersion": "1.0.0",
+  "targetGameVersion": "Path of Exile 1 3.29.1",
+  "verificationStatus": "supported",
+  "sourceIds": [
+    "ggg-poe-3-29-1-patch-notes",
+    "ggg-poe-3-29-0-content-update",
+    "pob-3-29-export-3a73a54",
+    "pob-dev-3-29-50d2236",
+    "poedb-enmitys-embrace-2026-08-03",
+    "ggg-poe-terms-2026-08-03",
+    "product-direction-first-release-2026-08-03",
+    "golden-glory-lab-data-boundary-2026-08-03"
+  ],
+  "scope": "Minimal Enmity's Embrace reference, isolated manual-input contribution, and observed-value review contract for PoE1 3.29.1. It is not a sheet-derived, combat, or availability calculation.",
+  "retention": {
+    "sourceLicense": "PoB LICENSE.md grants MIT terms for software, while ring.lua is marked Item data (c) Grinding Gear Games. PoEDB describes site content as CC BY-NC-SA 3.0. Neither statement establishes redistribution rights for underlying game item data.",
+    "dataLicense": "No affirmative right to redistribute raw unique-item tables or copied page content was established.",
+    "provenance": "Manually reviewed minimal item fields and isolated product math from the sources recorded in AUD-005.",
+    "redistribution": "Retention is limited to the small factual fields necessary to reproduce claims and synthetic gates; legal/policy review remains required before treating it as a redistribution basis.",
+    "derivation": "The manual formula is a narrowly documented product representation of the reviewed overcap concept, not a derivation of a Mercenary sheet or combat result.",
+    "attribution": "Grinding Gear Games, Path of Building Community, and PoEDB source locations and licence/terms limitations are recorded in the source registry and AUD-005.",
+    "retainedMaterial": "Item/base identity, small named natural ranges, dynamic-stat locator, item-specific cap, isolated formula terms, dependency manifest, and observed-value policy.",
+    "notVendored": "No raw PoB/PoEDB item table, source code, image, full tooltip, player item, or other upstream asset is vendored.",
+    "uncertainty": "Live 3.29.1 continuity, availability, sheet semantics, penalty order/rounding, aggregation, and damage effects remain unresolved."
+  },
+  "records": [
+    {
+      "id": "poe1-enmitys-embrace-reference",
+      "verificationStatus": "supported",
+      "claimIds": ["AUD-005-C01", "AUD-005-C02", "AUD-005-C08", "AUD-005-C09"],
+      "sourceIds": ["pob-3-29-export-3a73a54", "pob-dev-3-29-50d2236", "poedb-enmitys-embrace-2026-08-03", "golden-glory-lab-data-boundary-2026-08-03"],
+      "evidenceLocation": "PoB dev unique ring.lua, stat-description record 2919, ModParser.lua/CalcDefence.lua/CalcOffence.lua, 3.29 export commit 3a73a54bd3a9c92c4d3264c5d697a51b6c9063bc, and current PoEDB page recorded in AUD-005.",
+      "limitations": "Neither source is an official target-version item record. Availability sources conflict and raw observed items do not prove a natural range, current offer, or ownership. The exact modifier sentence is retained only in AUD-005 evidence, not this runtime-ineligible artifact.",
+      "loadBearing": true,
+      "downstreamConsumers": ["Enmity reference panel", "observed-roll reviewer", "manual-only input adapter"],
+      "replacementRule": "Replace only with a reviewed target-version structured item source and a superseding AUD-005.",
+      "data": {
+        "stableReferenceId": "poe1-enmitys-embrace",
+        "itemName": "Enmity's Embrace",
+        "baseType": "Vermillion Ring",
+        "requiredLevel": 80,
+        "sourceDataVersion": "PoB development snapshot with 3.29 export",
+        "versionState": "supporting-source-not-target-version-authority",
+        "sourceLocators": {"uniqueRecord": "src/Data/Uniques/ring.lua", "dynamicStatDescription": "generated stat-description record 2919", "parser": "src/Modules/ModParser.lua", "defenceModel": "src/Modules/CalcDefence.lua", "offenceModel": "src/Modules/CalcOffence.lua", "pinnedPobExportCommit": "3a73a54bd3a9c92c4d3264c5d697a51b6c9063bc"},
+        "reviewedNaturalRanges": {
+          "vermillionRingBaseImplicitMaximumLifePercent": {"minimum": 5, "maximum": 7},
+          "strength": {"minimum": 30, "maximum": 50},
+          "increasedFireDamagePercent": {"minimum": 10, "maximum": 20},
+          "reducedFireResistancePercentMagnitude": {"minimum": 65, "maximum": 75},
+          "fireSelfDamageWhenUsingSkill": {"minimum": 300, "maximum": 500}
+        },
+        "dynamicEffect": {"supportingStatId": "overcapped_fire_resistance_gain_as_fire_penetration", "itemSpecificCapPercent": 200, "modifierWordingEvidence": "docs/audits/AUD-005.md#evidence"},
+        "availability": {"state": "unknown-conflicting-supporting-sources", "pobLabel": "Incarnation of Fear / Moment of Trauma", "poedbLabel": "Incarnation of Fear / The Market"},
+        "observedValuePolicy": {"preserveRawText": true, "clamp": false, "outsideNaturalRange": "informational-review-only", "provesOwnership": false, "provesAvailability": false, "provesMechanics": false}
+      }
+    },
+    {
+      "id": "poe1-enmitys-embrace-manual-isolated-formula",
+      "verificationStatus": "supported",
+      "claimIds": ["AUD-005-C03", "AUD-005-C04", "AUD-005-C10"],
+      "sourceIds": ["pob-dev-3-29-50d2236", "poedb-enmitys-embrace-2026-08-03", "product-direction-first-release-2026-08-03"],
+      "evidenceLocation": "AUD-005 isolated formula, exact modifier evidence, and product target-reporting contract.",
+      "limitations": "The formula applies only after the separate gate manifest has accepted manually attested integral final inputs. It does not establish source-component derivation, game rounding, total penetration, enemy resistance, damage, or DPS.",
+      "loadBearing": true,
+      "downstreamConsumers": ["Manual-only Enmity reporter", "target/gap reporter", "AUD-005 gate fixture"],
+      "replacementRule": "Replace through a target-version mechanics audit and an AUD-002 dependency migration review.",
+      "data": {
+        "inputs": {"U": "final-uncapped-fire-resistance-with-Enmity-equipped", "M": "final-maximum-fire-resistance-same-state"},
+        "formula": {"overcap": "max(0,U-M)", "enmityOwnFirePenetration": "min(200,overcap)"},
+        "manualOnly": true,
+        "manualOutputRequirements": {"integralUAndM": true, "sameEquippedAndConditionalState": true, "enmityEquippedState": "equipped", "measurementContextRecorded": true, "equipmentInclusionStateRecorded": true},
+        "unknownIsNotZero": true,
+        "prohibitedOutputs": ["total-fire-penetration", "enemy-effective-resistance", "damage", "DPS", "combined-build-score"],
+        "targetReporting": {"allowedTargetRange": {"minimum": 0, "maximum": 200}, "belowMinimum": "invalid", "aboveMaximum": "unreachable-by-Enmity"}
+      }
+    },
+    {
+      "id": "poe1-enmitys-embrace-input-and-aggregation-gates",
+      "verificationStatus": "unknown",
+      "claimIds": ["AUD-005-C05", "AUD-005-C06", "AUD-005-C07"],
+      "sourceIds": ["ggg-poe-3-29-0-content-update", "pob-dev-3-29-50d2236", "product-direction-first-release-2026-08-03"],
+      "evidenceLocation": "AUD-002 v1.0.0 dependency contract and AUD-005 component/aggregation limitations.",
+      "limitations": "The dependencies are deliberately unresolved for a sheet-derived path; no component penalty, aggregation, enemy-resistance, or damage calculation is authorized.",
+      "loadBearing": true,
+      "downstreamConsumers": ["Manual-output gate", "derived-path gate", "missing-information reporter"],
+      "replacementRule": "Replace only through a superseding AUD-002/AUD-005 contract with consumer migration review.",
+      "data": {
+        "upstreamContract": {"auditId": "AUD-002", "contractVersion": "1.0.0"},
+        "upstreamDependencies": [
+          {"claimId": "AUD-002-C02", "minimumStatus": "supported", "appliesWhen": "permanent-Mercenary sheet adapter is offered", "unmetBehavior": "do-not-offer-sheet-adapter"},
+          {"claimId": "AUD-002-C03", "minimumStatus": "supported", "appliesWhen": "a field-derived value is requested", "unmetBehavior": "withhold-derived-value-preserve-manual-final-values"},
+          {"claimId": "AUD-002-C04", "minimumStatus": "supported", "appliesWhen": "a sheet value would be combined with equipment/components", "unmetBehavior": "do-not-combine-components-require-final-manual-values"},
+          {"claimId": "AUD-002-C05", "minimumStatus": "supported", "appliesWhen": "a comparable derived value is requested", "unmetBehavior": "withhold-derived-result-require-manual-shared-context"},
+          {"claimId": "AUD-002-C06", "minimumStatus": "supported", "appliesWhen": "manual P_enmity output is requested", "unmetBehavior": "do-not-calculate-manual-output"}
+        ],
+        "manualOutputGate": {"requiredEnmityEquippedState": "equipped", "requiresIntegralInputs": true, "requiresMeasurementContext": true, "requiresEquipmentInclusionStateRecorded": true, "unknownIsNotZero": true},
+        "derivedPath": "unavailable",
+        "aggregation": "unavailable",
+        "prohibitedOutputs": ["total-fire-penetration", "enemy-effective-resistance", "damage", "DPS", "combined-build-score"]
+      }
+    }
+  ],
+  "notes": "This artifact is audit evidence and a future-contract reference, not a production formula implementation. The separate unknown gate record prevents a supported formula record from silently authorizing an unresolved input or aggregation path."
+}

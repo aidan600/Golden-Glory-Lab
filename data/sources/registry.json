@@ -2,6 +2,53 @@
   "schemaVersion": "1.0",
   "sources": [
     {
+      "id": "pob-3-29-export-3a73a54",
+      "title": "Path of Building Community 3.29 export containing Enmity's Embrace",
+      "sourceClass": "pob-source",
+      "url": "https://github.com/PathOfBuildingCommunity/PathOfBuilding/commit/3a73a54bd3a9c92c4d3264c5d697a51b6c9063bc",
+      "publisherOrRepository": "PathOfBuildingCommunity/PathOfBuilding",
+      "gameOrSoftwareVersion": "Path of Building 3.29 export commit",
+      "accessedDate": "2026-08-03",
+      "supportedClaimsOrRecords": [
+        "Provides the pinned historical PoB 3.29 export commit containing the Enmity's Embrace record used as a reproducibility locator by AUD-005."
+      ],
+      "verificationStatus": "supported",
+      "limitations": "This establishes a PoB data-history locator, not official live 3.29.1 item continuity, acquisition, permanent-Mercenary mechanics, rounding, or redistribution rights for game data.",
+      "commitSha": "3a73a54bd3a9c92c4d3264c5d697a51b6c9063bc",
+      "notes": "No upstream item payload is retained. This is a pinned historical export locator; the current supporting snapshot is separately recorded as pob-dev-3-29-50d2236."
+    },
+    {
+      "id": "poedb-enmitys-embrace-2026-08-03",
+      "title": "PoEDB Enmity's Embrace reference page",
+      "sourceClass": "reference-site",
+      "url": "https://poedb.tw/us/Enmitys_Embrace",
+      "publisherOrRepository": "PoEDB",
+      "gameOrSoftwareVersion": "Current unpinned community reference page accessed during the Path of Exile 1 3.29.1 evidence freeze",
+      "accessedDate": "2026-08-03",
+      "supportedClaimsOrRecords": [
+        "Cross-checks Enmity's Embrace range presentation, overcap wording, and semantic modifier-family label used by AUD-005.",
+        "Exposes a current availability-label disagreement with the supporting PoB snapshot."
+      ],
+      "verificationStatus": "supported",
+      "limitations": "An unpinned community display is not authority for target-version item continuity, acquisition, permanent-Mercenary semantics, penalty order, rounding, aggregation, or underlying game-data licence rights.",
+      "notes": "Used only as a labelled corroborating/reference source. The page describes PoEDB site content as CC BY-NC-SA 3.0; that does not resolve underlying game-data rights. No page table, copied prose, image, or asset is retained."
+    },
+    {
+      "id": "golden-glory-lab-data-boundary-2026-08-03",
+      "title": "Golden Glory Lab agent data-boundary policy",
+      "sourceClass": "workflow-documentation",
+      "repositoryPath": "AGENTS.md",
+      "publisherOrRepository": "Golden Glory Lab repository",
+      "gameOrSoftwareVersion": "Repository policy reviewed 2026-08-03",
+      "accessedDate": "2026-08-03",
+      "supportedClaimsOrRecords": [
+        "Defines the product rule that observed item material is build-instance/review data, not general reference evidence; out-of-range observed values are preserved and not clamped."
+      ],
+      "verificationStatus": "confirmed",
+      "limitations": "This is a repository product/data policy, not evidence for any Path of Exile mechanic, current item range, availability, or ownership fact.",
+      "notes": "Used for AUD-005 observed-value handling only."
+    },
+    {
       "id": "product-direction-first-release-2026-08-03",
       "title": "Golden Glory Lab Product Direction",
       "sourceClass": "workflow-documentation",
@@ -188,9 +235,9 @@
         "Provides supporting source/data cross-checks for AUD-004 Flame Link and AUD-005 Enmity records without becoming permanent-Mercenary authority."
       ],
       "verificationStatus": "supported",
-      "limitations": "A moving development snapshot is not a target-version official game-data release or authority for permanent-Mercenary mechanics. Its MIT software license does not establish redistribution rights for embedded GGG game data.",
+      "limitations": "A moving development snapshot is not a target-version official game-data release or authority for permanent-Mercenary mechanics. Its LICENSE.md states MIT terms for software, while ring.lua is marked Item data (c) Grinding Gear Games; neither establishes redistribution rights for embedded game data.",
       "commitSha": "50d22365b919c7435b5d12d892875e9f61d11133",
-      "notes": "Inspected without executing code. Relevant AUD-003 paths include src/TreeData/3_29/tree.lua, src/Data/ModExplicit.lua, src/Data/ModCorrupted.lua, src/Data/Crucible.lua, src/Data/ModItemExclusive.lua, and src/Data/ModCache.lua."
+      "notes": "Inspected without executing code. Relevant AUD-003 paths include src/TreeData/3_29/tree.lua, src/Data/ModExplicit.lua, src/Data/ModCorrupted.lua, src/Data/Crucible.lua, src/Data/ModItemExclusive.lua, and src/Data/ModCache.lua. Relevant AUD-005 paths are src/Data/Uniques/ring.lua, src/Data/StatDescriptions/stat_descriptions.lua record 2919, src/Modules/ModParser.lua, src/Modules/CalcDefence.lua, and src/Modules/CalcOffence.lua. The Enmity record is present in pinned 3.29 export commit 3a73a54bd3a9c92c4d3264c5d697a51b6c9063bc. Licence locator: https://raw.githubusercontent.com/PathOfBuildingCommunity/PathOfBuilding/50d22365b919c7435b5d12d892875e9f61d11133/LICENSE.md."
     },
     {
       "id": "ggg-poe-terms-2026-08-03",
