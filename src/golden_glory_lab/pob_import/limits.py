@@ -20,7 +20,9 @@ class ImportLimits:
     maxXmlElements: int = 50_000
     maxAttributesPerElement: int = 64
     maxTextBytesPerElement: int = 1_000_000
+    maxNumericLexemeDigits: int = 128
     maxReportEntries: int = 256
+    inputEncodingChunkCharacters: int = 4_096
     decompressionChunkBytes: int = 16_384
 
     def to_dict(self) -> dict[str, int]:

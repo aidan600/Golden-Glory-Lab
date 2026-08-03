@@ -17,7 +17,7 @@ def deterministic_json(result: dict[str, Any]) -> str:
     return (
         json.dumps(
             result,
-            ensure_ascii=False,
+            ensure_ascii=True,
             allow_nan=False,
             indent=2,
             separators=(",", ": "),

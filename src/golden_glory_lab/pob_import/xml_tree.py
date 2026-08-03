@@ -7,11 +7,16 @@ not claim byte-exact element spans.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from typing import Any
 from xml.parsers import expat
 
 from .limits import ImportLimits
+
+MINIMUM_EXPAT_VERSION = (2, 7, 2)
+MINIMUM_EXPAT_VERSION_TEXT = ".".join(str(part) for part in MINIMUM_EXPAT_VERSION)
+_EXPAT_VERSION_RE = re.compile(r"^(?:expat_)?([0-9]+)\.([0-9]+)\.([0-9]+)$")
 
 
 @dataclass(slots=True)
@@ -23,6 +28,61 @@ class XmlLoadFailure(Exception):
     byteIndex: int | None = None
 
 
+@dataclass(slots=True)
+class XmlLoadInstrumentation:
+    """Test instrumentation for the character-data complexity boundary."""
+
+    characterCallbacks: int = 0
+    characterUtf8EncodeCalls: int = 0
+    characterUtf8Bytes: int = 0
+    retainedTextRescans: int = 0
+    characterConsolidations: int = 0
+    maxChunksPerConsolidation: int = 0
+
+
+@dataclass(slots=True)
+class _OpenElement:
+    node: dict[str, Any]
+    retainedTextUtf8Bytes: int = 0
+
+
+def expat_runtime_metadata(version: object | None = None) -> dict[str, Any]:
+    """Return non-throwing metadata for the linked Expat security boundary."""
+
+    detected = getattr(expat, "EXPAT_VERSION", None) if version is None else version
+    parsed: tuple[int, int, int] | None = None
+    if isinstance(detected, str):
+        match = _EXPAT_VERSION_RE.fullmatch(detected)
+        if match:
+            try:
+                parsed = tuple(int(part) for part in match.groups())
+            except (ValueError, OverflowError):
+                parsed = None
+    if parsed is None:
+        status = "unparseable"
+    elif parsed < MINIMUM_EXPAT_VERSION:
+        status = "unsupported"
+    else:
+        status = "supported"
+    return {
+        "detectedExpatVersion": detected if isinstance(detected, str) else None,
+        "parsedExpatVersion": list(parsed) if parsed is not None else None,
+        "minimumExpatVersion": MINIMUM_EXPAT_VERSION_TEXT,
+        "status": status,
+    }
+
+
+def _require_safe_expat_runtime() -> dict[str, Any]:
+    metadata = expat_runtime_metadata()
+    if metadata["status"] != "supported":
+        detected = metadata["detectedExpatVersion"] or "unparseable"
+        raise XmlLoadFailure(
+            "XML_RUNTIME_UNSUPPORTED",
+            f"Expat {detected} does not satisfy the reviewed minimum {MINIMUM_EXPAT_VERSION_TEXT}",
+        )
+    return metadata
+
+
 def _attributes(pairs: list[str]) -> list[dict[str, str]]:
     return [
         {"name": pairs[index], "value": pairs[index + 1]}
@@ -30,16 +90,28 @@ def _attributes(pairs: list[str]) -> list[dict[str, str]]:
     ]
 
 
-def load_xml_tree(xml_bytes: bytes, limits: ImportLimits) -> dict[str, Any]:
+def load_xml_tree(
+    xml_bytes: bytes | bytearray,
+    limits: ImportLimits,
+    *,
+    instrumentation: XmlLoadInstrumentation | None = None,
+) -> dict[str, Any]:
+    runtime_security = _require_safe_expat_runtime()
     parser = expat.ParserCreate(encoding="UTF-8")
     parser.ordered_attributes = True
     parser.specified_attributes = True
     parser.SetParamEntityParsing(expat.XML_PARAM_ENTITY_PARSING_NEVER)
+    if hasattr(parser, "SetReparseDeferralEnabled"):
+        parser.SetReparseDeferralEnabled(True)
 
-    stack: list[dict[str, Any]] = []
-    roots: list[dict[str, Any]] = []
+    stack: list[_OpenElement] = []
+    document_nodes: list[dict[str, Any]] = []
     in_cdata = False
     element_count = 0
+    pending_target: list[dict[str, Any]] | None = None
+    pending_kind: str | None = None
+    pending_chunks: list[str] = []
+    pending_exists = False
 
     def location() -> tuple[int, int, int]:
         return (
@@ -52,14 +124,43 @@ def load_xml_tree(xml_bytes: bytes, limits: ImportLimits) -> dict[str, Any]:
         line, column, byte_index = location()
         raise XmlLoadFailure(code, message, line, column, byte_index)
 
+    def current_target() -> list[dict[str, Any]]:
+        return stack[-1].node["children"] if stack else document_nodes
+
+    def flush_character_segment() -> None:
+        nonlocal pending_target, pending_kind, pending_chunks, pending_exists
+        if not pending_exists:
+            return
+        assert pending_target is not None
+        assert pending_kind is not None
+        pending_target.append({"kind": pending_kind, "value": "".join(pending_chunks)})
+        if instrumentation is not None:
+            instrumentation.characterConsolidations += 1
+            instrumentation.maxChunksPerConsolidation = max(
+                instrumentation.maxChunksPerConsolidation, len(pending_chunks)
+            )
+        pending_target = None
+        pending_kind = None
+        pending_chunks = []
+        pending_exists = False
+
+    def begin_character_segment(kind: str) -> None:
+        nonlocal pending_target, pending_kind, pending_chunks, pending_exists
+        target = current_target()
+        if pending_exists and (pending_target is not target or pending_kind != kind):
+            flush_character_segment()
+        if not pending_exists:
+            pending_target = target
+            pending_kind = kind
+            pending_chunks = []
+            pending_exists = True
+
     def append_child(child: dict[str, Any]) -> None:
-        if stack:
-            stack[-1]["children"].append(child)
-        else:
-            roots.append(child)
+        current_target().append(child)
 
     def start_element(name: str, pairs: list[str]) -> None:
         nonlocal element_count
+        flush_character_segment()
         element_count += 1
         if element_count > limits.maxXmlElements:
             fail("XML_ELEMENT_LIMIT", "XML element count exceeds the configured limit")
@@ -77,43 +178,50 @@ def load_xml_tree(xml_bytes: bytes, limits: ImportLimits) -> dict[str, Any]:
             "children": [],
         }
         append_child(node)
-        stack.append(node)
+        stack.append(_OpenElement(node))
 
     def end_element(_name: str) -> None:
+        flush_character_segment()
         stack.pop()
 
     def character_data(data: str) -> None:
         if not data:
             return
-        kind = "cdata" if in_cdata else "text"
+        if instrumentation is not None:
+            instrumentation.characterCallbacks += 1
+            instrumentation.characterUtf8EncodeCalls += 1
+        encoded_size = len(data.encode("utf-8"))
+        if instrumentation is not None:
+            instrumentation.characterUtf8Bytes += encoded_size
         if stack:
-            retained_bytes = _character_bytes(stack[-1])
-            if (
-                retained_bytes + len(data.encode("utf-8"))
-                > limits.maxTextBytesPerElement
-            ):
+            frame = stack[-1]
+            retained = frame.retainedTextUtf8Bytes + encoded_size
+            if retained > limits.maxTextBytesPerElement:
                 fail(
                     "XML_TEXT_LIMIT",
                     "XML character data in one element exceeds the configured limit",
                 )
-        target = stack[-1]["children"] if stack else roots
-        if target and target[-1]["kind"] == kind:
-            target[-1]["value"] += data
-        else:
-            target.append({"kind": kind, "value": data})
+            frame.retainedTextUtf8Bytes = retained
+        begin_character_segment("cdata" if in_cdata else "text")
+        pending_chunks.append(data)
 
     def start_cdata() -> None:
         nonlocal in_cdata
+        flush_character_segment()
         in_cdata = True
+        begin_character_segment("cdata")
 
     def end_cdata() -> None:
         nonlocal in_cdata
+        flush_character_segment()
         in_cdata = False
 
     def comment(data: str) -> None:
+        flush_character_segment()
         append_child({"kind": "comment", "value": data})
 
     def processing_instruction(target: str, data: str) -> None:
+        flush_character_segment()
         append_child(
             {"kind": "processing-instruction", "target": target, "value": data}
         )
@@ -144,6 +252,7 @@ def load_xml_tree(xml_bytes: bytes, limits: ImportLimits) -> dict[str, Any]:
         for offset in range(0, len(xml_bytes), chunk_size):
             parser.Parse(xml_bytes[offset : offset + chunk_size], False)
         parser.Parse(b"", True)
+        flush_character_segment()
     except XmlLoadFailure:
         raise
     except expat.ExpatError as error:
@@ -155,7 +264,7 @@ def load_xml_tree(xml_bytes: bytes, limits: ImportLimits) -> dict[str, Any]:
             parser.ErrorByteIndex,
         ) from error
 
-    element_roots = [node for node in roots if node["kind"] == "element"]
+    element_roots = [node for node in document_nodes if node["kind"] == "element"]
     if len(element_roots) != 1:
         raise XmlLoadFailure(
             "XML_ROOT_COUNT",
@@ -164,15 +273,18 @@ def load_xml_tree(xml_bytes: bytes, limits: ImportLimits) -> dict[str, Any]:
             parser.CurrentColumnNumber,
             parser.CurrentByteIndex,
         )
-    return element_roots[0]
-
-
-def _character_bytes(element: dict[str, Any]) -> int:
-    total = 0
-    for child in element["children"]:
-        if child["kind"] in {"text", "cdata"}:
-            total += len(child["value"].encode("utf-8"))
-    return total
+    root = element_roots[0]
+    document_events = [
+        {"kind": "root-element", "name": node["name"]}
+        if node["kind"] == "element"
+        else node
+        for node in document_nodes
+    ]
+    return {
+        "root": root,
+        "documentEvents": document_events,
+        "runtimeSecurity": runtime_security,
+    }
 
 
 def character_value(element: dict[str, Any]) -> str:

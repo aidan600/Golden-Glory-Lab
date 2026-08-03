@@ -21,33 +21,20 @@ from .xml_tree import (
     attribute_state,
     character_value,
     element_children,
+    expat_runtime_metadata,
     load_xml_tree,
 )
 
 CONTRACT_VERSION = "1.0.0"
-IMPLEMENTATION_VERSION = "pob-importer-python/0.1.0"
-EVIDENCE_PROFILE = [
-    {
-        "sourceId": "pob-release-2-66-2",
-        "revision": "b23da8f841e4b0bc167b0b4401ea002d7d45f807",
-    },
-    {
-        "sourceId": "pob-dev-format-ef4c584",
-        "revision": "ef4c5848fad33190f730cebaedff4b5831d0c88d",
-    },
-    {
-        "sourceId": "pob-simplegraphic-codec-3b1a346",
-        "revision": "3b1a3468223d0ebd4042d6ce76fc6144718ef79b",
-    },
-    {
-        "sourceId": "pob-pre-itemsets-1-4-36",
-        "revision": "69d4e4d4e4cfb82ccca0ebf609d6673e347a98dc",
-    },
-    {
-        "sourceId": "pob-itemsets-1-4-37",
-        "revision": "9f981583f7c721917124d604cddf0e8102e62714",
-    },
-]
+IMPLEMENTATION_VERSION = "pob-importer-python/0.1.1"
+_EVIDENCE_PROFILE = (
+    ("pob-release-2-66-2", "b23da8f841e4b0bc167b0b4401ea002d7d45f807"),
+    ("pob-dev-format-ef4c584", "ef4c5848fad33190f730cebaedff4b5831d0c88d"),
+    ("pob-simplegraphic-codec-3b1a346", "3b1a3468223d0ebd4042d6ce76fc6144718ef79b"),
+    ("pob-pre-itemsets-1-4-36", "69d4e4d4e4cfb82ccca0ebf609d6673e347a98dc"),
+    ("pob-itemsets-1-4-37", "9f981583f7c721917124d604cddf0e8102e62714"),
+    ("python-3-13-xml-security", "3.13.14-accessed-2026-08-03"),
+)
 
 _BASE64_RE = re.compile(r"^[A-Za-z0-9_-]*={0,2}$")
 _DECIMAL_RE = re.compile(r"^[0-9]+$")
@@ -68,6 +55,89 @@ class ImportFailure(Exception):
     normalizedShareCode: str | None = None
     decodedCompressed: bytes | None = None
     normalizations: list[dict[str, Any]] | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class Utf8Observation:
+    byteCount: int | None
+    digestHex: str | None
+    retainedBytes: bytearray | None
+    state: str
+    errorOffset: int | None
+    chunksEncoded: int
+    maxChunkUtf8Bytes: int
+
+
+def _encode_utf8_chunk(value: str) -> bytes:
+    """Single bounded encoding seam used by allocation regressions."""
+
+    return value.encode("utf-8", errors="strict")
+
+
+def _observe_utf8(
+    value: str,
+    *,
+    retain_limit: int | None,
+    chunk_characters: int,
+) -> Utf8Observation:
+    hasher = hashlib.sha256()
+    retained = bytearray() if retain_limit is not None else None
+    byte_count = 0
+    chunks_encoded = 0
+    max_chunk_bytes = 0
+    over_limit = False
+    for offset in range(0, len(value), chunk_characters):
+        chunk = value[offset : offset + chunk_characters]
+        try:
+            encoded = _encode_utf8_chunk(chunk)
+        except UnicodeEncodeError as error:
+            return Utf8Observation(
+                byteCount=None,
+                digestHex=None,
+                retainedBytes=None,
+                state="invalid",
+                errorOffset=offset + error.start,
+                chunksEncoded=chunks_encoded,
+                maxChunkUtf8Bytes=max_chunk_bytes,
+            )
+        chunks_encoded += 1
+        max_chunk_bytes = max(max_chunk_bytes, len(encoded))
+        byte_count += len(encoded)
+        hasher.update(encoded)
+        if retained is not None:
+            if byte_count <= retain_limit:
+                retained.extend(encoded)
+            else:
+                retained = None
+                over_limit = True
+    return Utf8Observation(
+        byteCount=byte_count,
+        digestHex=hasher.hexdigest(),
+        retainedBytes=retained,
+        state="limit-exceeded" if over_limit else "valid",
+        errorOffset=None,
+        chunksEncoded=chunks_encoded,
+        maxChunkUtf8Bytes=max_chunk_bytes,
+    )
+
+
+def _unobserved_utf8() -> Utf8Observation:
+    return Utf8Observation(
+        byteCount=None,
+        digestHex=None,
+        retainedBytes=None,
+        state="not-scanned-input-limit",
+        errorOffset=None,
+        chunksEncoded=0,
+        maxChunkUtf8Bytes=0,
+    )
+
+
+def _fresh_evidence_profile() -> list[dict[str, str]]:
+    return [
+        {"sourceId": source_id, "revision": revision}
+        for source_id, revision in _EVIDENCE_PROFILE
+    ]
 
 
 class Reporter:
@@ -131,26 +201,47 @@ def importPobRawXml(
     """Import a raw PoB XML string into neutral contract v1."""
 
     original, limits, producing_version = _prepare_input(input, options)
-    original_bytes = original.encode("utf-8")
+    observation = _observe_utf8(
+        original,
+        retain_limit=limits.maxRawXmlBytes,
+        chunk_characters=limits.inputEncodingChunkCharacters,
+    )
+    accepted_bytes = observation.retainedBytes if observation.state == "valid" else None
     envelope = _envelope(
         "raw-xml",
         original,
+        observation,
         limits,
         producing_version,
         decoded_xml=None,
+        xml_bytes=accepted_bytes,
         normalized_share_code=None,
         decoded_compressed=None,
         normalizations=[],
-        codec_steps=["caller string encoded as UTF-8 for byte limits and hashes"],
+        codec_steps=[
+            "incrementally count and hash strict UTF-8 chunks",
+            "retain at most maxRawXmlBytes before XML parsing",
+        ],
     )
-    if len(original_bytes) > limits.maxRawXmlBytes:
+    if observation.state == "invalid":
+        return _failure_result(
+            envelope,
+            "RAW_XML_UTF8_INVALID",
+            "xml",
+            "Raw XML contains a Python string value that strict UTF-8 cannot represent",
+            {"characterOffset": observation.errorOffset},
+        )
+    if observation.state == "limit-exceeded":
         return _failure_result(
             envelope,
             "RAW_XML_LIMIT",
             "xml",
             "Raw XML exceeds maxRawXmlBytes",
         )
-    return _load_neutral(original, original_bytes, envelope, limits, producing_version)
+    assert accepted_bytes is not None
+    return _load_neutral(
+        original, accepted_bytes, envelope, limits, producing_version
+    )
 
 
 def importPobShareCode(
@@ -159,6 +250,54 @@ def importPobShareCode(
     """Import strict PoB URL-safe Base64/zlib input into neutral contract v1."""
 
     original, limits, producing_version = _prepare_input(input, options)
+    if len(original) > limits.maxShareCodeCharacters:
+        envelope = _envelope(
+            "share-code",
+            original,
+            _unobserved_utf8(),
+            limits,
+            producing_version,
+            decoded_xml=None,
+            xml_bytes=None,
+            normalized_share_code=None,
+            decoded_compressed=None,
+            normalizations=[],
+            codec_steps=["reject character count before UTF-8 or Base64 allocation"],
+        )
+        return _failure_result(
+            envelope,
+            "SHARE_CODE_INPUT_LIMIT",
+            "envelope",
+            "Share-code input exceeds maxShareCodeCharacters",
+        )
+
+    observation = _observe_utf8(
+        original,
+        retain_limit=None,
+        chunk_characters=limits.inputEncodingChunkCharacters,
+    )
+    if observation.state == "invalid":
+        envelope = _envelope(
+            "share-code",
+            original,
+            observation,
+            limits,
+            producing_version,
+            decoded_xml=None,
+            xml_bytes=None,
+            normalized_share_code=None,
+            decoded_compressed=None,
+            normalizations=[],
+            codec_steps=["incrementally validate caller input as strict UTF-8"],
+        )
+        return _failure_result(
+            envelope,
+            "SHARE_CODE_UTF8_INVALID",
+            "envelope",
+            "Share-code input contains a Python string value that strict UTF-8 cannot represent",
+            {"characterOffset": observation.errorOffset},
+        )
+
     normalized: str | None = None
     compressed: bytes | None = None
     normalizations: list[dict[str, Any]] = []
@@ -179,13 +318,16 @@ def importPobShareCode(
         envelope = _envelope(
             "share-code",
             original,
+            observation,
             limits,
             producing_version,
             decoded_xml=xml_text,
+            xml_bytes=xml_bytes,
             normalized_share_code=normalized,
             decoded_compressed=compressed,
             normalizations=normalizations,
             codec_steps=[
+                "incrementally count and hash strict UTF-8 caller input",
                 "trim permitted outer ASCII whitespace when present",
                 "restore omitted Base64 padding when present",
                 "reverse PoB URL-safe substitutions '-' to '+' and '_' to '/'",
@@ -199,17 +341,28 @@ def importPobShareCode(
         envelope = _envelope(
             "share-code",
             original,
+            observation,
             limits,
             producing_version,
             decoded_xml=None,
-            normalized_share_code=failure.normalizedShareCode or normalized,
-            decoded_compressed=failure.decodedCompressed or compressed,
+            xml_bytes=None,
+            normalized_share_code=(
+                failure.normalizedShareCode
+                if failure.normalizedShareCode is not None
+                else normalized
+            ),
+            decoded_compressed=(
+                failure.decodedCompressed
+                if failure.decodedCompressed is not None
+                else compressed
+            ),
             normalizations=(
                 failure.normalizations
                 if failure.normalizations is not None
                 else normalizations
             ),
             codec_steps=[
+                "incrementally count and hash strict UTF-8 caller input",
                 "PoB URL-safe Base64 envelope",
                 "zlib-wrapped DEFLATE stream",
                 "UTF-8 XML",
@@ -243,21 +396,14 @@ def _prepare_input(
 def _decode_share_envelope(
     original: str, limits: ImportLimits
 ) -> tuple[str, bytes, list[dict[str, Any]]]:
-    if len(original) > limits.maxShareCodeCharacters:
-        raise ImportFailure(
-            "SHARE_CODE_INPUT_LIMIT",
-            "envelope",
-            "Share-code input exceeds maxShareCodeCharacters",
-        )
-    try:
-        original.encode("ascii")
-    except UnicodeEncodeError as error:
-        raise ImportFailure(
-            "SHARE_CODE_NON_ASCII",
-            "envelope",
-            "Share code must contain only the ASCII PoB Base64 alphabet",
-            {"characterOffset": error.start},
-        ) from error
+    for index, character in enumerate(original):
+        if ord(character) > 127:
+            raise ImportFailure(
+                "SHARE_CODE_NON_ASCII",
+                "envelope",
+                "Share code must contain only the ASCII PoB Base64 alphabet",
+                {"characterOffset": index},
+            )
 
     normalizations: list[dict[str, Any]] = []
     normalized = original.strip(" \t\r\n")
@@ -334,7 +480,7 @@ def _decode_share_envelope(
     return normalized, compressed, normalizations
 
 
-def _decompress_zlib(compressed: bytes, limits: ImportLimits) -> bytes:
+def _decompress_zlib(compressed: bytes, limits: ImportLimits) -> bytearray:
     decompressor = zlib.decompressobj(wbits=zlib.MAX_WBITS)
     output = bytearray()
     position = 0
@@ -383,32 +529,33 @@ def _decompress_zlib(compressed: bytes, limits: ImportLimits) -> bytes:
             "decompression",
             f"Payload is not a valid zlib-wrapped DEFLATE stream: {error}",
         ) from error
-    return bytes(output)
+    return output
 
 
 def _envelope(
     input_kind: str,
     original: str,
+    original_observation: Utf8Observation,
     limits: ImportLimits,
     producing_version: str | None,
     *,
     decoded_xml: str | None,
+    xml_bytes: bytes | bytearray | None,
     normalized_share_code: str | None,
     decoded_compressed: bytes | None,
     normalizations: list[dict[str, Any]],
     codec_steps: list[str],
 ) -> dict[str, Any]:
-    original_bytes = original.encode("utf-8")
-    xml_text = original if input_kind == "raw-xml" else decoded_xml
-    xml_bytes = xml_text.encode("utf-8") if xml_text is not None else None
-    hashes = [
-        {
-            "name": "original-input-sha256",
-            "algorithm": "SHA-256",
-            "byteDomain": "exact original input encoded as UTF-8",
-            "digestHex": hashlib.sha256(original_bytes).hexdigest(),
-        }
-    ]
+    hashes: list[dict[str, str]] = []
+    if original_observation.digestHex is not None:
+        hashes.append(
+            {
+                "name": "original-input-sha256",
+                "algorithm": "SHA-256",
+                "byteDomain": "exact original input incrementally encoded as strict UTF-8",
+                "digestHex": original_observation.digestHex,
+            }
+        )
     if decoded_compressed is not None:
         hashes.append(
             {
@@ -419,12 +566,18 @@ def _envelope(
             }
         )
     if xml_bytes is not None:
+        xml_digest = (
+            original_observation.digestHex
+            if input_kind == "raw-xml"
+            else hashlib.sha256(xml_bytes).hexdigest()
+        )
+        assert xml_digest is not None
         hashes.append(
             {
                 "name": "xml-utf8-sha256",
                 "algorithm": "SHA-256",
-                "byteDomain": "exact accepted XML string encoded as UTF-8",
-                "digestHex": hashlib.sha256(xml_bytes).hexdigest(),
+                "byteDomain": "exact accepted XML bytes after strict UTF-8 validation",
+                "digestHex": xml_digest,
             }
         )
     return {
@@ -435,7 +588,8 @@ def _envelope(
         "hashes": hashes,
         "sizes": {
             "originalInputCharacters": len(original),
-            "originalInputUtf8Bytes": len(original_bytes),
+            "originalInputUtf8Bytes": original_observation.byteCount,
+            "originalInputUtf8State": original_observation.state,
             "normalizedShareCodeCharacters": (
                 len(normalized_share_code)
                 if normalized_share_code is not None
@@ -446,11 +600,12 @@ def _envelope(
             ),
             "xmlUtf8Bytes": len(xml_bytes) if xml_bytes is not None else None,
         },
-        "codecSteps": codec_steps,
-        "normalizations": normalizations,
+        "codecSteps": list(codec_steps),
+        "normalizations": [dict(entry) for entry in normalizations],
         "limits": limits.to_dict(),
         "implementationVersion": IMPLEMENTATION_VERSION,
-        "evidenceProfile": EVIDENCE_PROFILE,
+        "runtimeSecurity": expat_runtime_metadata(),
+        "evidenceProfile": _fresh_evidence_profile(),
         "suppliedProducingPobVersion": producing_version,
     }
 
@@ -495,13 +650,14 @@ def _failure_result(
 
 def _load_neutral(
     xml_text: str,
-    xml_bytes: bytes,
+    xml_bytes: bytes | bytearray,
     envelope: dict[str, Any],
     limits: ImportLimits,
     producing_version: str | None,
 ) -> dict[str, Any]:
     try:
-        root = load_xml_tree(xml_bytes, limits)
+        loaded = load_xml_tree(xml_bytes, limits)
+        root = loaded["root"]
         if root["name"] != "PathOfBuilding":
             raise XmlLoadFailure(
                 "XML_ROOT_UNSUPPORTED",
@@ -531,7 +687,9 @@ def _load_neutral(
         "/PathOfBuilding[1]",
         "Recognized the pinned PoB root element.",
     )
-    document, source_metadata = _project_document(root, reporter, producing_version)
+    document, source_metadata = _project_document(
+        root, loaded["documentEvents"], reporter, producing_version, limits
+    )
     return {
         "contractVersion": CONTRACT_VERSION,
         "status": "success",
@@ -544,7 +702,11 @@ def _load_neutral(
 
 
 def _project_document(
-    root: dict[str, Any], reporter: Reporter, producing_version: str | None
+    root: dict[str, Any],
+    document_events: list[dict[str, Any]],
+    reporter: Reporter,
+    producing_version: str | None,
+    limits: ImportLimits,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     root_path = "/PathOfBuilding[1]"
     for attribute in root["attributes"]:
@@ -605,10 +767,11 @@ def _project_document(
                 items,
                 item_sets,
                 reporter,
+                limits,
             )
             items_sections.append(section)
         elif name == "Tree":
-            _parse_passive_references(element, path, passive_refs, reporter)
+            _parse_passive_references(element, path, passive_refs, reporter, limits)
             reporter.add(
                 "TREE_RELEVANT_REFERENCES_SCANNED",
                 "ignored as irrelevant",
@@ -618,7 +781,9 @@ def _project_document(
                 retained_material={"sourcePointer": path},
             )
         elif name == "Skills":
-            _parse_item_set_cross_references(element, path, cross_refs, reporter)
+            _parse_item_set_cross_references(
+                element, path, cross_refs, reporter, limits
+            )
             reporter.add(
                 "SKILLS_RELEVANT_REFERENCES_SCANNED",
                 "ignored as irrelevant",
@@ -677,6 +842,7 @@ def _project_document(
         "rootAttributes": root["attributes"],
         "topLevelNodeInventory": top_inventory,
         "sourceTree": root,
+        "documentEvents": document_events,
         "itemsSections": items_sections,
         "items": items,
         "itemSets": item_sets,
@@ -707,6 +873,7 @@ def _parse_items_section(
     all_items: list[dict[str, Any]],
     all_sets: list[dict[str, Any]],
     reporter: Reporter,
+    limits: ImportLimits,
 ) -> dict[str, Any]:
     section_id = f"items-section-{section_index + 1:04d}"
     _report_unknown_attributes(
@@ -726,11 +893,13 @@ def _parse_items_section(
         child_counts[child["name"]] = child_counts.get(child["name"], 0) + 1
         child_path = f"{path}/{child['name']}[{child_counts[child['name']]}]"
         if child["name"] == "Item":
-            item = _parse_item(child, child_path, len(all_items), reporter)
+            item = _parse_item(child, child_path, len(all_items), reporter, limits)
             all_items.append(item)
             section_item_ids.append(item["occurrenceId"])
         elif child["name"] == "ItemSet":
-            item_set = _parse_item_set(child, child_path, len(all_sets), reporter)
+            item_set = _parse_item_set(
+                child, child_path, len(all_sets), reporter, limits
+            )
             all_sets.append(item_set)
             section_set_ids.append(item_set["occurrenceId"])
             local_set_count += 1
@@ -754,7 +923,12 @@ def _parse_items_section(
             for slot_index, (slot, slot_path) in enumerate(direct_slots):
                 legacy_assignments.append(
                     _parse_assignment(
-                        slot, slot_path, synthesized_id, slot_index, reporter
+                        slot,
+                        slot_path,
+                        synthesized_id,
+                        slot_index,
+                        reporter,
+                        limits,
                     )
                 )
             synthesized_set = {
@@ -795,7 +969,9 @@ def _parse_items_section(
         else:
             for slot_index, (slot, slot_path) in enumerate(direct_slots):
                 legacy_assignments.append(
-                    _parse_assignment(slot, slot_path, section_id, slot_index, reporter)
+                    _parse_assignment(
+                        slot, slot_path, section_id, slot_index, reporter, limits
+                    )
                 )
             reporter.add(
                 "TRANSITIONAL_TOP_LEVEL_SLOTS_RETAINED",
@@ -816,7 +992,9 @@ def _parse_items_section(
         "attributes": element["attributes"],
         "activeItemSetReference": {
             "raw": attribute_state(element, "activeItemSet"),
-            "parsedId": _parse_decimal(attribute_state(element, "activeItemSet")),
+            "parsedId": _parse_decimal(
+                attribute_state(element, "activeItemSet"), limits
+            ),
             "resolution": None,
         },
         "legacyUseSecondWeaponSet": _boolean_value(
@@ -830,11 +1008,15 @@ def _parse_items_section(
 
 
 def _parse_item(
-    element: dict[str, Any], path: str, source_index: int, reporter: Reporter
+    element: dict[str, Any],
+    path: str,
+    source_index: int,
+    reporter: Reporter,
+    limits: ImportLimits,
 ) -> dict[str, Any]:
     occurrence_id = f"item-{source_index + 1:04d}"
     raw_id = attribute_state(element, "id")
-    parsed_id = _parse_decimal(raw_id)
+    parsed_id = _parse_decimal(raw_id, limits)
     warnings: list[str] = []
     if parsed_id is None:
         warnings.append("MALFORMED_ITEM_ID")
@@ -936,11 +1118,15 @@ def _parse_item(
 
 
 def _parse_item_set(
-    element: dict[str, Any], path: str, source_index: int, reporter: Reporter
+    element: dict[str, Any],
+    path: str,
+    source_index: int,
+    reporter: Reporter,
+    limits: ImportLimits,
 ) -> dict[str, Any]:
     occurrence_id = f"item-set-{source_index + 1:04d}"
     raw_id = attribute_state(element, "id")
-    parsed_id = _parse_decimal(raw_id)
+    parsed_id = _parse_decimal(raw_id, limits)
     warnings: list[str] = []
     if parsed_id is None:
         warnings.append("MALFORMED_ITEM_SET_ID")
@@ -979,7 +1165,12 @@ def _parse_item_set(
         if child["name"] == "Slot":
             assignments.append(
                 _parse_assignment(
-                    child, child_path, occurrence_id, len(assignments), reporter
+                    child,
+                    child_path,
+                    occurrence_id,
+                    len(assignments),
+                    reporter,
+                    limits,
                 )
             )
         elif child["name"] == "SocketIdURL":
@@ -989,7 +1180,9 @@ def _parse_item_set(
                 "sourcePath": child_path,
                 "attributes": child["attributes"],
                 "rawNodeId": attribute_state(child, "nodeId"),
-                "parsedNodeId": _parse_decimal(attribute_state(child, "nodeId")),
+                "parsedNodeId": _parse_decimal(
+                    attribute_state(child, "nodeId"), limits
+                ),
                 "rawName": attribute_state(child, "name"),
                 "rawItemPbUrl": attribute_state(child, "itemPbURL"),
             }
@@ -1060,6 +1253,7 @@ def _parse_assignment(
     parent_id: str,
     source_index: int,
     reporter: Reporter,
+    limits: ImportLimits,
 ) -> dict[str, Any]:
     occurrence_id = f"assignment-{parent_id}-{source_index + 1:04d}"
     name = attribute_state(element, "name")
@@ -1091,7 +1285,7 @@ def _parse_assignment(
         "sourcePath": path,
         "originalSlotName": name,
         "rawItemReference": raw_ref,
-        "parsedItemId": _parse_decimal(raw_ref),
+        "parsedItemId": _parse_decimal(raw_ref, limits),
         "active": active,
         "itemPbUrl": item_url,
         "attributes": element["attributes"],
@@ -1101,39 +1295,65 @@ def _parse_assignment(
     }
 
 
+def _children_with_paths(
+    element: dict[str, Any], path: str, name: str | None = None
+) -> Iterable[tuple[dict[str, Any], str]]:
+    counts: dict[str, int] = {}
+    for child in element_children(element):
+        child_name = child["name"]
+        counts[child_name] = counts.get(child_name, 0) + 1
+        child_path = f"{path}/{child_name}[{counts[child_name]}]"
+        if name is None or child_name == name:
+            yield child, child_path
+
+
 def _parse_passive_references(
     element: dict[str, Any],
     path: str,
     output: list[dict[str, Any]],
     reporter: Reporter,
+    limits: ImportLimits,
 ) -> None:
-    for child, child_path in _walk_elements(element, path):
-        if child["name"] != "Socket":
-            continue
-        raw_item = attribute_state(child, "itemId")
-        raw_node = attribute_state(child, "nodeId")
-        occurrence_id = f"passive-jewel-{len(output) + 1:04d}"
-        record = {
-            "occurrenceId": occurrence_id,
-            "sourceOccurrenceIndex": len(output),
-            "sourcePath": child_path,
-            "attributes": child["attributes"],
-            "rawNodeId": raw_node,
-            "parsedNodeId": _parse_decimal(raw_node),
-            "rawItemReference": raw_item,
-            "parsedItemId": _parse_decimal(raw_item),
-            "resolution": None,
-            "warnings": [],
-        }
-        output.append(record)
-        reporter.add(
-            "PASSIVE_JEWEL_REFERENCE_RECOGNIZED",
-            "recognized",
-            "semantic",
-            child_path,
-            "Retained a passive-spec jewel reference separately from equipment assignments.",
-            occurrence_id=occurrence_id,
-        )
+    for spec, spec_path in _children_with_paths(element, path, "Spec"):
+        for sockets, sockets_path in _children_with_paths(spec, spec_path, "Sockets"):
+            for socket, socket_path in _children_with_paths(
+                sockets, sockets_path, "Socket"
+            ):
+                raw_item = attribute_state(socket, "itemId")
+                raw_node = attribute_state(socket, "nodeId")
+                occurrence_id = f"passive-jewel-{len(output) + 1:04d}"
+                record = {
+                    "occurrenceId": occurrence_id,
+                    "sourceOccurrenceIndex": len(output),
+                    "sourcePath": socket_path,
+                    "attributes": socket["attributes"],
+                    "rawNodeId": raw_node,
+                    "parsedNodeId": _parse_decimal(raw_node, limits),
+                    "rawItemReference": raw_item,
+                    "parsedItemId": _parse_decimal(raw_item, limits),
+                    "resolution": None,
+                    "warnings": [],
+                }
+                if record["parsedNodeId"] is None:
+                    record["warnings"].append("MALFORMED_PASSIVE_NODE_ID")
+                    reporter.add(
+                        "MALFORMED_PASSIVE_NODE_ID",
+                        "malformed",
+                        "semantic",
+                        f"{socket_path}/@nodeId",
+                        "Passive jewel nodeId is missing, empty, nonnumeric, oversized, or otherwise unparseable.",
+                        occurrence_id=occurrence_id,
+                        retained_material=raw_node,
+                    )
+                output.append(record)
+                reporter.add(
+                    "PASSIVE_JEWEL_REFERENCE_RECOGNIZED",
+                    "recognized",
+                    "semantic",
+                    socket_path,
+                    "Retained a passive-spec jewel reference at the audited Tree/Spec/Sockets/Socket path.",
+                    occurrence_id=occurrence_id,
+                )
 
 
 def _parse_item_set_cross_references(
@@ -1141,34 +1361,38 @@ def _parse_item_set_cross_references(
     path: str,
     output: list[dict[str, Any]],
     reporter: Reporter,
+    limits: ImportLimits,
 ) -> None:
-    for child, child_path in _walk_elements(element, path):
-        if child["name"] != "Gem":
-            continue
-        for attribute_name in ("skillMinionItemSet", "skillMinionItemSetCalcs"):
-            raw = attribute_state(child, attribute_name)
-            if raw["state"] == "missing":
-                continue
-            occurrence_id = f"item-set-reference-{len(output) + 1:04d}"
-            record = {
-                "occurrenceId": occurrence_id,
-                "sourceOccurrenceIndex": len(output),
-                "sourcePath": f"{child_path}/@{attribute_name}",
-                "referenceKind": attribute_name,
-                "rawItemSetReference": raw,
-                "parsedItemSetId": _parse_decimal(raw),
-                "resolution": None,
-                "warnings": [],
-            }
-            output.append(record)
-            reporter.add(
-                "ITEM_SET_CROSS_REFERENCE_RECOGNIZED",
-                "recognized",
-                "semantic",
-                record["sourcePath"],
-                "Retained an explicit item-set cross-reference without interpreting minion ownership.",
-                occurrence_id=occurrence_id,
-            )
+    for skill_set, skill_set_path in _children_with_paths(element, path, "SkillSet"):
+        for skill, skill_path in _children_with_paths(skill_set, skill_set_path, "Skill"):
+            for gem, gem_path in _children_with_paths(skill, skill_path, "Gem"):
+                for attribute_name in (
+                    "skillMinionItemSet",
+                    "skillMinionItemSetCalcs",
+                ):
+                    raw = attribute_state(gem, attribute_name)
+                    if raw["state"] == "missing":
+                        continue
+                    occurrence_id = f"item-set-reference-{len(output) + 1:04d}"
+                    record = {
+                        "occurrenceId": occurrence_id,
+                        "sourceOccurrenceIndex": len(output),
+                        "sourcePath": f"{gem_path}/@{attribute_name}",
+                        "referenceKind": attribute_name,
+                        "rawItemSetReference": raw,
+                        "parsedItemSetId": _parse_decimal(raw, limits),
+                        "resolution": None,
+                        "warnings": [],
+                    }
+                    output.append(record)
+                    reporter.add(
+                        "ITEM_SET_CROSS_REFERENCE_RECOGNIZED",
+                        "recognized",
+                        "semantic",
+                        record["sourcePath"],
+                        "Retained an item-set cross-reference at the audited Skills/SkillSet/Skill/Gem path without interpreting ownership.",
+                        occurrence_id=occurrence_id,
+                    )
 
 
 def _resolve_all(
@@ -1208,6 +1432,8 @@ def _resolve_all(
             section["occurrenceId"],
             "item-set",
             reporter,
+            missing_is_optional=True,
+            zero_is_empty=False,
         )
         if section["transitionalTopLevelRepresentation"]:
             for assignment in section["legacyTopLevelAssignments"]:
@@ -1241,6 +1467,7 @@ def _resolve_all(
             reference["occurrenceId"],
             "item-set",
             reporter,
+            zero_is_empty=False,
         )
     for item in items:
         equipment = equipment_counts[item["occurrenceId"]]
@@ -1269,7 +1496,12 @@ def _resolve_reference(
     occurrence_id: str,
     target_kind: str,
     reporter: Reporter,
+    *,
+    missing_is_optional: bool = False,
+    zero_is_empty: bool = True,
 ) -> dict[str, Any]:
+    if raw["state"] == "missing" and missing_is_optional:
+        return {"state": "missing", "candidateOccurrences": []}
     if raw["state"] in {"missing", "empty"} or parsed is None:
         resolution = {"state": "malformed", "candidateOccurrences": []}
         reporter.add(
@@ -1277,12 +1509,12 @@ def _resolve_reference(
             "malformed",
             "resolution",
             location,
-            f"{target_kind.title()} reference is missing, empty, or nonnumeric.",
+            f"{target_kind.title()} reference is missing, empty, nonnumeric, oversized, or otherwise unparseable.",
             occurrence_id=occurrence_id,
             retained_material=raw,
         )
         return resolution
-    if parsed == 0:
+    if parsed == 0 and zero_is_empty:
         return {"state": "empty-reference", "candidateOccurrences": []}
     candidates = declarations.get(parsed, [])
     if len(candidates) == 1:
@@ -1422,11 +1654,16 @@ def _report_unknown_attributes(
             )
 
 
-def _parse_decimal(raw: dict[str, Any]) -> int | None:
+def _parse_decimal(raw: dict[str, Any], limits: ImportLimits) -> int | None:
     value = raw["value"]
     if raw["state"] != "present" or value is None or not _DECIMAL_RE.fullmatch(value):
         return None
-    return int(value)
+    if len(value) > limits.maxNumericLexemeDigits:
+        return None
+    try:
+        return int(value)
+    except (ValueError, OverflowError):
+        return None
 
 
 def _boolean_value(raw: dict[str, Any]) -> dict[str, Any]:
