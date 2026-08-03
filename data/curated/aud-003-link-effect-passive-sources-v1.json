@@ -1,0 +1,101 @@
+{
+  "schemaVersion": "1.0",
+  "artifactId": "aud-003-link-effect-passive-sources-v1",
+  "artifactType": "source-catalog",
+  "auditId": "AUD-003",
+  "contractVersion": "1.0.0",
+  "targetGameVersion": "Path of Exile 1 3.29.1",
+  "verificationStatus": "confirmed",
+  "sourceIds": [
+    "ggg-poe1-skilltree-export-3-29-1",
+    "ggg-poe-developer-data-docs",
+    "ggg-poe-terms-2026-08-03"
+  ],
+  "scope": "All matching direct Link Skill Buff Effect node stats and related condition nodes in the pinned 3.29.1 Default passive tree. It does not establish their arithmetic, stacking, or runtime activation state.",
+  "retention": {
+    "sourceLicense": "The official skilltree-export repository had no declared repository license at the pinned commit.",
+    "dataLicense": "No affirmative redistribution license for raw game data was established by the inspected source.",
+    "provenance": "Manually reviewed minimal node/condition records from the pinned official Default-tree export listed in AUD-003.",
+    "redistribution": "Only minimal factual identifiers, values, and condition flags are retained; raw export redistribution is not asserted.",
+    "derivation": "Records are a manual bounded scan result, not a generated copy of the source payload.",
+    "attribution": "Grinding Gear Games and the exact repository commit, file, and hash are recorded in the source registry and AUD-003.",
+    "retainedMaterial": "Node IDs, short names, values, condition identifiers, and limited applicability metadata.",
+    "notVendored": "Raw data.json, sprites, full node text, and all unrelated tree records are not vendored.",
+    "uncertainty": "Stacking, arithmetic, target scope beyond literal wording, and runtime condition activation are not established."
+  },
+  "records": [
+    {
+      "id": "poe1-passive-node-3089",
+      "verificationStatus": "confirmed",
+      "claimIds": ["AUD-003-C04"],
+      "sourceIds": ["ggg-poe1-skilltree-export-3-29-1"],
+      "evidenceLocation": "data.json Default tree node 3089",
+      "limitations": "The record identifies a direct source but not stack arithmetic with other effects.",
+      "loadBearing": true,
+      "downstreamConsumers": ["Default-tree passive recognizer", "Direct Link source panel", "AUD-004 dependency"],
+      "replacementRule": "Replace through a new pinned Default-tree scan recorded in a superseding AUD-003.",
+      "data": {"nodeId": 3089, "skillId": 3089, "name": "Link Effect", "sourceType": "passive-node", "statFamily": "direct-link-buff-effect", "valuePercent": 5, "sign": "increase", "condition": "always-on-if-allocated", "availability": "Default-tree"}
+    },
+    {
+      "id": "poe1-passive-node-57404",
+      "verificationStatus": "confirmed",
+      "claimIds": ["AUD-003-C04"],
+      "sourceIds": ["ggg-poe1-skilltree-export-3-29-1"],
+      "evidenceLocation": "data.json Default tree node 57404",
+      "limitations": "The record identifies a direct source but not stack arithmetic with other effects.",
+      "loadBearing": true,
+      "downstreamConsumers": ["Default-tree passive recognizer", "Direct Link source panel", "AUD-004 dependency"],
+      "replacementRule": "Replace through a new pinned Default-tree scan recorded in a superseding AUD-003.",
+      "data": {"nodeId": 57404, "skillId": 57404, "name": "Link Effect", "sourceType": "passive-node", "statFamily": "direct-link-buff-effect", "valuePercent": 5, "sign": "increase", "condition": "always-on-if-allocated", "availability": "Default-tree"}
+    },
+    {
+      "id": "poe1-passive-node-60145",
+      "verificationStatus": "confirmed",
+      "claimIds": ["AUD-003-C04"],
+      "sourceIds": ["ggg-poe1-skilltree-export-3-29-1"],
+      "evidenceLocation": "data.json Default tree node 60145",
+      "limitations": "The record identifies a direct source but not stack arithmetic with other effects.",
+      "loadBearing": true,
+      "downstreamConsumers": ["Default-tree passive recognizer", "Direct Link source panel", "AUD-004 dependency"],
+      "replacementRule": "Replace through a new pinned Default-tree scan recorded in a superseding AUD-003.",
+      "data": {"nodeId": 60145, "skillId": 60145, "name": "Link Effect", "sourceType": "passive-node", "statFamily": "direct-link-buff-effect", "valuePercent": 5, "sign": "increase", "condition": "always-on-if-allocated", "availability": "Default-tree"}
+    },
+    {
+      "id": "poe1-passive-node-60781",
+      "verificationStatus": "confirmed",
+      "claimIds": ["AUD-003-C04", "AUD-003-C09", "AUD-003-C12"],
+      "sourceIds": ["ggg-poe1-skilltree-export-3-29-1"],
+      "evidenceLocation": "data.json Default tree node 60781 and its Recently reminder text",
+      "limitations": "The four-second reminder is known; no contract derives whether the relevant event is active for a permanent Link sequence.",
+      "loadBearing": true,
+      "downstreamConsumers": ["Condition input UI", "Direct Link source panel", "AUD-004 dependency"],
+      "replacementRule": "Replace with direct target-version condition behavior evidence or a new pinned tree scan.",
+      "data": {"nodeId": 60781, "skillId": 60781, "name": "Inspiring Bond", "sourceType": "passive-node", "statFamily": "direct-link-buff-effect", "valuePercent": 20, "sign": "increase", "condition": {"kind": "linked-recently", "windowSeconds": 4, "defaultState": "unknown"}, "availability": "Default-tree"}
+    },
+    {
+      "id": "poe1-passive-node-46471",
+      "verificationStatus": "unknown",
+      "claimIds": ["AUD-003-C04", "AUD-003-C08"],
+      "sourceIds": ["ggg-poe1-skilltree-export-3-29-1"],
+      "evidenceLocation": "data.json Default tree node 46471",
+      "limitations": "Node text identifies the threshold, but no evidence establishes the runtime condition with infinite attachment duration.",
+      "loadBearing": true,
+      "downstreamConsumers": ["Condition input UI", "Direct Link source panel", "AUD-004 dependency"],
+      "replacementRule": "Replace with direct mechanics evidence or a controlled observation recorded in a superseding AUD-003.",
+      "data": {"nodeId": 46471, "skillId": 46471, "name": "Powerful Bond", "sourceType": "passive-node", "statFamily": "direct-link-buff-effect", "valuePercent": 20, "sign": "increase", "condition": {"kind": "half-link-duration-expired", "thresholdPercent": 50, "defaultState": "unknown"}, "availability": "Default-tree"}
+    },
+    {
+      "id": "poe1-passive-node-15900",
+      "verificationStatus": "confirmed",
+      "claimIds": ["AUD-003-C08"],
+      "sourceIds": ["ggg-poe1-skilltree-export-3-29-1"],
+      "evidenceLocation": "data.json Default tree node 15900",
+      "limitations": "The related condition text is retained only to expose the unresolved interaction with Powerful Bond; it is not a direct Link Buff Effect source.",
+      "loadBearing": true,
+      "downstreamConsumers": ["Condition input UI", "Powerful Bond gate"],
+      "replacementRule": "Replace with direct mechanics evidence or a new pinned tree scan recorded in a superseding AUD-003.",
+      "data": {"nodeId": 15900, "skillId": 15900, "name": "Oath of Fealty", "sourceType": "related-condition-node", "attachmentDuration": "infinite", "directLinkBuffEffectPercent": null, "availability": "Default-tree"}
+    }
+  ],
+  "notes": "The three identical 5% nodes remain independently identifiable. Conditions default to unknown, never active or inactive."
+}
