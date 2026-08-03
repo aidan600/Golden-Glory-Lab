@@ -1,0 +1,1 @@
+<?before proof?><!--before-root--><PathOfBuilding><Items><Item id="1">start<![CDATA[first]]><![CDATA[second]]>end</Item><ItemSet id="1" title="Preservation"><Slot name="Weapon 1" itemId="1"/></ItemSet></Items></PathOfBuilding><!--after-root--><?after proof?>

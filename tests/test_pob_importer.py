@@ -1,18 +1,24 @@
 from __future__ import annotations
 
 import base64
+import copy
 import hashlib
 import json
 import subprocess
 import sys
 import unittest
 import zlib
+from unittest.mock import patch
 from pathlib import Path
 from typing import Any
+
+from jsonschema import Draft202012Validator, ValidationError
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
+import golden_glory_lab.pob_import.importer as importer_module  # noqa: E402
+import golden_glory_lab.pob_import.xml_tree as xml_tree_module  # noqa: E402
 from golden_glory_lab.pob_import import (  # noqa: E402
     CONTRACT_VERSION,
     DEFAULT_IMPORT_LIMITS,
@@ -20,6 +26,11 @@ from golden_glory_lab.pob_import import (  # noqa: E402
     deterministic_json_bytes,
     importPobRawXml,
     importPobShareCode,
+)
+from golden_glory_lab.pob_import.xml_tree import (  # noqa: E402
+    XmlLoadInstrumentation,
+    character_value,
+    load_xml_tree,
 )
 
 FIXTURES = ROOT / "fixtures" / "pob" / "proof"
@@ -79,15 +90,44 @@ class PublicContractTests(unittest.TestCase):
         self.assertEqual(unknown["sourceMetadata"]["gameTargetVersion"]["value"], "3_0")
         self.assertEqual(supplied["sourceMetadata"]["producingPobVersion"], "2.66.2")
 
-    def test_schema_artifact_is_valid_json_and_names_v1(self) -> None:
+    def test_real_draft_2020_12_schema_validates_complete_contract(self) -> None:
         schema = json.loads(
             (ROOT / "data" / "schemas" / "pob-neutral-import-v1.schema.json").read_text(
                 encoding="utf-8"
             )
         )
-        self.assertEqual(
-            schema["properties"]["contractVersion"]["const"], CONTRACT_VERSION
-        )
+        Draft202012Validator.check_schema(schema)
+        validator = Draft202012Validator(schema)
+        representative_results = [
+            importPobRawXml(fixture_text("equivalent.xml")),
+            importPobShareCode("%%%"),
+            importPobShareCode(encoded_compressed(b"not a zlib stream")),
+            importPobRawXml("<PathOfBuilding><Items></PathOfBuilding>"),
+            importPobRawXml(fixture_text("duplicates-and-malformed.xml")),
+            json.loads(
+                (GOLDENS / "comprehensive.raw.neutral-v1.json").read_text(
+                    encoding="utf-8"
+                )
+            ),
+        ]
+        for result in representative_results:
+            with self.subTest(
+                status=result["status"],
+                failure=result["failure"]["code"] if result["failure"] else None,
+            ):
+                validator.validate(result)
+
+        missing_required = copy.deepcopy(representative_results[0])
+        del missing_required["document"]["sourceTree"]
+        with self.assertRaises(ValidationError):
+            validator.validate(missing_required)
+
+        wrong_nested_type = copy.deepcopy(representative_results[0])
+        wrong_nested_type["document"]["itemSets"][0][
+            "sourceOccurrenceIndex"
+        ] = "not-an-integer"
+        with self.assertRaises(ValidationError):
+            validator.validate(wrong_nested_type)
 
 
 class Aud001FixtureMatrixTests(unittest.TestCase):
@@ -312,8 +352,21 @@ class Aud001FixtureMatrixTests(unittest.TestCase):
             after_unique["comparisonEvidence"]["exactXmlCharacterValueSha256"],
         )
         self.assertFalse(any("merge" in key.lower() for key in all_keys(before)))
+        self.assertEqual(
+            [item_set["parsedId"] for item_set in before["document"]["itemSets"]],
+            [1, 2],
+        )
+        self.assertEqual(
+            [item_set["parsedId"] for item_set in after["document"]["itemSets"]],
+            [2, 1],
+        )
         self.assertEqual(before["document"]["itemSets"][0]["title"]["value"], "Before")
-        self.assertEqual(after["document"]["itemSets"][0]["title"]["value"], "Renamed")
+        renamed = next(
+            item_set
+            for item_set in after["document"]["itemSets"]
+            if item_set["parsedId"] == 1
+        )
+        self.assertEqual(renamed["title"]["value"], "Renamed")
 
     def test_matrix_15_legacy_synthesizes_once_and_transitional_does_not_double_count(
         self,
@@ -577,7 +630,360 @@ class Aud001FixtureMatrixTests(unittest.TestCase):
         digests = [hashlib.sha256(output).hexdigest() for output in outputs]
         self.assertEqual(len(set(digests)), 1)
         golden = (GOLDENS / "comprehensive.raw.neutral-v1.json").read_bytes()
+        self.assertEqual(len(golden), 87_288)
+        self.assertEqual(
+            hashlib.sha256(golden).hexdigest(),
+            "a1dc0f9fd312b82ab05307e1112906525fa75fab0e8f3c06265094f804da0429",
+        )
         self.assertEqual(outputs[0], golden)
+
+
+class SecurityBoundaryRepairTests(unittest.TestCase):
+    def test_fragmented_character_data_is_linear_bounded_and_deterministic(self) -> None:
+        repetitions = 2_000
+        expected = "a&" * repetitions
+        xml = (
+            '<PathOfBuilding><Items><Item id="1">'
+            + "a&amp;" * repetitions
+            + '</Item><ItemSet id="1"/></Items></PathOfBuilding>'
+        )
+        limits = DEFAULT_IMPORT_LIMITS.with_overrides(
+            {"maxTextBytesPerElement": len(expected.encode("utf-8"))}
+        )
+        instrumentation = XmlLoadInstrumentation()
+        loaded = load_xml_tree(
+            bytearray(xml.encode("utf-8")),
+            limits,
+            instrumentation=instrumentation,
+        )
+        items = next(
+            child
+            for child in loaded["root"]["children"]
+            if child["kind"] == "element" and child["name"] == "Items"
+        )
+        item = next(
+            child
+            for child in items["children"]
+            if child["kind"] == "element" and child["name"] == "Item"
+        )
+        self.assertEqual(character_value(item), expected)
+        self.assertEqual([child["kind"] for child in item["children"]], ["text"])
+        self.assertGreater(instrumentation.characterCallbacks, repetitions)
+        self.assertEqual(
+            instrumentation.characterUtf8EncodeCalls,
+            instrumentation.characterCallbacks,
+        )
+        self.assertEqual(instrumentation.retainedTextRescans, 0)
+        self.assertGreater(instrumentation.maxChunksPerConsolidation, repetitions)
+
+        accepted = importPobRawXml(
+            xml,
+            {"limits": {"maxTextBytesPerElement": len(expected.encode("utf-8"))}},
+        )
+        repeated = importPobRawXml(
+            xml,
+            {"limits": {"maxTextBytesPerElement": len(expected.encode("utf-8"))}},
+        )
+        self.assertEqual(deterministic_json_bytes(accepted), deterministic_json_bytes(repeated))
+        rejected = importPobRawXml(
+            xml,
+            {
+                "limits": {
+                    "maxTextBytesPerElement": len(expected.encode("utf-8")) - 1
+                }
+            },
+        )
+        self.assertEqual(rejected["failure"]["code"], "XML_TEXT_LIMIT")
+
+    def test_oversized_input_rejection_never_encodes_a_complete_copy(self) -> None:
+        real_encoder = importer_module._encode_utf8_chunk
+        encoded_chunk_sizes: list[int] = []
+
+        def instrument(value: str) -> bytes:
+            encoded = real_encoder(value)
+            encoded_chunk_sizes.append(len(encoded))
+            return encoded
+
+        raw = "é" * 2_000
+        with patch.object(importer_module, "_encode_utf8_chunk", side_effect=instrument):
+            result = importPobRawXml(
+                raw,
+                {
+                    "limits": {
+                        "maxRawXmlBytes": 10,
+                        "inputEncodingChunkCharacters": 7,
+                    }
+                },
+            )
+        self.assertEqual(result["failure"]["code"], "RAW_XML_LIMIT")
+        self.assertIs(result["envelope"]["originalInput"], raw)
+        self.assertEqual(result["envelope"]["sizes"]["originalInputUtf8Bytes"], 4_000)
+        self.assertEqual(
+            result["envelope"]["sizes"]["originalInputUtf8State"],
+            "limit-exceeded",
+        )
+        self.assertTrue(encoded_chunk_sizes)
+        self.assertLessEqual(max(encoded_chunk_sizes), 28)
+        self.assertNotIn(4_000, encoded_chunk_sizes)
+
+        encoded_chunk_sizes.clear()
+        share = "A" * 2_000
+        with patch.object(importer_module, "_encode_utf8_chunk", side_effect=instrument):
+            share_result = importPobShareCode(
+                share,
+                {"limits": {"maxShareCodeCharacters": 10}},
+            )
+        self.assertEqual(
+            share_result["failure"]["code"], "SHARE_CODE_INPUT_LIMIT"
+        )
+        self.assertIs(share_result["envelope"]["originalInput"], share)
+        self.assertEqual(encoded_chunk_sizes, [])
+        self.assertEqual(
+            share_result["envelope"]["sizes"]["originalInputUtf8State"],
+            "not-scanned-input-limit",
+        )
+
+    def test_supported_below_floor_and_malformed_expat_versions(self) -> None:
+        xml = fixture_text("equivalent.xml")
+        actual = importPobRawXml(xml)
+        self.assertEqual(actual["status"], "success")
+        self.assertEqual(actual["envelope"]["runtimeSecurity"]["status"], "supported")
+        self.assertGreaterEqual(
+            actual["envelope"]["runtimeSecurity"]["parsedExpatVersion"],
+            [2, 7, 2],
+        )
+
+        with patch.object(xml_tree_module.expat, "EXPAT_VERSION", "expat_2.7.2"):
+            supported = importPobRawXml(xml)
+        self.assertEqual(supported["status"], "success")
+
+        with patch.object(xml_tree_module.expat, "EXPAT_VERSION", "expat_2.7.1"):
+            unsupported = importPobRawXml(xml)
+        self.assertEqual(unsupported["failure"]["code"], "XML_RUNTIME_UNSUPPORTED")
+        self.assertEqual(unsupported["failure"]["stage"], "xml")
+        self.assertEqual(
+            unsupported["envelope"]["runtimeSecurity"]["status"], "unsupported"
+        )
+
+        with patch.object(xml_tree_module.expat, "EXPAT_VERSION", "future-version"):
+            malformed = importPobRawXml(xml)
+        self.assertEqual(malformed["failure"]["code"], "XML_RUNTIME_UNSUPPORTED")
+        self.assertEqual(
+            malformed["envelope"]["runtimeSecurity"]["status"], "unparseable"
+        )
+
+        with patch.object(
+            xml_tree_module.expat,
+            "EXPAT_VERSION",
+            f"expat_{'9' * 5_000}.0.0",
+        ):
+            protected_numeric = importPobRawXml(xml)
+        self.assertEqual(
+            protected_numeric["failure"]["code"], "XML_RUNTIME_UNSUPPORTED"
+        )
+        self.assertEqual(
+            protected_numeric["envelope"]["runtimeSecurity"]["status"],
+            "unparseable",
+        )
+
+    def test_numeric_lexeme_boundaries_and_protected_int_conversion(self) -> None:
+        def result_for(value: str) -> dict[str, Any]:
+            xml = (
+                f'<PathOfBuilding><Items activeItemSet="{value}">'
+                f'<ItemSet id="{value}"/></Items></PathOfBuilding>'
+            )
+            return importPobRawXml(
+                xml, {"limits": {"maxNumericLexemeDigits": 4}}
+            )
+
+        below = result_for("999")
+        at = result_for("9999")
+        above = result_for("99999")
+        self.assertEqual(
+            below["document"]["itemsSections"][0]["activeItemSetReference"][
+                "resolution"
+            ]["state"],
+            "resolved",
+        )
+        self.assertEqual(
+            at["document"]["itemsSections"][0]["activeItemSetReference"][
+                "resolution"
+            ]["state"],
+            "resolved",
+        )
+        self.assertEqual(
+            above["document"]["itemsSections"][0]["activeItemSetReference"][
+                "resolution"
+            ]["state"],
+            "malformed",
+        )
+        self.assertEqual(above["document"]["itemSets"][0]["rawId"]["value"], "99999")
+        self.assertIsNone(above["document"]["itemSets"][0]["parsedId"])
+
+        protected = "9" * 5_000
+        protected_result = importPobRawXml(
+            f'<PathOfBuilding><Items activeItemSet="{protected}"><ItemSet id="{protected}"/></Items></PathOfBuilding>'
+        )
+        self.assertEqual(protected_result["status"], "success")
+        self.assertEqual(
+            protected_result["document"]["itemsSections"][0][
+                "activeItemSetReference"
+            ]["resolution"]["state"],
+            "malformed",
+        )
+
+        passive_result = importPobRawXml(
+            f'<PathOfBuilding><Tree><Spec><Sockets><Socket nodeId="{protected}" itemId="0"/></Sockets></Spec></Tree></PathOfBuilding>'
+        )
+        passive = passive_result["document"]["passiveJewelReferences"][0]
+        self.assertEqual(passive["rawNodeId"]["value"], protected)
+        self.assertIsNone(passive["parsedNodeId"])
+        self.assertIn("MALFORMED_PASSIVE_NODE_ID", passive["warnings"])
+
+    def test_lone_surrogates_return_stable_public_failures(self) -> None:
+        raw = importPobRawXml("<PathOfBuilding>\ud800</PathOfBuilding>")
+        share = importPobShareCode("AA\ud800AA")
+        self.assertEqual(raw["failure"]["code"], "RAW_XML_UTF8_INVALID")
+        self.assertEqual(raw["failure"]["stage"], "xml")
+        self.assertEqual(share["failure"]["code"], "SHARE_CODE_UTF8_INVALID")
+        self.assertEqual(share["failure"]["stage"], "envelope")
+        self.assertIn(b"\\ud800", deterministic_json_bytes(raw))
+        self.assertIn(b"\\ud800", deterministic_json_bytes(share))
+
+
+class ReferenceSemanticsRepairTests(unittest.TestCase):
+    def test_complete_active_item_set_state_matrix(self) -> None:
+        result = importPobRawXml(
+            fixture_text("active-set-states.xml"),
+            {"limits": {"maxNumericLexemeDigits": 4}},
+        )
+        references = [
+            section["activeItemSetReference"]
+            for section in result["document"]["itemsSections"]
+        ]
+        self.assertEqual(
+            [reference["resolution"]["state"] for reference in references],
+            [
+                "missing",
+                "malformed",
+                "malformed",
+                "malformed",
+                "unresolved",
+                "unresolved",
+                "ambiguous",
+                "resolved",
+            ],
+        )
+        self.assertEqual(references[0]["raw"], {"state": "missing", "value": None})
+        self.assertEqual(references[3]["raw"]["value"], "12345")
+        self.assertEqual(references[4]["parsedId"], 0)
+        self.assertNotIn(
+            "/PathOfBuilding[1]/Items[1]/@activeItemSet",
+            [
+                entry["location"]
+                for entry in result["report"]
+                if entry["code"] == "MALFORMED_ITEM_SET_REFERENCE"
+            ],
+        )
+
+    def test_zero_semantics_are_context_specific(self) -> None:
+        paths = importPobRawXml(fixture_text("reference-paths.xml"))
+        section = paths["document"]["itemsSections"][0]
+        self.assertEqual(
+            section["activeItemSetReference"]["resolution"]["state"], "resolved"
+        )
+        self.assertEqual(
+            paths["document"]["itemSets"][0]["assignments"][0]["resolution"][
+                "state"
+            ],
+            "empty-reference",
+        )
+        self.assertEqual(
+            paths["document"]["passiveJewelReferences"][0]["resolution"]["state"],
+            "empty-reference",
+        )
+        self.assertEqual(
+            [
+                reference["resolution"]["state"]
+                for reference in paths["document"]["itemSetCrossReferences"]
+            ],
+            ["resolved", "unresolved"],
+        )
+        active_matrix = importPobRawXml(
+            fixture_text("active-set-states.xml"),
+            {"limits": {"maxNumericLexemeDigits": 4}},
+        )
+        self.assertEqual(
+            active_matrix["document"]["itemsSections"][4][
+                "activeItemSetReference"
+            ]["resolution"]["state"],
+            "unresolved",
+        )
+
+    def test_only_audited_socket_and_gem_paths_are_projected(self) -> None:
+        result = importPobRawXml(fixture_text("reference-paths.xml"))
+        passive = result["document"]["passiveJewelReferences"]
+        cross = result["document"]["itemSetCrossReferences"]
+        self.assertEqual(len(passive), 1)
+        self.assertEqual(len(cross), 2)
+        self.assertEqual(
+            passive[0]["sourcePath"],
+            "/PathOfBuilding[1]/Tree[1]/Spec[1]/Sockets[1]/Socket[1]",
+        )
+        self.assertTrue(
+            all("/Future[" not in reference["sourcePath"] for reference in passive + cross)
+        )
+        retained = deterministic_json(result["document"]["sourceTree"])
+        self.assertIn('"name": "Future"', retained)
+        self.assertIn('"name": "offPath"', retained)
+
+
+class PreservationAndIsolationRepairTests(unittest.TestCase):
+    def test_adjacent_cdata_and_document_level_events_are_preserved(self) -> None:
+        xml = fixture_text("preservation-events.xml")
+        first = importPobRawXml(xml)
+        second = importPobRawXml(xml)
+        self.assertEqual(
+            [event["kind"] for event in first["document"]["documentEvents"]],
+            [
+                "processing-instruction",
+                "comment",
+                "root-element",
+                "comment",
+                "processing-instruction",
+            ],
+        )
+        events = first["document"]["documentEvents"]
+        self.assertEqual(events[0], {"kind": "processing-instruction", "target": "before", "value": "proof"})
+        self.assertEqual(events[1], {"kind": "comment", "value": "before-root"})
+        self.assertEqual(events[3], {"kind": "comment", "value": "after-root"})
+        self.assertEqual(events[4], {"kind": "processing-instruction", "target": "after", "value": "proof"})
+        item = first["document"]["items"][0]
+        self.assertEqual(
+            [child["kind"] for child in item["orderedChildMaterial"]],
+            ["text", "cdata", "cdata", "text"],
+        )
+        self.assertEqual(
+            [child["value"] for child in item["orderedChildMaterial"]],
+            ["start", "first", "second", "end"],
+        )
+        self.assertEqual(item["xmlCharacterValue"], "startfirstsecondend")
+        self.assertEqual(deterministic_json_bytes(first), deterministic_json_bytes(second))
+
+    def test_results_are_deeply_isolated_from_global_state(self) -> None:
+        xml = fixture_text("equivalent.xml")
+        pristine = importPobRawXml(xml)
+        mutated = importPobRawXml(xml)
+        mutated["envelope"]["evidenceProfile"][0]["sourceId"] = "mutated"
+        mutated["envelope"]["runtimeSecurity"]["parsedExpatVersion"][0] = 0
+        mutated["envelope"]["limits"]["maxRawXmlBytes"] = 1
+        mutated["envelope"]["normalizations"].append({"code": "MUTATED"})
+        later = importPobRawXml(xml)
+        self.assertEqual(later, pristine)
+        self.assertEqual(
+            deterministic_json_bytes(later), deterministic_json_bytes(pristine)
+        )
+        self.assertEqual(DEFAULT_IMPORT_LIMITS.maxRawXmlBytes, 8_000_000)
 
 
 class EnvelopeNormalizationTests(unittest.TestCase):
@@ -657,7 +1063,9 @@ class DefaultLimitContractTests(unittest.TestCase):
                 "maxXmlElements": 50_000,
                 "maxAttributesPerElement": 64,
                 "maxTextBytesPerElement": 1_000_000,
+                "maxNumericLexemeDigits": 128,
                 "maxReportEntries": 256,
+                "inputEncodingChunkCharacters": 4_096,
                 "decompressionChunkBytes": 16_384,
             },
         )

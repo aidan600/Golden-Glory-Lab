@@ -15,121 +15,223 @@
   ],
   "additionalProperties": false,
   "properties": {
-    "contractVersion": {
-      "const": "1.0.0"
-    },
-    "status": {
-      "enum": [
-        "success",
-        "failure"
-      ]
-    },
-    "failure": {
-      "oneOf": [
-        {
-          "type": "null"
-        },
-        {
-          "$ref": "#/$defs/failure"
-        }
-      ]
-    },
-    "envelope": {
-      "$ref": "#/$defs/envelope"
-    },
+    "contractVersion": { "const": "1.0.0" },
+    "status": { "enum": ["success", "failure"] },
+    "failure": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/failure" }] },
+    "envelope": { "$ref": "#/$defs/envelope" },
     "sourceMetadata": {
-      "type": [
-        "object",
-        "null"
-      ]
+      "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/sourceMetadata" }]
     },
     "document": {
-      "type": [
-        "object",
-        "null"
-      ]
+      "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/document" }]
     },
     "report": {
       "type": "array",
-      "items": {
-        "$ref": "#/$defs/reportEntry"
-      }
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/reportEntry" }
     }
   },
-  "allOf": [
+  "oneOf": [
     {
-      "if": {
-        "properties": {
-          "status": {
-            "const": "success"
-          }
-        }
-      },
-      "then": {
-        "properties": {
-          "failure": {
-            "type": "null"
-          },
-          "sourceMetadata": {
-            "type": "object"
-          },
-          "document": {
-            "type": "object"
-          }
-        }
-      },
-      "else": {
-        "properties": {
-          "failure": {
-            "$ref": "#/$defs/failure"
-          },
-          "sourceMetadata": {
-            "type": "null"
-          },
-          "document": {
-            "type": "null"
-          }
-        }
+      "properties": {
+        "status": { "const": "success" },
+        "failure": { "type": "null" },
+        "sourceMetadata": { "$ref": "#/$defs/sourceMetadata" },
+        "document": { "$ref": "#/$defs/document" }
+      }
+    },
+    {
+      "properties": {
+        "status": { "const": "failure" },
+        "failure": { "$ref": "#/$defs/failure" },
+        "sourceMetadata": { "type": "null" },
+        "document": { "type": "null" }
       }
     }
   ],
   "$defs": {
-    "failure": {
+    "nonNegativeInteger": { "type": "integer", "minimum": 0 },
+    "positiveInteger": { "type": "integer", "minimum": 1 },
+    "nullableNonNegativeInteger": {
+      "type": ["integer", "null"],
+      "minimum": 0
+    },
+    "stringArray": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "attribute": {
+      "type": "object",
+      "required": ["name", "value"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "value": { "type": "string" }
+      }
+    },
+    "attributeArray": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/attribute" }
+    },
+    "rawAttributeState": {
+      "type": "object",
+      "required": ["state", "value"],
+      "additionalProperties": false,
+      "properties": {
+        "state": { "enum": ["missing", "empty", "present"] },
+        "value": { "type": ["string", "null"] }
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "state": { "const": "missing" },
+            "value": { "type": "null" }
+          }
+        },
+        {
+          "properties": {
+            "state": { "const": "empty" },
+            "value": { "const": "" }
+          }
+        },
+        {
+          "properties": {
+            "state": { "const": "present" },
+            "value": { "type": "string", "minLength": 1 }
+          }
+        }
+      ]
+    },
+    "booleanValue": {
+      "type": "object",
+      "required": ["raw", "parsed"],
+      "additionalProperties": false,
+      "properties": {
+        "raw": { "$ref": "#/$defs/rawAttributeState" },
+        "parsed": { "type": ["boolean", "null"] }
+      }
+    },
+    "hash": {
+      "type": "object",
+      "required": ["name", "algorithm", "byteDomain", "digestHex"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "algorithm": { "const": "SHA-256" },
+        "byteDomain": { "type": "string", "minLength": 1 },
+        "digestHex": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      }
+    },
+    "sizes": {
       "type": "object",
       "required": [
-        "code",
-        "stage",
-        "message",
-        "location",
-        "sourcePointer"
+        "originalInputCharacters",
+        "originalInputUtf8Bytes",
+        "originalInputUtf8State",
+        "normalizedShareCodeCharacters",
+        "decodedCompressedBytes",
+        "xmlUtf8Bytes"
       ],
       "additionalProperties": false,
       "properties": {
-        "code": {
-          "type": "string",
-          "minLength": 1
+        "originalInputCharacters": { "$ref": "#/$defs/nonNegativeInteger" },
+        "originalInputUtf8Bytes": { "$ref": "#/$defs/nullableNonNegativeInteger" },
+        "originalInputUtf8State": {
+          "enum": ["valid", "invalid", "limit-exceeded", "not-scanned-input-limit"]
         },
-        "stage": {
-          "enum": [
-            "envelope",
-            "decompression",
-            "xml"
+        "normalizedShareCodeCharacters": { "$ref": "#/$defs/nullableNonNegativeInteger" },
+        "decodedCompressedBytes": { "$ref": "#/$defs/nullableNonNegativeInteger" },
+        "xmlUtf8Bytes": { "$ref": "#/$defs/nullableNonNegativeInteger" }
+      }
+    },
+    "trimNormalization": {
+      "type": "object",
+      "required": ["code", "beforeCharacters", "afterCharacters"],
+      "additionalProperties": false,
+      "properties": {
+        "code": { "const": "TRIM_OUTER_ASCII_WHITESPACE" },
+        "beforeCharacters": { "$ref": "#/$defs/nonNegativeInteger" },
+        "afterCharacters": { "$ref": "#/$defs/nonNegativeInteger" }
+      }
+    },
+    "paddingNormalization": {
+      "type": "object",
+      "required": ["code", "paddingCharactersAdded"],
+      "additionalProperties": false,
+      "properties": {
+        "code": { "const": "RESTORE_BASE64_PADDING" },
+        "paddingCharactersAdded": { "enum": [1, 2] }
+      }
+    },
+    "limits": {
+      "type": "object",
+      "required": [
+        "maxShareCodeCharacters",
+        "maxDecodedCompressedBytes",
+        "maxDecompressedXmlBytes",
+        "maxRawXmlBytes",
+        "maxXmlDepth",
+        "maxXmlElements",
+        "maxAttributesPerElement",
+        "maxTextBytesPerElement",
+        "maxNumericLexemeDigits",
+        "maxReportEntries",
+        "inputEncodingChunkCharacters",
+        "decompressionChunkBytes"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "maxShareCodeCharacters": { "$ref": "#/$defs/positiveInteger" },
+        "maxDecodedCompressedBytes": { "$ref": "#/$defs/positiveInteger" },
+        "maxDecompressedXmlBytes": { "$ref": "#/$defs/positiveInteger" },
+        "maxRawXmlBytes": { "$ref": "#/$defs/positiveInteger" },
+        "maxXmlDepth": { "$ref": "#/$defs/positiveInteger" },
+        "maxXmlElements": { "$ref": "#/$defs/positiveInteger" },
+        "maxAttributesPerElement": { "$ref": "#/$defs/positiveInteger" },
+        "maxTextBytesPerElement": { "$ref": "#/$defs/positiveInteger" },
+        "maxNumericLexemeDigits": { "$ref": "#/$defs/positiveInteger" },
+        "maxReportEntries": { "$ref": "#/$defs/positiveInteger" },
+        "inputEncodingChunkCharacters": { "$ref": "#/$defs/positiveInteger" },
+        "decompressionChunkBytes": { "$ref": "#/$defs/positiveInteger" }
+      }
+    },
+    "runtimeSecurity": {
+      "type": "object",
+      "required": [
+        "detectedExpatVersion",
+        "parsedExpatVersion",
+        "minimumExpatVersion",
+        "status"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "detectedExpatVersion": { "type": ["string", "null"] },
+        "parsedExpatVersion": {
+          "oneOf": [
+            { "type": "null" },
+            {
+              "type": "array",
+              "prefixItems": [
+                { "$ref": "#/$defs/nonNegativeInteger" },
+                { "$ref": "#/$defs/nonNegativeInteger" },
+                { "$ref": "#/$defs/nonNegativeInteger" }
+              ],
+              "minItems": 3,
+              "maxItems": 3
+            }
           ]
         },
-        "message": {
-          "type": "string",
-          "minLength": 1
-        },
-        "location": {
-          "type": [
-            "object",
-            "null"
-          ]
-        },
-        "sourcePointer": {
-          "type": "string",
-          "minLength": 1
-        }
+        "minimumExpatVersion": { "const": "2.7.2" },
+        "status": { "enum": ["supported", "unsupported", "unparseable"] }
+      }
+    },
+    "evidenceEntry": {
+      "type": "object",
+      "required": ["sourceId", "revision"],
+      "additionalProperties": false,
+      "properties": {
+        "sourceId": { "type": "string", "minLength": 1 },
+        "revision": { "type": "string", "minLength": 1 }
       }
     },
     "envelope": {
@@ -145,95 +247,673 @@
         "normalizations",
         "limits",
         "implementationVersion",
+        "runtimeSecurity",
         "evidenceProfile",
         "suppliedProducingPobVersion"
       ],
       "additionalProperties": false,
       "properties": {
-        "inputKind": {
-          "enum": [
-            "raw-xml",
-            "share-code"
-          ]
-        },
-        "originalInput": {
-          "type": "string"
-        },
-        "decodedXml": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "normalizedShareCode": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
+        "inputKind": { "enum": ["raw-xml", "share-code"] },
+        "originalInput": { "type": "string" },
+        "decodedXml": { "type": ["string", "null"] },
+        "normalizedShareCode": { "type": ["string", "null"] },
         "hashes": {
           "type": "array",
-          "minItems": 1,
-          "items": {
-            "type": "object",
-            "required": [
-              "name",
-              "algorithm",
-              "byteDomain",
-              "digestHex"
-            ]
-          }
+          "items": { "$ref": "#/$defs/hash" }
         },
-        "sizes": {
-          "type": "object"
-        },
-        "codecSteps": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
+        "sizes": { "$ref": "#/$defs/sizes" },
+        "codecSteps": { "$ref": "#/$defs/stringArray" },
         "normalizations": {
           "type": "array",
           "items": {
-            "type": "object"
-          }
-        },
-        "limits": {
-          "type": "object",
-          "required": [
-            "maxShareCodeCharacters",
-            "maxDecodedCompressedBytes",
-            "maxDecompressedXmlBytes",
-            "maxRawXmlBytes",
-            "maxXmlDepth",
-            "maxXmlElements",
-            "maxAttributesPerElement",
-            "maxTextBytesPerElement",
-            "maxReportEntries",
-            "decompressionChunkBytes"
-          ]
-        },
-        "implementationVersion": {
-          "type": "string"
-        },
-        "evidenceProfile": {
-          "type": "array",
-          "minItems": 1,
-          "items": {
-            "type": "object",
-            "required": [
-              "sourceId",
-              "revision"
+            "oneOf": [
+              { "$ref": "#/$defs/trimNormalization" },
+              { "$ref": "#/$defs/paddingNormalization" }
             ]
           }
         },
-        "suppliedProducingPobVersion": {
-          "type": [
-            "string",
-            "null"
-          ]
+        "limits": { "$ref": "#/$defs/limits" },
+        "implementationVersion": { "type": "string", "minLength": 1 },
+        "runtimeSecurity": { "$ref": "#/$defs/runtimeSecurity" },
+        "evidenceProfile": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/evidenceEntry" }
+        },
+        "suppliedProducingPobVersion": { "type": ["string", "null"] }
+      }
+    },
+    "failureLocation": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": false,
+      "properties": {
+        "line": { "$ref": "#/$defs/nullableNonNegativeInteger" },
+        "column": { "$ref": "#/$defs/nullableNonNegativeInteger" },
+        "byteOffset": { "$ref": "#/$defs/nullableNonNegativeInteger" },
+        "characterOffset": { "$ref": "#/$defs/nullableNonNegativeInteger" }
+      }
+    },
+    "failure": {
+      "type": "object",
+      "required": ["code", "stage", "message", "location", "sourcePointer"],
+      "additionalProperties": false,
+      "properties": {
+        "code": { "type": "string", "minLength": 1 },
+        "stage": { "enum": ["envelope", "decompression", "xml"] },
+        "message": { "type": "string", "minLength": 1 },
+        "location": {
+          "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/failureLocation" }]
+        },
+        "sourcePointer": { "type": "string", "minLength": 1 }
+      }
+    },
+    "textNode": {
+      "type": "object",
+      "required": ["kind", "value"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "const": "text" },
+        "value": { "type": "string" }
+      }
+    },
+    "cdataNode": {
+      "type": "object",
+      "required": ["kind", "value"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "const": "cdata" },
+        "value": { "type": "string" }
+      }
+    },
+    "commentNode": {
+      "type": "object",
+      "required": ["kind", "value"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "const": "comment" },
+        "value": { "type": "string" }
+      }
+    },
+    "processingInstructionNode": {
+      "type": "object",
+      "required": ["kind", "target", "value"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "const": "processing-instruction" },
+        "target": { "type": "string" },
+        "value": { "type": "string" }
+      }
+    },
+    "elementNode": {
+      "type": "object",
+      "required": ["kind", "name", "attributes", "children"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "const": "element" },
+        "name": { "type": "string" },
+        "attributes": { "$ref": "#/$defs/attributeArray" },
+        "children": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/sourceNode" }
         }
+      }
+    },
+    "sourceNode": {
+      "oneOf": [
+        { "$ref": "#/$defs/elementNode" },
+        { "$ref": "#/$defs/textNode" },
+        { "$ref": "#/$defs/cdataNode" },
+        { "$ref": "#/$defs/commentNode" },
+        { "$ref": "#/$defs/processingInstructionNode" }
+      ]
+    },
+    "rootDocumentEvent": {
+      "type": "object",
+      "required": ["kind", "name"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "const": "root-element" },
+        "name": { "type": "string" }
+      }
+    },
+    "documentEvent": {
+      "oneOf": [
+        { "$ref": "#/$defs/rootDocumentEvent" },
+        { "$ref": "#/$defs/textNode" },
+        { "$ref": "#/$defs/commentNode" },
+        { "$ref": "#/$defs/processingInstructionNode" }
+      ]
+    },
+    "referenceResolution": {
+      "type": "object",
+      "required": ["state", "candidateOccurrences"],
+      "additionalProperties": false,
+      "properties": {
+        "state": {
+          "enum": [
+            "missing",
+            "malformed",
+            "empty-reference",
+            "unresolved",
+            "ambiguous",
+            "resolved"
+          ]
+        },
+        "candidateOccurrences": { "$ref": "#/$defs/stringArray" }
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "state": {
+              "enum": ["missing", "malformed", "empty-reference", "unresolved"]
+            },
+            "candidateOccurrences": { "maxItems": 0 }
+          }
+        },
+        {
+          "properties": {
+            "state": { "const": "resolved" },
+            "candidateOccurrences": { "minItems": 1, "maxItems": 1 }
+          }
+        },
+        {
+          "properties": {
+            "state": { "const": "ambiguous" },
+            "candidateOccurrences": { "minItems": 2 }
+          }
+        }
+      ]
+    },
+    "equipmentResolution": {
+      "allOf": [
+        { "$ref": "#/$defs/referenceResolution" },
+        {
+          "properties": {
+            "state": {
+              "enum": ["malformed", "empty-reference", "unresolved", "ambiguous", "resolved"]
+            }
+          }
+        }
+      ]
+    },
+    "activeItemSetResolution": {
+      "allOf": [
+        { "$ref": "#/$defs/referenceResolution" },
+        {
+          "properties": {
+            "state": { "enum": ["missing", "malformed", "unresolved", "ambiguous", "resolved"] }
+          }
+        }
+      ]
+    },
+    "itemSetCrossResolution": {
+      "allOf": [
+        { "$ref": "#/$defs/referenceResolution" },
+        {
+          "properties": {
+            "state": { "enum": ["malformed", "unresolved", "ambiguous", "resolved"] }
+          }
+        }
+      ]
+    },
+    "derivedAbyssalParent": {
+      "type": "object",
+      "required": [
+        "originalChildSlotName",
+        "derivedParentSlotName",
+        "socketIndex",
+        "state",
+        "candidateParentAssignments"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "originalChildSlotName": { "type": "string" },
+        "derivedParentSlotName": { "type": "string" },
+        "socketIndex": { "type": "integer", "minimum": 1, "maximum": 6 },
+        "state": {
+          "enum": [
+            "missing-parent-assignment",
+            "empty-parent-assignment",
+            "parent-assignment-present"
+          ]
+        },
+        "candidateParentAssignments": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "slotAssignment": {
+      "type": "object",
+      "required": [
+        "occurrenceId",
+        "sourceOccurrenceIndex",
+        "sourcePath",
+        "originalSlotName",
+        "rawItemReference",
+        "parsedItemId",
+        "active",
+        "itemPbUrl",
+        "attributes",
+        "resolution",
+        "derivedAbyssalParent",
+        "warnings"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "occurrenceId": { "type": "string" },
+        "sourceOccurrenceIndex": { "$ref": "#/$defs/nonNegativeInteger" },
+        "sourcePath": { "type": "string" },
+        "originalSlotName": { "$ref": "#/$defs/rawAttributeState" },
+        "rawItemReference": { "$ref": "#/$defs/rawAttributeState" },
+        "parsedItemId": { "$ref": "#/$defs/nullableNonNegativeInteger" },
+        "active": { "$ref": "#/$defs/booleanValue" },
+        "itemPbUrl": { "$ref": "#/$defs/rawAttributeState" },
+        "attributes": { "$ref": "#/$defs/attributeArray" },
+        "resolution": { "$ref": "#/$defs/equipmentResolution" },
+        "derivedAbyssalParent": {
+          "oneOf": [
+            { "type": "null" },
+            { "$ref": "#/$defs/derivedAbyssalParent" }
+          ]
+        },
+        "warnings": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "socketIdUrl": {
+      "type": "object",
+      "required": [
+        "occurrenceId",
+        "sourceOccurrenceIndex",
+        "sourcePath",
+        "attributes",
+        "rawNodeId",
+        "parsedNodeId",
+        "rawName",
+        "rawItemPbUrl"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "occurrenceId": { "type": "string" },
+        "sourceOccurrenceIndex": { "$ref": "#/$defs/nonNegativeInteger" },
+        "sourcePath": { "type": "string" },
+        "attributes": { "$ref": "#/$defs/attributeArray" },
+        "rawNodeId": { "$ref": "#/$defs/rawAttributeState" },
+        "parsedNodeId": { "$ref": "#/$defs/nullableNonNegativeInteger" },
+        "rawName": { "$ref": "#/$defs/rawAttributeState" },
+        "rawItemPbUrl": { "$ref": "#/$defs/rawAttributeState" }
+      }
+    },
+    "itemSetProvenance": {
+      "type": "object",
+      "required": ["kind", "synthesized", "sourcePointer", "synthesizedLegacyIdHint"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "enum": ["nested-item-set", "legacy-top-level-slots"] },
+        "synthesized": { "type": "boolean" },
+        "sourcePointer": { "type": "string" },
+        "synthesizedLegacyIdHint": { "$ref": "#/$defs/nullableNonNegativeInteger" }
+      }
+    },
+    "itemSet": {
+      "type": "object",
+      "required": [
+        "occurrenceId",
+        "sourceOccurrenceIndex",
+        "sourcePath",
+        "rawId",
+        "parsedId",
+        "title",
+        "useSecondWeaponSet",
+        "attributes",
+        "assignments",
+        "socketIdUrls",
+        "unknownChildren",
+        "provenance",
+        "warnings"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "occurrenceId": { "type": "string" },
+        "sourceOccurrenceIndex": { "$ref": "#/$defs/nonNegativeInteger" },
+        "sourcePath": { "type": "string" },
+        "rawId": { "$ref": "#/$defs/rawAttributeState" },
+        "parsedId": { "$ref": "#/$defs/nullableNonNegativeInteger" },
+        "title": { "$ref": "#/$defs/rawAttributeState" },
+        "useSecondWeaponSet": { "$ref": "#/$defs/booleanValue" },
+        "attributes": { "$ref": "#/$defs/attributeArray" },
+        "assignments": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/slotAssignment" }
+        },
+        "socketIdUrls": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/socketIdUrl" }
+        },
+        "unknownChildren": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/elementNode" }
+        },
+        "provenance": { "$ref": "#/$defs/itemSetProvenance" },
+        "warnings": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "modRange": {
+      "type": "object",
+      "required": ["sourcePointer", "attributes", "rawId", "rawRange"],
+      "additionalProperties": false,
+      "properties": {
+        "sourcePointer": { "type": "string" },
+        "attributes": { "$ref": "#/$defs/attributeArray" },
+        "rawId": { "$ref": "#/$defs/rawAttributeState" },
+        "rawRange": { "$ref": "#/$defs/rawAttributeState" }
+      }
+    },
+    "variantLexeme": {
+      "type": "object",
+      "required": ["name", "raw"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "raw": { "$ref": "#/$defs/rawAttributeState" }
+      }
+    },
+    "uniqueIdLine": {
+      "type": "object",
+      "required": ["state", "value"],
+      "additionalProperties": false,
+      "properties": {
+        "state": { "enum": ["missing", "present"] },
+        "value": { "type": ["string", "null"] }
+      }
+    },
+    "usageSummary": {
+      "type": "object",
+      "required": [
+        "state",
+        "equipmentCandidateReferenceCount",
+        "passiveCandidateReferenceCount"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "state": { "enum": ["unused", "referenced"] },
+        "equipmentCandidateReferenceCount": { "$ref": "#/$defs/nonNegativeInteger" },
+        "passiveCandidateReferenceCount": { "$ref": "#/$defs/nonNegativeInteger" }
+      }
+    },
+    "item": {
+      "type": "object",
+      "required": [
+        "occurrenceId",
+        "sourceOccurrenceIndex",
+        "sourcePath",
+        "rawId",
+        "parsedId",
+        "attributes",
+        "xmlCharacterValue",
+        "orderedChildMaterial",
+        "modRanges",
+        "unknownChildren",
+        "recognizedMetadata",
+        "comparisonEvidence",
+        "usage",
+        "warnings"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "occurrenceId": { "type": "string" },
+        "sourceOccurrenceIndex": { "$ref": "#/$defs/nonNegativeInteger" },
+        "sourcePath": { "type": "string" },
+        "rawId": { "$ref": "#/$defs/rawAttributeState" },
+        "parsedId": { "$ref": "#/$defs/nullableNonNegativeInteger" },
+        "attributes": { "$ref": "#/$defs/attributeArray" },
+        "xmlCharacterValue": { "type": "string" },
+        "orderedChildMaterial": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/sourceNode" }
+        },
+        "modRanges": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/modRange" }
+        },
+        "unknownChildren": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/elementNode" }
+        },
+        "recognizedMetadata": {
+          "type": "object",
+          "required": ["variantLexemes"],
+          "additionalProperties": false,
+          "properties": {
+            "variantLexemes": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/variantLexeme" }
+            }
+          }
+        },
+        "comparisonEvidence": {
+          "type": "object",
+          "required": ["exactXmlCharacterValueSha256", "uniqueIdLine"],
+          "additionalProperties": false,
+          "properties": {
+            "exactXmlCharacterValueSha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "uniqueIdLine": { "$ref": "#/$defs/uniqueIdLine" }
+          }
+        },
+        "usage": { "$ref": "#/$defs/usageSummary" },
+        "warnings": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "activeItemSetReference": {
+      "type": "object",
+      "required": ["raw", "parsedId", "resolution"],
+      "additionalProperties": false,
+      "properties": {
+        "raw": { "$ref": "#/$defs/rawAttributeState" },
+        "parsedId": { "$ref": "#/$defs/nullableNonNegativeInteger" },
+        "resolution": { "$ref": "#/$defs/activeItemSetResolution" }
+      }
+    },
+    "itemsSection": {
+      "type": "object",
+      "required": [
+        "occurrenceId",
+        "sourceOccurrenceIndex",
+        "sourcePath",
+        "attributes",
+        "activeItemSetReference",
+        "legacyUseSecondWeaponSet",
+        "itemOccurrences",
+        "itemSetOccurrences",
+        "legacyTopLevelAssignments",
+        "transitionalTopLevelRepresentation"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "occurrenceId": { "type": "string" },
+        "sourceOccurrenceIndex": { "$ref": "#/$defs/nonNegativeInteger" },
+        "sourcePath": { "type": "string" },
+        "attributes": { "$ref": "#/$defs/attributeArray" },
+        "activeItemSetReference": { "$ref": "#/$defs/activeItemSetReference" },
+        "legacyUseSecondWeaponSet": { "$ref": "#/$defs/booleanValue" },
+        "itemOccurrences": { "$ref": "#/$defs/stringArray" },
+        "itemSetOccurrences": { "$ref": "#/$defs/stringArray" },
+        "legacyTopLevelAssignments": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/slotAssignment" }
+        },
+        "transitionalTopLevelRepresentation": { "type": "boolean" }
+      }
+    },
+    "passiveJewelReference": {
+      "type": "object",
+      "required": [
+        "occurrenceId",
+        "sourceOccurrenceIndex",
+        "sourcePath",
+        "attributes",
+        "rawNodeId",
+        "parsedNodeId",
+        "rawItemReference",
+        "parsedItemId",
+        "resolution",
+        "warnings"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "occurrenceId": { "type": "string" },
+        "sourceOccurrenceIndex": { "$ref": "#/$defs/nonNegativeInteger" },
+        "sourcePath": { "type": "string" },
+        "attributes": { "$ref": "#/$defs/attributeArray" },
+        "rawNodeId": { "$ref": "#/$defs/rawAttributeState" },
+        "parsedNodeId": { "$ref": "#/$defs/nullableNonNegativeInteger" },
+        "rawItemReference": { "$ref": "#/$defs/rawAttributeState" },
+        "parsedItemId": { "$ref": "#/$defs/nullableNonNegativeInteger" },
+        "resolution": { "$ref": "#/$defs/equipmentResolution" },
+        "warnings": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "itemSetCrossReference": {
+      "type": "object",
+      "required": [
+        "occurrenceId",
+        "sourceOccurrenceIndex",
+        "sourcePath",
+        "referenceKind",
+        "rawItemSetReference",
+        "parsedItemSetId",
+        "resolution",
+        "warnings"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "occurrenceId": { "type": "string" },
+        "sourceOccurrenceIndex": { "$ref": "#/$defs/nonNegativeInteger" },
+        "sourcePath": { "type": "string" },
+        "referenceKind": {
+          "enum": ["skillMinionItemSet", "skillMinionItemSetCalcs"]
+        },
+        "rawItemSetReference": { "$ref": "#/$defs/rawAttributeState" },
+        "parsedItemSetId": { "$ref": "#/$defs/nullableNonNegativeInteger" },
+        "resolution": { "$ref": "#/$defs/itemSetCrossResolution" },
+        "warnings": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "topLevelNodeInventory": {
+      "type": "object",
+      "required": [
+        "sourceOccurrenceIndex",
+        "name",
+        "attributes",
+        "classification",
+        "sourcePointer"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "sourceOccurrenceIndex": { "$ref": "#/$defs/nonNegativeInteger" },
+        "name": { "type": "string" },
+        "attributes": { "$ref": "#/$defs/attributeArray" },
+        "classification": { "enum": ["recognized", "unrecognized"] },
+        "sourcePointer": { "type": "string" }
+      }
+    },
+    "gameTargetVersion": {
+      "type": "object",
+      "required": ["state", "value", "sourcePointers"],
+      "additionalProperties": false,
+      "properties": {
+        "state": { "enum": ["missing", "empty", "present", "ambiguous"] },
+        "value": { "type": ["string", "null"] },
+        "sourcePointers": { "$ref": "#/$defs/stringArray" },
+        "candidates": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/rawAttributeState" }
+        }
+      }
+    },
+    "versionLikeValue": {
+      "type": "object",
+      "required": ["sourcePointer", "attributeName", "rawValue"],
+      "additionalProperties": false,
+      "properties": {
+        "sourcePointer": { "type": "string" },
+        "attributeName": { "type": "string" },
+        "rawValue": { "type": "string" }
+      }
+    },
+    "sourceMetadata": {
+      "type": "object",
+      "required": [
+        "producingPobVersion",
+        "producingPobVersionSource",
+        "gameTargetVersion",
+        "otherVersionLikeValues"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "producingPobVersion": { "type": ["string", "null"] },
+        "producingPobVersionSource": { "enum": ["caller-supplied", "unknown"] },
+        "gameTargetVersion": { "$ref": "#/$defs/gameTargetVersion" },
+        "otherVersionLikeValues": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/versionLikeValue" }
+        }
+      }
+    },
+    "document": {
+      "type": "object",
+      "required": [
+        "rootName",
+        "rootAttributes",
+        "topLevelNodeInventory",
+        "sourceTree",
+        "documentEvents",
+        "itemsSections",
+        "items",
+        "itemSets",
+        "passiveJewelReferences",
+        "itemSetCrossReferences",
+        "documentWarnings"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "rootName": { "const": "PathOfBuilding" },
+        "rootAttributes": { "$ref": "#/$defs/attributeArray" },
+        "topLevelNodeInventory": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/topLevelNodeInventory" }
+        },
+        "sourceTree": { "$ref": "#/$defs/elementNode" },
+        "documentEvents": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/documentEvent" },
+          "contains": { "$ref": "#/$defs/rootDocumentEvent" },
+          "minContains": 1,
+          "maxContains": 1
+        },
+        "itemsSections": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/itemsSection" }
+        },
+        "items": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/item" }
+        },
+        "itemSets": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/itemSet" }
+        },
+        "passiveJewelReferences": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/passiveJewelReference" }
+        },
+        "itemSetCrossReferences": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/itemSetCrossReference" }
+        },
+        "documentWarnings": { "$ref": "#/$defs/stringArray" }
       }
     },
     "reportEntry": {
@@ -252,12 +932,8 @@
       ],
       "additionalProperties": false,
       "properties": {
-        "reportId": {
-          "type": "string"
-        },
-        "code": {
-          "type": "string"
-        },
+        "reportId": { "type": "string" },
+        "code": { "type": "string" },
         "category": {
           "enum": [
             "recognized",
@@ -269,30 +945,14 @@
           ]
         },
         "stage": {
-          "type": "string"
+          "enum": ["envelope", "decompression", "xml", "semantic", "resolution", "mapping", "reporting"]
         },
-        "location": {
-          "type": "string"
-        },
-        "occurrenceId": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "sourcePointer": {
-          "type": "string"
-        },
+        "location": { "type": "string" },
+        "occurrenceId": { "type": ["string", "null"] },
+        "sourcePointer": { "type": "string" },
         "retainedMaterial": {},
-        "explanation": {
-          "type": "string"
-        },
-        "candidateTargets": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
+        "explanation": { "type": "string" },
+        "candidateTargets": { "$ref": "#/$defs/stringArray" }
       }
     }
   }
