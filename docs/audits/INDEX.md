@@ -5,15 +5,15 @@ Audit records are the durable evidence trail for bounded research. Start from
 inference, and register material sources before treating a conclusion as
 current.
 
-## Proposed initial order
+## Initial audit order and current status
 
 | Order | Audit | Status | Dependency-aware intent |
 | --- | --- | --- | --- |
 | 1 | [AUD-001 — PoB item-set import contract](AUD-001.md) | supported | Establishes a pinned neutral import contract and explicit loadout mapping before a parser proof. |
-| 2 | AUD-002 — Permanent Mercenary passive-sheet fields | planned | Can gather evidence alongside AUD-001; blocks reliable Mercenary instance inputs and may require human in-game evidence. |
-| 3 | AUD-003 — Light Radius source coverage | planned | Establishes the versioned player-source catalog before a Flame Link calculation claim. |
-| 4 | AUD-004 — Flame Link | planned | Depends on the relevant Light Radius and Link-effect evidence from AUD-003. |
-| 5 | AUD-005 — Enmity's Embrace | planned | Uses the Mercenary-field contract from AUD-002; preserves arbitrary observed values and excludes Volatile crafting simulation. |
+| 2 | [AUD-002 — Permanent Mercenary passive-sheet fields](AUD-002.md) | blocked | Manual final values only; `C03-C05` block a derived permanent-Mercenary sheet path. |
+| 3 | [AUD-003 — Light Radius source coverage](AUD-003.md) | supported | Scoped Default-tree coverage; `C08` and `C12` retain condition and arithmetic gates. |
+| 4 | [AUD-004 — Flame Link](AUD-004.md) | supported | Reference contract only; `C09-C10` withhold a final scaled result. |
+| 5 | [AUD-005 — Enmity's Embrace](AUD-005.md) | supported | Manual isolated Enmity path only; derived and aggregate paths remain gated. |
 | 6 | AUD-006 — Critical strikes | planned | Deferred until the Flame Link and Enmity paths are established; remains a separate, ability-dependent audit. |
 
 ### [AUD-001 — PoB item-set import contract](AUD-001.md)
@@ -24,27 +24,37 @@ alternate weapons, and relevant child sockets. A later PROOF must implement and
 test the neutral loader. Player and Mercenary ownership always requires an
 explicit user mapping; source order is never ownership evidence.
 
-### AUD-002 — Permanent Mercenary passive-sheet fields
+## First-release evidence-pack
 
-Determine exact displayed fields, units, whether equipment is included, whether
-values are capped, uncapped, passive-only, or conditional, and which fields are
-required by the initial release. Human in-game screenshots or transcriptions may
-be required.
+See [first-release evidence-pack status](FIRST_RELEASE_EVIDENCE_PACK.md) for
+the task/phase distinction and the exact claim gates. The pack is structurally
+complete, while the affected BUILD calculation remains unauthorized.
 
-### AUD-003 — Light Radius source coverage
+### [AUD-002 — Permanent Mercenary passive-sheet fields](AUD-002.md)
 
-Generate and manually review the source catalog, including slot coverage,
-conditions, conflicts, availability, and provenance.
+Status: blocked. It establishes permanent-Mercenary/info-sheet scope and a
+manual-final-value safety contract, but `C03-C05` leave labels, semantics,
+equipment inclusion, and comparable context unknown. A derived sheet value
+therefore remains unavailable.
 
-### AUD-004 — Flame Link
+### [AUD-003 — Light Radius source coverage](AUD-003.md)
 
-Audit level data, Link-effect application, calculation order, and rounding.
+Status: supported. It establishes bounded Default-tree Light Radius and direct
+Link Skill Buff Effect source recognition plus literal Golden Glory wording.
+`C08` and `C12` still gate Powerful Bond's condition, complete source coverage,
+arithmetic, stacking, runtime activation, and scaled output.
 
-### AUD-005 — Enmity's Embrace
+### [AUD-004 — Flame Link](AUD-004.md)
 
-Audit the natural range, arbitrary observed values, calculation order,
-penetration cap, target gap, and surplus behavior. Volatile crafting simulation
-is outside scope.
+Status: supported. It establishes a Flame Link reference and reporting contract
+for ordinary levels, but `C09-C10` withhold a definitive scaled integer granted
+damage result. Exceptional levels remain separately gated.
+
+### [AUD-005 — Enmity's Embrace](AUD-005.md)
+
+Status: supported. It establishes an explicitly equipped, same-context,
+integral manual isolated Enmity path and target reporting. Penalty derivation,
+sheet-derived values, aggregation, enemy resistance, and damage remain gated.
 
 ### AUD-006 — Critical strikes
 

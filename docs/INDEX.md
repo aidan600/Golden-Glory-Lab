@@ -26,6 +26,9 @@ chat summary.
 - [Open questions](OPEN_QUESTIONS.md) — unresolved product, evidence, proof,
   and implementation work.
 - [Audit index](audits/INDEX.md) — ordered mechanics and import audit backlog.
+- [First-release evidence-pack status](audits/FIRST_RELEASE_EVIDENCE_PACK.md) —
+  task-completion, phase-exit, and claim-gate boundary for AUD-002 through
+  AUD-005.
 - [Proof index](proofs/INDEX.md) — bounded technical results, adoption status,
   and downstream consumers.
 - [Audit template](audits/TEMPLATE.md) — required evidence-aware audit record.
