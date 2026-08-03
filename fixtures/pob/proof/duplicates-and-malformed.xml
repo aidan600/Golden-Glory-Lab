@@ -1,0 +1,26 @@
+<PathOfBuilding>
+  <Build targetVersion="3_0"/>
+  <Items activeItemSet="10">
+    <Item id="1">Rarity: Rare
+First Declaration
+Synthetic Sword</Item>
+    <Item id="1">Rarity: Rare
+Second Declaration
+Synthetic Sword</Item>
+    <Item id="abc">Malformed numeric declaration</Item>
+    <Item>Missing declaration</Item>
+    <ItemSet id="10">
+      <Slot name="Weapon 1" itemId="1"/>
+      <Slot name="Weapon 1" itemId="999"/>
+      <Slot name="Weapon 2" itemId="abc"/>
+      <Slot name="Boots"/>
+      <Slot name="Helmet" itemId="0"/>
+      <Slot name="Future Slot" itemId="1" futureSlotAttribute="kept"/>
+    </ItemSet>
+    <ItemSet id="10" title=""/>
+    <ItemSet id="11" title="Item Set"/>
+    <ItemSet id="12" title="Item Set"/>
+    <ItemSet id="bad" title="Malformed set"/>
+  </Items>
+  <Skills><SkillSet><Skill><Gem skillMinionItemSet="10"/></Skill></SkillSet></Skills>
+</PathOfBuilding>

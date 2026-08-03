@@ -1,0 +1,10 @@
+<PathOfBuilding>
+  <Items><ItemSet id="1" title="Missing optional reference"/></Items>
+  <Items activeItemSet=""><ItemSet id="2" title="Empty reference"/></Items>
+  <Items activeItemSet="abc"><ItemSet id="3" title="Nonnumeric reference"/></Items>
+  <Items activeItemSet="12345"><ItemSet id="4" title="Oversized reference"/></Items>
+  <Items activeItemSet="0"/>
+  <Items activeItemSet="60"/>
+  <Items activeItemSet="70"><ItemSet id="70" title="Duplicate A"/><ItemSet id="70" title="Duplicate B"/></Items>
+  <Items activeItemSet="80"><ItemSet id="80" title="Single target"/></Items>
+</PathOfBuilding>

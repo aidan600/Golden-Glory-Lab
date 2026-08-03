@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools==75.8.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "golden-glory-lab"
+version = "0.1.0"
+description = "Offline Golden Glory Lab production-intent core"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.scripts]
+ggl-pob-import = "golden_glory_lab.pob_import.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

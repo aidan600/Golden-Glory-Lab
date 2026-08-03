@@ -1,0 +1,8 @@
+<PathOfBuilding><Items activeItemSet="1"><Item id="2">Rarity: Rare
+No Stable ID
+Synthetic Ring
+Changed text</Item><Item id="1">Rarity: Rare
+Stable Name
+Synthetic Sword
+Unique ID: stable-api-id
+Changed modifier</Item><ItemSet id="2" title="Secondary Renamed"><Slot name="Ring 1" itemId="2"/></ItemSet><ItemSet id="1" title="Renamed"><Slot name="Ring 1" itemId="2"/><Slot name="Weapon 1" itemId="1"/></ItemSet></Items></PathOfBuilding>

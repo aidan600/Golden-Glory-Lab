@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PathOfBuilding formatHint="synthetic-proof">
+  <Build targetVersion="3_0" pobVersionHint="caller-must-not-infer"/>
+  <Items activeItemSet="10" useSecondWeaponSet="true" mysteryAttr="retained">
+    <Item id="1" variant="2">Rarity: Rare
+Solar Edge
+Synthetic Sword
+Unique ID: player-weapon-001
+{crafted}99% increased Light Radius<ModRange id="1" range="9"/></Item>
+    <Item id="2">Rarity: Rare
+Mirror Guard
+Synthetic Shield</Item>
+    <Item id="3">Rarity: Rare
+Flight Thread
+Synthetic Quiver</Item>
+    <Item id="4">Rarity: Rare
+Buried Spark
+Synthetic Abyss Jewel</Item>
+    <Item id="5">Rarity: Rare
+Tree Spark
+Synthetic Jewel</Item>
+    <Item id="6">Rarity: Rare
+Unused Memory
+Synthetic Ring</Item>
+    <Item id="7">Rarity: Unique
+Enmity's Embrace
+Synthetic Gloves
++999% to Fire Resistance
+Unique ID: volatile-observed-001</Item>
+    <Item id="8" futureItemAttribute="kept">Rarity: Rare
+Unknown Child Holder<FutureItemChild source="proof">opaque</FutureItemChild></Item>
+    <ItemSet id="10" title="Player candidate" useSecondWeaponSet="false" futureSetAttribute="kept">
+      <Slot name="Weapon 1" itemId="1" active="true" itemPbURL="https://example.invalid/player"/>
+      <Slot name="Weapon 2" itemId="2"/>
+      <Slot name="Weapon 1 Swap" itemId="1"/>
+      <Slot name="Weapon 2 Swap" itemId="0"/>
+      <Slot name="Boots" itemId="0"/>
+      <Slot name="Weapon 1 Abyssal Socket 1" itemId="4"/>
+      <Slot name="Weapon 1 Abyssal Socket 2" itemId="0"/>
+      <Slot name="Helmet Abyssal Socket 2" itemId="4"/>
+      <SocketIdURL nodeId="101" name="Synthetic socket" itemPbURL="https://example.invalid/socket"/>
+      <FutureSetChild proof="true">retained</FutureSetChild>
+    </ItemSet>
+    <ItemSet id="20" title="Mercenary candidate" useSecondWeaponSet="true">
+      <Slot name="Weapon 1" itemId="7"/>
+      <Slot name="Weapon 2" itemId="3"/>
+      <Slot name="Weapon 1 Swap" itemId="1"/>
+      <Slot name="Weapon 2 Swap" itemId="2"/>
+    </ItemSet>
+    <ItemSet id="30" title="Animate Guardian" useSecondWeaponSet="false">
+      <Slot name="Gloves" itemId="7"/>
+    </ItemSet>
+    <FutureItemsChild proof="true">retained</FutureItemsChild>
+  </Items>
+  <Tree>
+    <Spec title="First"><Sockets><Socket nodeId="1001" itemId="5"/><Socket nodeId="1002" itemId="0"/></Sockets></Spec>
+    <Spec title="Second"><Sockets><Socket nodeId="2001" itemId="5"/></Sockets></Spec>
+  </Tree>
+  <Skills>
+    <SkillSet id="1"><Skill><Gem skillMinionItemSet="20" skillMinionItemSetCalcs="999"/></Skill></SkillSet>
+  </Skills>
+  <FutureSection proof="true"><Opaque>retained</Opaque></FutureSection>
+</PathOfBuilding>

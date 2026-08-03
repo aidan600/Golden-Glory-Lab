@@ -1,0 +1,1 @@
+<PathOfBuilding><Items activeItemSet="1" useSecondWeaponSet="false"><Item id="1">Transitional item</Item><Slot name="Weapon 1" itemId="1"/><ItemSet id="1" title="Nested"><Slot name="Weapon 1" itemId="1"/></ItemSet></Items></PathOfBuilding>
