@@ -177,6 +177,92 @@
       ],
       "verificationStatus": "confirmed",
       "limitations": "This is a build-time dependency only. The importer has no third-party runtime package dependency."
+    },
+    {
+      "id": "python-3-13-xml-security",
+      "title": "Python 3.13 XML security guidance",
+      "sourceClass": "workflow-documentation",
+      "url": "https://docs.python.org/3.13/library/xml.html#xml-vulnerabilities",
+      "publisherOrRepository": "Python Software Foundation",
+      "gameOrSoftwareVersion": "Python 3.13.14 documentation; proof runtime Expat 2.8.1",
+      "accessedDate": "2026-08-03",
+      "supportedClaimsOrRecords": [
+        "Documents denial-of-service and memory risks in vulnerable Expat versions, including exponential entity expansion, quadratic blowup, and large-token reparsing.",
+        "Records Python's guidance to check pyexpat.EXPAT_VERSION and the current statement that Expat versions before 2.7.2 may be vulnerable."
+      ],
+      "verificationStatus": "confirmed",
+      "limitations": "The 2.7.2 floor is a conservative runtime admission gate based on current Python documentation, not a claim that every future Expat security issue is covered. Packaged runtimes must report and re-exercise their exact version."
+    },
+    {
+      "id": "jsonschema-4-26-0",
+      "title": "jsonschema 4.26.0 package metadata",
+      "sourceClass": "workflow-documentation",
+      "url": "https://pypi.org/pypi/jsonschema/4.26.0/json",
+      "publisherOrRepository": "Python Packaging Authority / python-jsonschema",
+      "gameOrSoftwareVersion": "jsonschema 4.26.0",
+      "accessedDate": "2026-08-03",
+      "supportedClaimsOrRecords": [
+        "Pins the proof-only validator that checks the complete neutral-import contract against JSON Schema Draft 2020-12.",
+        "Records Python 3.10 or newer support, Draft 2020-12 support, direct dependency constraints, and the MIT license expression."
+      ],
+      "verificationStatus": "confirmed",
+      "limitations": "This is a proof/test dependency only. The shipped importer retains zero third-party runtime dependencies, and format-checking extras are not installed."
+    },
+    {
+      "id": "attrs-26-1-0",
+      "title": "attrs 26.1.0 package metadata",
+      "sourceClass": "workflow-documentation",
+      "url": "https://pypi.org/pypi/attrs/26.1.0/json",
+      "publisherOrRepository": "Python Packaging Authority / python-attrs",
+      "gameOrSoftwareVersion": "attrs 26.1.0",
+      "accessedDate": "2026-08-03",
+      "supportedClaimsOrRecords": [
+        "Pins a resolved jsonschema proof dependency and records its MIT license expression."
+      ],
+      "verificationStatus": "confirmed",
+      "limitations": "Proof/test dependency only; it is installed with no dependency resolution from the exact proof requirements file."
+    },
+    {
+      "id": "jsonschema-specifications-2025-9-1",
+      "title": "jsonschema-specifications 2025.9.1 package metadata",
+      "sourceClass": "workflow-documentation",
+      "url": "https://pypi.org/pypi/jsonschema-specifications/2025.9.1/json",
+      "publisherOrRepository": "Python Packaging Authority / python-jsonschema",
+      "gameOrSoftwareVersion": "jsonschema-specifications 2025.9.1",
+      "accessedDate": "2026-08-03",
+      "supportedClaimsOrRecords": [
+        "Pins the Draft 2020-12 metaschema/vocabulary proof dependency and records its MIT license expression."
+      ],
+      "verificationStatus": "confirmed",
+      "limitations": "Proof/test dependency only; it is installed with no dependency resolution from the exact proof requirements file."
+    },
+    {
+      "id": "referencing-0-37-0",
+      "title": "referencing 0.37.0 package metadata",
+      "sourceClass": "workflow-documentation",
+      "url": "https://pypi.org/pypi/referencing/0.37.0/json",
+      "publisherOrRepository": "Python Packaging Authority / python-jsonschema",
+      "gameOrSoftwareVersion": "referencing 0.37.0",
+      "accessedDate": "2026-08-03",
+      "supportedClaimsOrRecords": [
+        "Pins a resolved jsonschema proof dependency and records its MIT license expression."
+      ],
+      "verificationStatus": "confirmed",
+      "limitations": "Proof/test dependency only; it is installed with no dependency resolution from the exact proof requirements file."
+    },
+    {
+      "id": "rpds-py-2026-6-3",
+      "title": "rpds-py 2026.6.3 package metadata",
+      "sourceClass": "workflow-documentation",
+      "url": "https://pypi.org/pypi/rpds-py/2026.6.3/json",
+      "publisherOrRepository": "Python Packaging Authority / crate-py",
+      "gameOrSoftwareVersion": "rpds-py 2026.6.3",
+      "accessedDate": "2026-08-03",
+      "supportedClaimsOrRecords": [
+        "Pins a resolved jsonschema proof dependency and records its MIT license expression."
+      ],
+      "verificationStatus": "confirmed",
+      "limitations": "Proof/test dependency only; the gate installs a published wheel with no dependency resolution from the exact proof requirements file."
     }
   ]
 }
