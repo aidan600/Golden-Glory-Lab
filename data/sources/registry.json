@@ -119,6 +119,64 @@
       "limitations": "Only five old fixtures are present. Each has one unnamed item set; they do not cover named multiple sets, active alternate weapons, non-empty Abyssal equipment slots, malformed input, or all current fields.",
       "commitSha": "ef4c5848fad33190f730cebaedff4b5831d0c88d",
       "notes": "These are incidental implementation fixtures, not a formal schema or Path of Exile mechanics authority."
+    },
+    {
+      "id": "python-3-13-zlib-docs",
+      "title": "Python 3.13 zlib standard-library documentation",
+      "sourceClass": "workflow-documentation",
+      "url": "https://docs.python.org/3.13/library/zlib.html",
+      "publisherOrRepository": "Python Software Foundation",
+      "gameOrSoftwareVersion": "Python 3.13.14 documentation; proof runtime zlib 1.3.1",
+      "accessedDate": "2026-08-02",
+      "supportedClaimsOrRecords": [
+        "Documents that positive MAX_WBITS requires the zlib header and trailer rather than raw DEFLATE.",
+        "Documents bounded Decompress.decompress max_length output, unconsumed_tail handling, unused_data after stream end, and eof detection for complete versus truncated streams."
+      ],
+      "verificationStatus": "confirmed",
+      "limitations": "Documents the Python 3.13 API; packaged runtimes must still exercise their exact Python and zlib versions through the retained regression suite."
+    },
+    {
+      "id": "python-3-13-expat-docs",
+      "title": "Python 3.13 xml.parsers.expat documentation",
+      "sourceClass": "workflow-documentation",
+      "url": "https://docs.python.org/3.13/library/pyexpat.html",
+      "publisherOrRepository": "Python Software Foundation",
+      "gameOrSoftwareVersion": "Python 3.13.14 documentation; proof runtime Expat 2.8.1",
+      "accessedDate": "2026-08-02",
+      "supportedClaimsOrRecords": [
+        "Documents incremental Parse calls, ordered_attributes, DTD and external-entity handlers, parameter-entity controls, and parser error locations.",
+        "Documents Expat reparse deferral and entity-amplification protections in the proof runtime line."
+      ],
+      "verificationStatus": "confirmed",
+      "limitations": "Expat exposes XML-normalized event data, not trustworthy byte-exact element spans. Handler limits run after Expat recognizes a token, so the importer also relies on its pre-parse whole-XML byte limit."
+    },
+    {
+      "id": "python-3-13-license-docs",
+      "title": "Python 3.13 history, license, and incorporated-software notices",
+      "sourceClass": "workflow-documentation",
+      "url": "https://docs.python.org/3.13/license.html",
+      "publisherOrRepository": "Python Software Foundation",
+      "gameOrSoftwareVersion": "Python 3.13.14 documentation",
+      "accessedDate": "2026-08-02",
+      "supportedClaimsOrRecords": [
+        "Records the Python Software Foundation License Version 2 and the incorporated Expat and zlib license notices used by the selected standard-library implementation."
+      ],
+      "verificationStatus": "confirmed",
+      "limitations": "This record documents implementation-dependency licenses; it does not declare a license for the Golden Glory Lab repository."
+    },
+    {
+      "id": "setuptools-75-8-2",
+      "title": "setuptools 75.8.2 package metadata",
+      "sourceClass": "workflow-documentation",
+      "url": "https://pypi.org/project/setuptools/75.8.2/",
+      "publisherOrRepository": "Python Packaging Authority",
+      "gameOrSoftwareVersion": "setuptools 75.8.2",
+      "accessedDate": "2026-08-02",
+      "supportedClaimsOrRecords": [
+        "Pins the proof package build backend version and records its Python requirement and MIT license metadata."
+      ],
+      "verificationStatus": "confirmed",
+      "limitations": "This is a build-time dependency only. The importer has no third-party runtime package dependency."
     }
   ]
 }

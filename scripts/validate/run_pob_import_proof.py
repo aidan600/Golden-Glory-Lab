@@ -37,7 +37,6 @@ def main() -> int:
             "install",
             "--disable-pip-version-check",
             "--no-deps",
-            "--no-build-isolation",
             "--target",
             install_target,
             ".",

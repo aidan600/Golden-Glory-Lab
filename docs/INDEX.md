@@ -26,6 +26,8 @@ chat summary.
 - [Open questions](OPEN_QUESTIONS.md) — unresolved product, evidence, proof,
   and implementation work.
 - [Audit index](audits/INDEX.md) — ordered mechanics and import audit backlog.
+- [Proof index](proofs/INDEX.md) — bounded technical results, adoption status,
+  and downstream consumers.
 - [Audit template](audits/TEMPLATE.md) — required evidence-aware audit record.
 - [Decision index](decisions/INDEX.md) — current decision records.
 - [Decision template](decisions/TEMPLATE.md) — format for a reviewed decision.

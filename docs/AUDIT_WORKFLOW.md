@@ -68,3 +68,34 @@ PROOF work records the bounded experiment, result, what it does not prove, and
 an adoption recommendation. BUILD and REPAIR work record the implementation
 outcome, validation, manual inspection, known limitations, and relevant
 evidence or decision dependencies.
+
+## Evidence units and PR units
+
+Different evidence questions may share one PR when they collectively establish
+one named downstream product contract. Each audit remains independently
+identifiable, evidenced, validated, and repairable.
+
+The complete PR outcome is the review unit. Individual audit reports are
+evidence units. Each audit retains its own identifier, status, evidence,
+conclusion, non-conclusions, and implementation contract. Individually
+reviewable commits are preferred where practical. A repair may target one
+affected audit without reopening unrelated supported evidence.
+
+Every audit implementation contract identifies:
+
+- required inputs;
+- established rules;
+- unsupported, provisional, or manually required behavior;
+- machine-readable tables or fixtures established by evidence; and
+- the expected downstream module or user flow.
+
+## Proof adoption and downstream consumption
+
+Every PROOF identifies its intended downstream consumer, production-facing
+interface or artifact, retained implementation/fixtures/tests, next integrated
+exercise, and adopt, repair, reject, or follow-up recommendation.
+
+Adopted implementations and regression tests are reused through the established
+seam. Replacing an adopted proof artifact requires explicit technical rationale
+and review. A proof harness may be disposable; the adopted core, contracts,
+fixtures, and tests are production-intent artifacts.

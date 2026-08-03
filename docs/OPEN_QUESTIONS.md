@@ -6,7 +6,7 @@ should inform or block the question.
 
 | ID | Category | Status | Question | Dependencies |
 | --- | --- | --- | --- | --- |
-| OQ-001 | blocking | open | What PoB item-set structure permits reliable player/Mercenary mapping without relying on set order? | AUD-001 |
+| OQ-001 | blocking | resolved | What PoB item-set structure permits reliable player/Mercenary mapping without relying on set order? | AUD-001; PROOF-001 adopted neutral importer; explicit user mapping remains outside imported facts |
 | OQ-002 | blocking | open | What permanent Mercenary passive-sheet fields are displayed, in what units, and which are required initially? | AUD-002; possible in-game evidence |
 | OQ-003 | proof required | open | Do relevant permanent Mercenary sheet fields include equipment, and under which display conditions? | AUD-002; controlled observation |
 | OQ-004 | blocking | open | What is the complete, versioned source coverage for Light Radius? | AUD-003 |
