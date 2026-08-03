@@ -7,7 +7,6 @@ name = "golden-glory-lab"
 version = "0.1.0"
 description = "Offline Golden Glory Lab production-intent core"
 requires-python = ">=3.11"
-license = "MIT"
 dependencies = []
 
 [project.scripts]
@@ -15,4 +14,3 @@ ggl-pob-import = "golden_glory_lab.pob_import.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
-

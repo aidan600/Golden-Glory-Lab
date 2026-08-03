@@ -19,7 +19,6 @@ from .limits import DEFAULT_IMPORT_LIMITS, ImportLimits
 from .xml_tree import (
     XmlLoadFailure,
     attribute_state,
-    attribute_value,
     character_value,
     element_children,
     load_xml_tree,
@@ -66,6 +65,9 @@ class ImportFailure(Exception):
     stage: str
     message: str
     location: dict[str, int] | None = None
+    normalizedShareCode: str | None = None
+    decodedCompressed: bytes | None = None
+    normalizations: list[dict[str, Any]] | None = None
 
 
 class Reporter:
@@ -123,7 +125,9 @@ class Reporter:
         return self.entries[-1]["reportId"]
 
 
-def importPobRawXml(input: str, options: Mapping[str, Any] | None = None) -> dict[str, Any]:
+def importPobRawXml(
+    input: str, options: Mapping[str, Any] | None = None
+) -> dict[str, Any]:
     """Import a raw PoB XML string into neutral contract v1."""
 
     original, limits, producing_version = _prepare_input(input, options)
@@ -149,12 +153,20 @@ def importPobRawXml(input: str, options: Mapping[str, Any] | None = None) -> dic
     return _load_neutral(original, original_bytes, envelope, limits, producing_version)
 
 
-def importPobShareCode(input: str, options: Mapping[str, Any] | None = None) -> dict[str, Any]:
+def importPobShareCode(
+    input: str, options: Mapping[str, Any] | None = None
+) -> dict[str, Any]:
     """Import strict PoB URL-safe Base64/zlib input into neutral contract v1."""
 
     original, limits, producing_version = _prepare_input(input, options)
+    normalized: str | None = None
+    compressed: bytes | None = None
+    normalizations: list[dict[str, Any]] = []
     try:
-        normalized, compressed, xml_bytes, normalizations = _decode_share_code(original, limits)
+        normalized, compressed, normalizations = _decode_share_envelope(
+            original, limits
+        )
+        xml_bytes = _decompress_zlib(compressed, limits)
         try:
             xml_text = xml_bytes.decode("utf-8", errors="strict")
         except UnicodeDecodeError as error:
@@ -190,9 +202,13 @@ def importPobShareCode(input: str, options: Mapping[str, Any] | None = None) -> 
             limits,
             producing_version,
             decoded_xml=None,
-            normalized_share_code=None,
-            decoded_compressed=None,
-            normalizations=[],
+            normalized_share_code=failure.normalizedShareCode or normalized,
+            decoded_compressed=failure.decodedCompressed or compressed,
+            normalizations=(
+                failure.normalizations
+                if failure.normalizations is not None
+                else normalizations
+            ),
             codec_steps=[
                 "PoB URL-safe Base64 envelope",
                 "zlib-wrapped DEFLATE stream",
@@ -224,9 +240,9 @@ def _prepare_input(
     return input, limits, producing
 
 
-def _decode_share_code(
+def _decode_share_envelope(
     original: str, limits: ImportLimits
-) -> tuple[str, bytes, bytes, list[dict[str, Any]]]:
+) -> tuple[str, bytes, list[dict[str, Any]]]:
     if len(original) > limits.maxShareCodeCharacters:
         raise ImportFailure(
             "SHARE_CODE_INPUT_LIMIT",
@@ -245,6 +261,22 @@ def _decode_share_code(
 
     normalizations: list[dict[str, Any]] = []
     normalized = original.strip(" \t\r\n")
+
+    def envelope_failure(
+        code: str,
+        message: str,
+        *,
+        decoded: bytes | None = None,
+    ) -> ImportFailure:
+        return ImportFailure(
+            code,
+            "envelope",
+            message,
+            normalizedShareCode=normalized,
+            decodedCompressed=decoded,
+            normalizations=list(normalizations),
+        )
+
     if normalized != original:
         normalizations.append(
             {
@@ -254,24 +286,21 @@ def _decode_share_code(
             }
         )
     if not normalized or not _BASE64_RE.fullmatch(normalized):
-        raise ImportFailure(
+        raise envelope_failure(
             "INVALID_BASE64_ALPHABET",
-            "envelope",
             "Share code contains invalid Base64 characters or padding placement",
         )
     if "=" in normalized:
         if len(normalized) % 4 != 0:
-            raise ImportFailure(
+            raise envelope_failure(
                 "INVALID_BASE64_LENGTH",
-                "envelope",
                 "Padded Base64 length must be a multiple of four",
             )
     else:
         remainder = len(normalized) % 4
         if remainder == 1:
-            raise ImportFailure(
+            raise envelope_failure(
                 "INVALID_BASE64_LENGTH",
-                "envelope",
                 "Unpadded Base64 has an impossible length",
             )
         if remainder:
@@ -284,28 +313,25 @@ def _decode_share_code(
     padding = len(normalized) - len(normalized.rstrip("="))
     expected_decoded = (len(normalized) // 4) * 3 - padding
     if expected_decoded > limits.maxDecodedCompressedBytes:
-        raise ImportFailure(
+        raise envelope_failure(
             "DECODED_COMPRESSED_LIMIT",
-            "envelope",
             "Decoded Base64 payload exceeds maxDecodedCompressedBytes",
         )
     standard = normalized.translate(str.maketrans("-_", "+/"))
     try:
         compressed = base64.b64decode(standard, validate=True)
     except (binascii.Error, ValueError) as error:
-        raise ImportFailure(
+        raise envelope_failure(
             "INVALID_BASE64",
-            "envelope",
             "Share code is not valid strict Base64",
         ) from error
     if len(compressed) > limits.maxDecodedCompressedBytes:
-        raise ImportFailure(
+        raise envelope_failure(
             "DECODED_COMPRESSED_LIMIT",
-            "envelope",
             "Decoded Base64 payload exceeds maxDecodedCompressedBytes",
+            decoded=compressed,
         )
-    xml_bytes = _decompress_zlib(compressed, limits)
-    return normalized, compressed, xml_bytes, normalizations
+    return normalized, compressed, normalizations
 
 
 def _decompress_zlib(compressed: bytes, limits: ImportLimits) -> bytes:
@@ -411,7 +437,9 @@ def _envelope(
             "originalInputCharacters": len(original),
             "originalInputUtf8Bytes": len(original_bytes),
             "normalizedShareCodeCharacters": (
-                len(normalized_share_code) if normalized_share_code is not None else None
+                len(normalized_share_code)
+                if normalized_share_code is not None
+                else None
             ),
             "decodedCompressedBytes": (
                 len(decoded_compressed) if decoded_compressed is not None else None
@@ -558,7 +586,9 @@ def _project_document(
         )
         if name == "Build":
             target = attribute_state(element, "targetVersion")
-            build_targets.append({"sourcePointer": f"{path}/@targetVersion", "raw": target})
+            build_targets.append(
+                {"sourcePointer": f"{path}/@targetVersion", "raw": target}
+            )
             reporter.add(
                 "BUILD_METADATA_RETAINED",
                 "ignored as irrelevant",
@@ -636,7 +666,9 @@ def _project_document(
 
     source_metadata = {
         "producingPobVersion": producing_version,
-        "producingPobVersionSource": "caller-supplied" if producing_version is not None else "unknown",
+        "producingPobVersionSource": "caller-supplied"
+        if producing_version is not None
+        else "unknown",
         "gameTargetVersion": game_target,
         "otherVersionLikeValues": other_versions,
     }
@@ -650,7 +682,6 @@ def _project_document(
         "itemSets": item_sets,
         "passiveJewelReferences": passive_refs,
         "itemSetCrossReferences": cross_refs,
-        "ownershipMapping": None,
         "documentWarnings": [
             entry["code"]
             for entry in reporter.entries
@@ -663,7 +694,7 @@ def _project_document(
         "mapping",
         "/application/item-set-mapping",
         "Player and optional Mercenary item-set mappings require explicit user confirmation outside imported facts.",
-        retained_material={"ownershipMapping": None},
+        retained_material={"mappingState": "not-imported"},
         candidate_targets=[item_set["occurrenceId"] for item_set in item_sets],
     )
     return document, source_metadata
@@ -722,7 +753,9 @@ def _parse_items_section(
             synthesized_id = f"item-set-{len(all_sets) + 1:04d}"
             for slot_index, (slot, slot_path) in enumerate(direct_slots):
                 legacy_assignments.append(
-                    _parse_assignment(slot, slot_path, synthesized_id, slot_index, reporter)
+                    _parse_assignment(
+                        slot, slot_path, synthesized_id, slot_index, reporter
+                    )
                 )
             synthesized_set = {
                 "occurrenceId": synthesized_id,
@@ -731,7 +764,9 @@ def _parse_items_section(
                 "rawId": {"state": "missing", "value": None},
                 "parsedId": None,
                 "title": {"state": "missing", "value": None},
-                "useSecondWeaponSet": _boolean_value(attribute_state(element, "useSecondWeaponSet")),
+                "useSecondWeaponSet": _boolean_value(
+                    attribute_state(element, "useSecondWeaponSet")
+                ),
                 "attributes": [],
                 "assignments": legacy_assignments,
                 "socketIdUrls": [],
@@ -753,7 +788,9 @@ def _parse_items_section(
                 path,
                 "Synthesized one neutral legacy item-set occurrence from top-level Slot elements.",
                 occurrence_id=synthesized_id,
-                retained_material={"slotSourcePointers": [slot_path for _, slot_path in direct_slots]},
+                retained_material={
+                    "slotSourcePointers": [slot_path for _, slot_path in direct_slots]
+                },
             )
         else:
             for slot_index, (slot, slot_path) in enumerate(direct_slots):
@@ -767,7 +804,9 @@ def _parse_items_section(
                 path,
                 "Top-level transitional slots coexist with nested sets; they are retained but not counted as another set.",
                 occurrence_id=section_id,
-                retained_material={"slotSourcePointers": [slot_path for _, slot_path in direct_slots]},
+                retained_material={
+                    "slotSourcePointers": [slot_path for _, slot_path in direct_slots]
+                },
             )
 
     return {
@@ -780,7 +819,9 @@ def _parse_items_section(
             "parsedId": _parse_decimal(attribute_state(element, "activeItemSet")),
             "resolution": None,
         },
-        "legacyUseSecondWeaponSet": _boolean_value(attribute_state(element, "useSecondWeaponSet")),
+        "legacyUseSecondWeaponSet": _boolean_value(
+            attribute_state(element, "useSecondWeaponSet")
+        ),
         "itemOccurrences": section_item_ids,
         "itemSetOccurrences": section_set_ids,
         "legacyTopLevelAssignments": legacy_assignments,
@@ -806,7 +847,15 @@ def _parse_item(
             occurrence_id=occurrence_id,
             retained_material=raw_id,
         )
-    known_attrs = {"id", "variant", "variantAlt", "variantAlt2", "variantAlt3", "variantAlt4", "variantAlt5"}
+    known_attrs = {
+        "id",
+        "variant",
+        "variantAlt",
+        "variantAlt2",
+        "variantAlt3",
+        "variantAlt4",
+        "variantAlt5",
+    }
     _report_unknown_attributes(element, known_attrs, path, occurrence_id, reporter)
     text = character_value(element)
     unique_match = _UNIQUE_ID_RE.search(text)
@@ -825,7 +874,9 @@ def _parse_item(
                     "rawRange": attribute_state(child, "range"),
                 }
             )
-            _report_unknown_attributes(child, {"id", "range"}, child_path, occurrence_id, reporter)
+            _report_unknown_attributes(
+                child, {"id", "range"}, child_path, occurrence_id, reporter
+            )
         else:
             unknown_children.append(child)
             reporter.add(
@@ -859,12 +910,21 @@ def _parse_item(
         "recognizedMetadata": {
             "variantLexemes": [
                 {"name": name, "raw": attribute_state(element, name)}
-                for name in ["variant", "variantAlt", "variantAlt2", "variantAlt3", "variantAlt4", "variantAlt5"]
+                for name in [
+                    "variant",
+                    "variantAlt",
+                    "variantAlt2",
+                    "variantAlt3",
+                    "variantAlt4",
+                    "variantAlt5",
+                ]
                 if attribute_state(element, name)["state"] != "missing"
             ]
         },
         "comparisonEvidence": {
-            "exactXmlCharacterValueSha256": hashlib.sha256(text.encode("utf-8")).hexdigest(),
+            "exactXmlCharacterValueSha256": hashlib.sha256(
+                text.encode("utf-8")
+            ).hexdigest(),
             "uniqueIdLine": {
                 "state": "present" if unique_match else "missing",
                 "value": unique_match.group(1) if unique_match else None,
@@ -906,7 +966,9 @@ def _parse_item_set(
             occurrence_id=occurrence_id,
             retained_material=weapon_state["raw"],
         )
-    _report_unknown_attributes(element, {"id", "title", "useSecondWeaponSet"}, path, occurrence_id, reporter)
+    _report_unknown_attributes(
+        element, {"id", "title", "useSecondWeaponSet"}, path, occurrence_id, reporter
+    )
     assignments: list[dict[str, Any]] = []
     socket_urls: list[dict[str, Any]] = []
     unknown_children: list[dict[str, Any]] = []
@@ -916,7 +978,9 @@ def _parse_item_set(
         child_path = f"{path}/{child['name']}[{child_counts[child['name']]}]"
         if child["name"] == "Slot":
             assignments.append(
-                _parse_assignment(child, child_path, occurrence_id, len(assignments), reporter)
+                _parse_assignment(
+                    child, child_path, occurrence_id, len(assignments), reporter
+                )
             )
         elif child["name"] == "SocketIdURL":
             record = {
@@ -930,7 +994,13 @@ def _parse_item_set(
                 "rawItemPbUrl": attribute_state(child, "itemPbURL"),
             }
             socket_urls.append(record)
-            _report_unknown_attributes(child, {"nodeId", "name", "itemPbURL"}, child_path, record["occurrenceId"], reporter)
+            _report_unknown_attributes(
+                child,
+                {"nodeId", "name", "itemPbURL"},
+                child_path,
+                record["occurrenceId"],
+                reporter,
+            )
             if record["parsedNodeId"] is None:
                 reporter.add(
                     "MALFORMED_SOCKET_ID_URL_NODE",
@@ -997,7 +1067,13 @@ def _parse_assignment(
     active = _boolean_value(attribute_state(element, "active"))
     item_url = attribute_state(element, "itemPbURL")
     warnings: list[str] = []
-    _report_unknown_attributes(element, {"name", "itemId", "active", "itemPbURL"}, path, occurrence_id, reporter)
+    _report_unknown_attributes(
+        element,
+        {"name", "itemId", "active", "itemPbURL"},
+        path,
+        occurrence_id,
+        reporter,
+    )
     if name["state"] != "present" or not _KNOWN_SLOT_RE.fullmatch(name["value"] or ""):
         warnings.append("UNKNOWN_SLOT_NAME")
         reporter.add(
@@ -1271,7 +1347,9 @@ def _report_duplicate_declarations(
             )
 
 
-def _mark_duplicate_assignments(assignments: list[dict[str, Any]], reporter: Reporter) -> None:
+def _mark_duplicate_assignments(
+    assignments: list[dict[str, Any]], reporter: Reporter
+) -> None:
     by_name: dict[str, list[dict[str, Any]]] = {}
     for assignment in assignments:
         name = assignment["originalSlotName"]["value"]
@@ -1318,7 +1396,9 @@ def _derive_abyssal_parents(assignments: list[dict[str, Any]]) -> None:
             "derivedParentSlotName": parent_name,
             "socketIndex": int(match.group("index")),
             "state": state,
-            "candidateParentAssignments": [parent["occurrenceId"] for parent in parents],
+            "candidateParentAssignments": [
+                parent["occurrenceId"] for parent in parents
+            ],
         }
 
 
@@ -1368,7 +1448,9 @@ def _walk_elements(
         yield from _walk_elements(child, child_path)
 
 
-def _find_version_like_values(root: dict[str, Any], root_path: str) -> list[dict[str, str]]:
+def _find_version_like_values(
+    root: dict[str, Any], root_path: str
+) -> list[dict[str, str]]:
     values: list[dict[str, str]] = []
     for element, path in [(root, root_path), *_walk_elements(root, root_path)]:
         for attribute in element["attributes"]:

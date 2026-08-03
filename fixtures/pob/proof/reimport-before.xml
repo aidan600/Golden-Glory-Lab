@@ -1,0 +1,8 @@
+<PathOfBuilding><Items activeItemSet="1"><Item id="1">Rarity: Rare
+Stable Name
+Synthetic Sword
+Unique ID: stable-api-id
+Old modifier</Item><Item id="2">Rarity: Rare
+No Stable ID
+Synthetic Ring
+Old text</Item><ItemSet id="1" title="Before"><Slot name="Weapon 1" itemId="1"/><Slot name="Ring 1" itemId="2"/></ItemSet></Items></PathOfBuilding>

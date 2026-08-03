@@ -14,15 +14,17 @@ def deterministic_json(result: dict[str, Any]) -> str:
     remain in source/report order; keys are intentionally not re-sorted.
     """
 
-    return json.dumps(
-        result,
-        ensure_ascii=False,
-        allow_nan=False,
-        indent=2,
-        separators=(",", ": "),
-    ) + "\n"
+    return (
+        json.dumps(
+            result,
+            ensure_ascii=False,
+            allow_nan=False,
+            indent=2,
+            separators=(",", ": "),
+        )
+        + "\n"
+    )
 
 
 def deterministic_json_bytes(result: dict[str, Any]) -> bytes:
     return deterministic_json(result).encode("utf-8")
-

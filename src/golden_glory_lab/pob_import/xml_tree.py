@@ -86,18 +86,21 @@ def load_xml_tree(xml_bytes: bytes, limits: ImportLimits) -> dict[str, Any]:
         if not data:
             return
         kind = "cdata" if in_cdata else "text"
+        if stack:
+            retained_bytes = _character_bytes(stack[-1])
+            if (
+                retained_bytes + len(data.encode("utf-8"))
+                > limits.maxTextBytesPerElement
+            ):
+                fail(
+                    "XML_TEXT_LIMIT",
+                    "XML character data in one element exceeds the configured limit",
+                )
         target = stack[-1]["children"] if stack else roots
         if target and target[-1]["kind"] == kind:
             target[-1]["value"] += data
         else:
             target.append({"kind": kind, "value": data})
-        if stack:
-            total = _character_bytes(stack[-1])
-            if total > limits.maxTextBytesPerElement:
-                fail(
-                    "XML_TEXT_LIMIT",
-                    "XML character data in one element exceeds the configured limit",
-                )
 
     def start_cdata() -> None:
         nonlocal in_cdata
@@ -111,7 +114,9 @@ def load_xml_tree(xml_bytes: bytes, limits: ImportLimits) -> dict[str, Any]:
         append_child({"kind": "comment", "value": data})
 
     def processing_instruction(target: str, data: str) -> None:
-        append_child({"kind": "processing-instruction", "target": target, "value": data})
+        append_child(
+            {"kind": "processing-instruction", "target": target, "value": data}
+        )
 
     def reject_doctype(*_args: Any) -> None:
         fail("XML_DTD_FORBIDDEN", "DTD declarations are forbidden")
@@ -184,7 +189,9 @@ def character_value(element: dict[str, Any]) -> str:
     return "".join(values)
 
 
-def element_children(element: dict[str, Any], name: str | None = None) -> list[dict[str, Any]]:
+def element_children(
+    element: dict[str, Any], name: str | None = None
+) -> list[dict[str, Any]]:
     children = [child for child in element["children"] if child["kind"] == "element"]
     if name is None:
         return children

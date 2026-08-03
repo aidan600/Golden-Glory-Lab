@@ -21,17 +21,23 @@ def build_parser() -> argparse.ArgumentParser:
         description="Emit deterministic Golden Glory Lab PoB neutral JSON."
     )
     source = parser.add_mutually_exclusive_group(required=True)
-    source.add_argument("--raw-xml", metavar="FILE", help="Import a UTF-8 raw XML file.")
+    source.add_argument(
+        "--raw-xml", metavar="FILE", help="Import a UTF-8 raw XML file."
+    )
     source.add_argument(
         "--share-code-file", metavar="FILE", help="Import a UTF-8 PoB share-code file."
     )
-    source.add_argument("--share-code", metavar="CODE", help="Import a supplied PoB share code.")
+    source.add_argument(
+        "--share-code", metavar="CODE", help="Import a supplied PoB share code."
+    )
     parser.add_argument(
         "--producing-pob-version",
         help="Optional caller-supplied producing PoB version; never inferred from targetVersion.",
     )
     parser.add_argument(
-        "--debug", action="store_true", help="Print a traceback for unexpected tool failures."
+        "--debug",
+        action="store_true",
+        help="Print a traceback for unexpected tool failures.",
     )
     return parser
 
@@ -60,4 +66,3 @@ def main(argv: Sequence[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

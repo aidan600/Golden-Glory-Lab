@@ -1,0 +1,299 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://goldenglorylab.local/schemas/pob-neutral-import-v1.schema.json",
+  "title": "Golden Glory Lab PoB Neutral Import Result v1",
+  "description": "Versioned neutral PoB intake contract. This is not the Golden Glory Lab saved-build schema.",
+  "type": "object",
+  "required": [
+    "contractVersion",
+    "status",
+    "failure",
+    "envelope",
+    "sourceMetadata",
+    "document",
+    "report"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "contractVersion": {
+      "const": "1.0.0"
+    },
+    "status": {
+      "enum": [
+        "success",
+        "failure"
+      ]
+    },
+    "failure": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/failure"
+        }
+      ]
+    },
+    "envelope": {
+      "$ref": "#/$defs/envelope"
+    },
+    "sourceMetadata": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "document": {
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "report": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/reportEntry"
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "success"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "failure": {
+            "type": "null"
+          },
+          "sourceMetadata": {
+            "type": "object"
+          },
+          "document": {
+            "type": "object"
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "failure": {
+            "$ref": "#/$defs/failure"
+          },
+          "sourceMetadata": {
+            "type": "null"
+          },
+          "document": {
+            "type": "null"
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "failure": {
+      "type": "object",
+      "required": [
+        "code",
+        "stage",
+        "message",
+        "location",
+        "sourcePointer"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "type": "string",
+          "minLength": 1
+        },
+        "stage": {
+          "enum": [
+            "envelope",
+            "decompression",
+            "xml"
+          ]
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1
+        },
+        "location": {
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "sourcePointer": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "envelope": {
+      "type": "object",
+      "required": [
+        "inputKind",
+        "originalInput",
+        "decodedXml",
+        "normalizedShareCode",
+        "hashes",
+        "sizes",
+        "codecSteps",
+        "normalizations",
+        "limits",
+        "implementationVersion",
+        "evidenceProfile",
+        "suppliedProducingPobVersion"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "inputKind": {
+          "enum": [
+            "raw-xml",
+            "share-code"
+          ]
+        },
+        "originalInput": {
+          "type": "string"
+        },
+        "decodedXml": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "normalizedShareCode": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "hashes": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": [
+              "name",
+              "algorithm",
+              "byteDomain",
+              "digestHex"
+            ]
+          }
+        },
+        "sizes": {
+          "type": "object"
+        },
+        "codecSteps": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "normalizations": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "limits": {
+          "type": "object",
+          "required": [
+            "maxShareCodeCharacters",
+            "maxDecodedCompressedBytes",
+            "maxDecompressedXmlBytes",
+            "maxRawXmlBytes",
+            "maxXmlDepth",
+            "maxXmlElements",
+            "maxAttributesPerElement",
+            "maxTextBytesPerElement",
+            "maxReportEntries",
+            "decompressionChunkBytes"
+          ]
+        },
+        "implementationVersion": {
+          "type": "string"
+        },
+        "evidenceProfile": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": [
+              "sourceId",
+              "revision"
+            ]
+          }
+        },
+        "suppliedProducingPobVersion": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "reportEntry": {
+      "type": "object",
+      "required": [
+        "reportId",
+        "code",
+        "category",
+        "stage",
+        "location",
+        "occurrenceId",
+        "sourcePointer",
+        "retainedMaterial",
+        "explanation",
+        "candidateTargets"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "reportId": {
+          "type": "string"
+        },
+        "code": {
+          "type": "string"
+        },
+        "category": {
+          "enum": [
+            "recognized",
+            "ignored as irrelevant",
+            "unrecognized",
+            "ambiguous",
+            "manually required",
+            "malformed"
+          ]
+        },
+        "stage": {
+          "type": "string"
+        },
+        "location": {
+          "type": "string"
+        },
+        "occurrenceId": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sourcePointer": {
+          "type": "string"
+        },
+        "retainedMaterial": {},
+        "explanation": {
+          "type": "string"
+        },
+        "candidateTargets": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
