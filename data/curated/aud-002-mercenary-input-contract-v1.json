@@ -1,0 +1,157 @@
+{
+  "schemaVersion": "1.0",
+  "artifactId": "aud-002-mercenary-input-contract-v1",
+  "artifactType": "manual-input-contract",
+  "auditId": "AUD-002",
+  "contractVersion": "1.0.0",
+  "targetGameVersion": "Path of Exile 1 3.29.1",
+  "verificationStatus": "supported",
+  "sourceIds": [
+    "ggg-poe-3-29-0-content-update",
+    "ggg-poe-3-29-1-patch-notes"
+  ],
+  "scope": "A product manual-input contract for one active permanent Mercenary. It does not assert the actual labels or aggregation behavior of any in-game sheet.",
+  "retention": {
+    "sourceLicense": "GGG page licensing is not stated in the inspected patch notes.",
+    "dataLicense": "No third-party data is retained; this artifact is a Golden Glory Lab product-contract record.",
+    "provenance": "Manually authored from AUD-002 claims and the registered GGG announcement records.",
+    "redistribution": "No copied GGG prose, UI image, or game-data payload is retained.",
+    "derivation": "The records formalize a non-double-counting input safeguard; they do not derive a game value.",
+    "attribution": "Source IDs and source URLs are retained in the source registry and AUD-002.",
+    "retainedMaterial": "Stable field IDs, product labels, input states, and claim/source references only.",
+    "notVendored": "No screenshots, raw item instances, UI strings, client data, or third-party tables are vendored.",
+    "uncertainty": "Actual sheet field labels, units, inclusion, conditions, and display precision remain unknown."
+  },
+  "records": [
+    {
+      "id": "mercenary-final-uncapped-fire-resistance",
+      "verificationStatus": "unknown",
+      "claimIds": [
+        "AUD-002-C03",
+        "AUD-002-C05",
+        "AUD-002-C06"
+      ],
+      "sourceIds": [
+        "ggg-poe-3-29-0-content-update"
+      ],
+      "evidenceLocation": "docs/audits/AUD-002.md#claim-inventory",
+      "limitations": "This product label is not an established in-game field label or precision.",
+      "loadBearing": true,
+      "downstreamConsumers": [
+        "Mercenary manual-input form",
+        "AUD-005 manual-only Enmity input adapter"
+      ],
+      "replacementRule": "Replace only through a versioned AUD-002 supersession and downstream migration review.",
+      "data": {
+        "userVisibleLabel": "Final Uncapped Fire Resistance (same state as Enmity)",
+        "type": "number",
+        "unit": "percentage points",
+        "sourcePath": "manual-only",
+        "acceptsArbitraryObservedValues": true,
+        "missingState": "missing",
+        "unknownState": "unknown",
+        "unsupportedState": "derived-from-sheet-unsupported"
+      }
+    },
+    {
+      "id": "mercenary-maximum-fire-resistance",
+      "verificationStatus": "unknown",
+      "claimIds": [
+        "AUD-002-C03",
+        "AUD-002-C05",
+        "AUD-002-C06"
+      ],
+      "sourceIds": [
+        "ggg-poe-3-29-0-content-update"
+      ],
+      "evidenceLocation": "docs/audits/AUD-002.md#claim-inventory",
+      "limitations": "This product label is not an established in-game field label or default value.",
+      "loadBearing": true,
+      "downstreamConsumers": [
+        "Mercenary manual-input form",
+        "AUD-005 manual-only Enmity input adapter"
+      ],
+      "replacementRule": "Replace only through a versioned AUD-002 supersession and downstream migration review.",
+      "data": {
+        "userVisibleLabel": "Maximum Fire Resistance (same state as Enmity)",
+        "type": "number",
+        "unit": "percentage points",
+        "sourcePath": "manual-only",
+        "defaultValue": null,
+        "acceptsArbitraryObservedValues": true,
+        "missingState": "missing",
+        "unknownState": "unknown",
+        "unsupportedState": "derived-from-sheet-unsupported"
+      }
+    },
+    {
+      "id": "mercenary-equipment-inclusion-state",
+      "verificationStatus": "unknown",
+      "claimIds": [
+        "AUD-002-C04",
+        "AUD-002-C06"
+      ],
+      "sourceIds": [
+        "ggg-poe-3-29-0-content-update",
+        "community-luminary-defence-observation-2026-07-28"
+      ],
+      "evidenceLocation": "docs/audits/AUD-002.md#claim-inventory",
+      "limitations": "The state is a required review choice; the current sources do not establish which choice is correct for a given sheet field.",
+      "loadBearing": true,
+      "downstreamConsumers": [
+        "Mapped-equipment adapter",
+        "AUD-005 derived-path gate"
+      ],
+      "replacementRule": "Replace only through a controlled observation or versioned field evidence recorded in a superseding AUD-002.",
+      "data": {
+        "userVisibleLabel": "Does the observed sheet include equipped items?",
+        "type": "enum",
+        "allowedValues": [
+          "included",
+          "excluded",
+          "unknown"
+        ],
+        "sourcePath": "manual-review-or-future-observation",
+        "missingState": "missing",
+        "unknownState": "unknown",
+        "unsupportedState": "component-derivation-disabled"
+      }
+    },
+    {
+      "id": "mercenary-measurement-context",
+      "verificationStatus": "unknown",
+      "claimIds": [
+        "AUD-002-C05",
+        "AUD-002-C06"
+      ],
+      "sourceIds": [
+        "ggg-poe-3-29-0-content-update"
+      ],
+      "evidenceLocation": "docs/audits/AUD-002.md#controlled-observation-request",
+      "limitations": "No source establishes which context dimensions the sheet includes; this record requires their retention for review.",
+      "loadBearing": true,
+      "downstreamConsumers": [
+        "Mercenary manual-input form",
+        "Missing-information and review-state UI"
+      ],
+      "replacementRule": "Replace only through a versioned AUD-002 supersession and downstream migration review.",
+      "data": {
+        "userVisibleLabel": "Measurement context",
+        "type": "structured-notes",
+        "requiredTopics": [
+          "Mercenary identity and level",
+          "active state",
+          "zone or UI context",
+          "equipment state",
+          "relevant effects",
+          "capture time"
+        ],
+        "sourcePath": "manual",
+        "missingState": "missing",
+        "unknownState": "unknown",
+        "unsupportedState": "comparable-derived-value-disabled"
+      }
+    }
+  ],
+  "notes": "This artifact intentionally contains no actual Mercenary sheet values."
+}
