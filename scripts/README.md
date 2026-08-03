@@ -20,6 +20,15 @@ from `requirements/pob-import-proof.txt` into a separate isolated target with
 `--no-deps`; runs the full suite; validates repository JSON, the source
 registry, links, and agent references; and runs `git diff --check`.
 
+Production smoke and proof dependency/test processes use `python -I -S`. Their
+bootstrap paths contain only the isolated production install or repository
+source, the isolated proof-dependency target, the test directory, and the
+interpreter standard library. The runner removes `PYTHONPATH`, rejects a
+current-working-directory path or any ambient `site-packages`/`dist-packages`
+path, and verifies every proof package's exact version and module location. On
+Python below 3.13 it also hides `typing_extensions` temporarily and proves the
+same isolated dependency check fails without that conditional pin.
+
 Regenerate deterministic golden output with:
 
     py scripts/generate_pob_import_goldens.py

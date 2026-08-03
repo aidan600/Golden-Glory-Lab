@@ -57,6 +57,16 @@ def report_codes(result: dict[str, Any]) -> list[str]:
     return [entry["code"] for entry in result["report"]]
 
 
+def contract_validator() -> Draft202012Validator:
+    schema = json.loads(
+        (ROOT / "data" / "schemas" / "pob-neutral-import-v1.schema.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    Draft202012Validator.check_schema(schema)
+    return Draft202012Validator(schema)
+
+
 def all_keys(value: Any) -> list[str]:
     keys: list[str] = []
     if isinstance(value, dict):
@@ -91,13 +101,7 @@ class PublicContractTests(unittest.TestCase):
         self.assertEqual(supplied["sourceMetadata"]["producingPobVersion"], "2.66.2")
 
     def test_real_draft_2020_12_schema_validates_complete_contract(self) -> None:
-        schema = json.loads(
-            (ROOT / "data" / "schemas" / "pob-neutral-import-v1.schema.json").read_text(
-                encoding="utf-8"
-            )
-        )
-        Draft202012Validator.check_schema(schema)
-        validator = Draft202012Validator(schema)
+        validator = contract_validator()
         representative_results = [
             importPobRawXml(fixture_text("equivalent.xml")),
             importPobShareCode("%%%"),
@@ -635,7 +639,90 @@ class Aud001FixtureMatrixTests(unittest.TestCase):
             hashlib.sha256(golden).hexdigest(),
             "a1dc0f9fd312b82ab05307e1112906525fa75fab0e8f3c06265094f804da0429",
         )
-        self.assertEqual(outputs[0], golden)
+        current_result = json.loads(outputs[0])
+        golden_result = json.loads(golden)
+        if (
+            current_result["envelope"]["runtimeSecurity"]
+            != golden_result["envelope"]["runtimeSecurity"]
+        ):
+            current_result["envelope"]["runtimeSecurity"] = copy.deepcopy(
+                golden_result["envelope"]["runtimeSecurity"]
+            )
+            self.assertEqual(deterministic_json_bytes(current_result), golden)
+        else:
+            self.assertEqual(outputs[0], golden)
+
+
+class ReportSummaryRepairTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.validator = contract_validator()
+
+    def assert_warning_summary_matches_final_report(
+        self, result: dict[str, Any]
+    ) -> None:
+        self.assertEqual(
+            result["document"]["documentWarnings"],
+            importer_module._document_warning_codes(result["report"]),
+        )
+        self.validator.validate(result)
+
+    def test_limit_one_summary_contains_only_final_sentinel(self) -> None:
+        result = importPobRawXml(
+            "<PathOfBuilding/>",
+            {"limits": {"maxReportEntries": 1}},
+        )
+
+        self.assertEqual(report_codes(result), ["REPORT_LIMIT_REACHED"])
+        self.assertEqual(
+            result["document"]["documentWarnings"], ["REPORT_LIMIT_REACHED"]
+        )
+        self.assertNotIn("POB_ROOT_RECOGNIZED", report_codes(result))
+        self.assert_warning_summary_matches_final_report(result)
+
+    def test_exact_saturation_replaces_evicted_warning_deterministically(
+        self,
+    ) -> None:
+        xml = '<PathOfBuilding future="retained"/>'
+        options = {"limits": {"maxReportEntries": 2}}
+        first = importPobRawXml(xml, options)
+        second = importPobRawXml(xml, options)
+
+        self.assertEqual(
+            report_codes(first),
+            ["POB_ROOT_RECOGNIZED", "REPORT_LIMIT_REACHED"],
+        )
+        self.assertEqual(
+            first["report"][-1]["retainedMaterial"]["droppedEntryCount"], 2
+        )
+        self.assertEqual(
+            first["document"]["documentWarnings"], ["REPORT_LIMIT_REACHED"]
+        )
+        self.assertNotIn(
+            "UNKNOWN_ROOT_ATTRIBUTE", first["document"]["documentWarnings"]
+        )
+        self.assertEqual(
+            deterministic_json_bytes(first), deterministic_json_bytes(second)
+        )
+        self.assert_warning_summary_matches_final_report(first)
+        self.validator.validate(second)
+
+    def test_non_saturated_summary_keeps_golden_order_and_excludes_manual(self) -> None:
+        result = importPobRawXml(fixture_text("comprehensive.xml"))
+        golden = json.loads(
+            (GOLDENS / "comprehensive.raw.neutral-v1.json").read_text(
+                encoding="utf-8"
+            )
+        )
+
+        self.assertEqual(
+            result["document"]["documentWarnings"],
+            golden["document"]["documentWarnings"],
+        )
+        self.assertNotIn(
+            "OWNERSHIP_MAPPING_REQUIRED", result["document"]["documentWarnings"]
+        )
+        self.assert_warning_summary_matches_final_report(result)
 
 
 class SecurityBoundaryRepairTests(unittest.TestCase):
@@ -1016,7 +1103,13 @@ class EnvelopeNormalizationTests(unittest.TestCase):
 class CliSmokeTests(unittest.TestCase):
     def run_cli(self, *args: str) -> subprocess.CompletedProcess[bytes]:
         return subprocess.run(
-            [sys.executable, str(ROOT / "proofs" / "pob_import_cli.py"), *args],
+            [
+                sys.executable,
+                "-I",
+                "-S",
+                str(ROOT / "proofs" / "pob_import_cli.py"),
+                *args,
+            ],
             cwd=ROOT,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,

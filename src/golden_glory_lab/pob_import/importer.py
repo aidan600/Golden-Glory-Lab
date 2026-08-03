@@ -195,6 +195,14 @@ class Reporter:
         return self.entries[-1]["reportId"]
 
 
+def _document_warning_codes(report: Iterable[dict[str, Any]]) -> list[str]:
+    return [
+        entry["code"]
+        for entry in report
+        if entry["category"] in {"unrecognized", "ambiguous", "malformed"}
+    ]
+
+
 def importPobRawXml(
     input: str, options: Mapping[str, Any] | None = None
 ) -> dict[str, Any]:
@@ -848,11 +856,7 @@ def _project_document(
         "itemSets": item_sets,
         "passiveJewelReferences": passive_refs,
         "itemSetCrossReferences": cross_refs,
-        "documentWarnings": [
-            entry["code"]
-            for entry in reporter.entries
-            if entry["category"] in {"unrecognized", "ambiguous", "malformed"}
-        ],
+        "documentWarnings": [],
     }
     reporter.add(
         "OWNERSHIP_MAPPING_REQUIRED",
@@ -863,6 +867,7 @@ def _project_document(
         retained_material={"mappingState": "not-imported"},
         candidate_targets=[item_set["occurrenceId"] for item_set in item_sets],
     )
+    document["documentWarnings"] = _document_warning_codes(reporter.entries)
     return document, source_metadata
 
 

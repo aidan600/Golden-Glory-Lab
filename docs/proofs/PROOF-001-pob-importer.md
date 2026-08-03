@@ -6,8 +6,9 @@ Result: **PASS WITH LIMITATIONS**
 
 Adoption recommendation: **ADOPT WITH NAMED LIMITATIONS**
 
-Repaired and retested on 2026-08-03 with Python 3.13.14, zlib 1.3.1,
-Expat 2.8.1, and Node.js 22.20.0 for repository validation.
+Repaired and retested on 2026-08-03 with Python 3.13.14/zlib 1.3.1/Expat
+2.8.1 and Python 3.12.13/zlib 1.3.1/Expat 2.7.4. Node.js 22.20.0 ran
+repository validation.
 
 ## Question
 
@@ -42,6 +43,7 @@ revisions rather than following moving branches.
 | `jsonschema-specifications-2025-9-1` | 2025.9.1 | Exact proof-only metaschema dependency and MIT license. |
 | `referencing-0-37-0` | 0.37.0 | Exact proof-only reference dependency and MIT license. |
 | `rpds-py-2026-6-3` | 2026.6.3 | Exact proof-only data-structure dependency and MIT license. |
+| `typing-extensions-4-15-0` | 4.15.0 | Conditional proof-only compatibility dependency below Python 3.13 and PSF-2.0 license. |
 
 The five pinned upstream XML fixtures are 26,191 to 65,185 bytes. The
 purpose-built comprehensive synthetic fixture is 2,641 bytes. The default XML
@@ -64,10 +66,13 @@ The proof-only validator set is pinned exactly in
 - `attrs==26.1.0`;
 - `jsonschema-specifications==2025.9.1`;
 - `referencing==0.37.0`;
-- `rpds-py==2026.6.3`.
+- `rpds-py==2026.6.3`;
+- `typing-extensions==4.15.0; python_version < "3.13"`.
 
-All five declare the MIT license. They do not appear in production package
-metadata. The production importer uses only standard-library modules.
+The five jsonschema-supporting packages declare the MIT license.
+`typing-extensions` declares PSF-2.0 and is installed only below Python 3.13.
+None appears in production package metadata. The production importer uses only
+standard-library modules.
 
 Python was selected because streaming zlib directly exposes bounded output,
 end-of-stream state, and trailing-data state. Expat supplies ordered events,
@@ -233,7 +238,15 @@ Supplementary repair fixtures and tests establish the full active-set matrix,
 per-context zero behavior, audited structural paths, off-path retention,
 fragmented-character behavior, allocation bounds, runtime guard, numeric limits,
 lone-surrogate failures, document events, adjacent CDATA, schema conformance,
-and deep result isolation. The complete suite contains 39 tests.
+deep result isolation, and bounded-report warning consistency. The complete
+suite contains 42 tests.
+
+`documentWarnings` is derived once from the finalized bounded `report`, after
+the manual ownership-mapping entry has been attempted. Its ordered codes are
+therefore exactly the final unrecognized, ambiguous, and malformed entries.
+Limit-one and exact-saturation regressions prove that an evicted code cannot
+remain in the summary, that `REPORT_LIMIT_REACHED` and its dropped count remain
+correct, and that the result is deterministic and Draft 2020-12 valid.
 
 ## Complete neutral-result schema
 
@@ -337,8 +350,12 @@ the actual module.
   failures rather than being repaired.
 - Per-element byte spans, entity spelling, and pre-normalization inner line
   endings are unavailable; the complete input remains the byte authority.
-- The suite runs on Python 3.13.14/Expat 2.8.1, while package metadata admits
-  Python 3.11+ only when its linked Expat passes the runtime guard.
+- Package metadata admits Python 3.11+ only when its linked Expat passes the
+  runtime guard; this repair exercised Python 3.13.14/Expat 2.8.1 and Python
+  3.12.13/Expat 2.7.4.
+- The committed golden records the canonical 3.13 runtime metadata. The 3.12
+  gate proves the result is otherwise byte-identical by substituting only the
+  explicit `envelope.runtimeSecurity` block before comparison.
 - The schema intentionally leaves only `report[].retainedMaterial` value
   content open because it can carry arbitrary preserved source material.
 
@@ -366,13 +383,23 @@ or release readiness.
 ## Verification
 
 One command reports the runtime, compiles sources, builds and installs an
-isolated wheel, imports the installed package, installs the exact proof-only
-validator set into a separate isolated target, runs all 39 tests, validates the
-repository/schema/source registry/links, and checks whitespace:
+isolated wheel with `--no-deps`, imports the installed package, installs the
+exact proof-only validator set into a separate isolated target with `--no-deps`,
+runs all 42 tests, validates the repository/schema/source registry/links, and
+checks whitespace:
 
 ```powershell
 py scripts/validate/run_pob_import_proof.py
 ```
+
+Production smoke, proof dependency imports, and tests run with `python -I -S`.
+The bootstrap prepends only the installed production target or repository
+source, isolated proof-dependency target, test directory, and interpreter
+standard library. It removes `PYTHONPATH`, rejects the current working directory
+and ambient `site-packages`/`dist-packages`, verifies all exact versions and
+module origins, confirms `typing_extensions` is present below Python 3.13 and
+absent on 3.13+, and proves the below-3.13 dependency check fails when the
+conditional module is temporarily hidden.
 
 Additional checks:
 
@@ -382,8 +409,12 @@ node scripts/validate/check_repository.mjs
 git diff --check origin/main...HEAD
 ```
 
-The full proof gate passed twice on the runtime recorded above. The golden
-generator reproduced the committed 87,288-byte artifact and recorded SHA-256.
+The complete isolated proof gate passed on both runtimes recorded above. The
+canonical Python 3.13 run compared the regenerated comprehensive result
+byte-for-byte with the unchanged committed 87,288-byte artifact and SHA-256
+`a1dc0f9fd312b82ab05307e1112906525fa75fab0e8f3c06265094f804da0429`.
+The Python 3.12 run proved the only golden-result difference was the recorded
+`envelope.runtimeSecurity` value.
 
 ## Recommended next action
 

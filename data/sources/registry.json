@@ -263,6 +263,21 @@
       ],
       "verificationStatus": "confirmed",
       "limitations": "Proof/test dependency only; the gate installs a published wheel with no dependency resolution from the exact proof requirements file."
+    },
+    {
+      "id": "typing-extensions-4-15-0",
+      "title": "typing-extensions 4.15.0 package metadata",
+      "sourceClass": "workflow-documentation",
+      "url": "https://pypi.org/pypi/typing-extensions/4.15.0/json",
+      "publisherOrRepository": "Python Packaging Authority / Python typing_extensions",
+      "gameOrSoftwareVersion": "typing-extensions 4.15.0",
+      "accessedDate": "2026-08-03",
+      "supportedClaimsOrRecords": [
+        "Pins the conditional proof-only compatibility dependency required by the validator stack when python_version is below 3.13.",
+        "Records Python 3.9 or newer support and the PSF-2.0 license expression."
+      ],
+      "verificationStatus": "confirmed",
+      "limitations": "Proof/test dependency only; installed only when python_version < \"3.13\". It is not installed on Python 3.13 or newer, and production package metadata remains dependency-free."
     }
   ]
 }
