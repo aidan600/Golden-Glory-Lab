@@ -29,6 +29,7 @@ const artifactPaths = [
   "data/curated/aud-003-link-effect-passive-sources-v1.json",
   "data/curated/aud-003-link-effect-observed-stat-terms-v1.json",
   "data/curated/aud-003-golden-glory-mechanic-v1.json",
+  "data/curated/aud-004-flame-link-reference-v1.json",
   "fixtures/mechanics/aud-004-flame-link-gates-v1.json",
   "data/curated/aud-005-enmitys-embrace-reference-v1.json",
   "fixtures/mechanics/aud-005-enmitys-embrace-gates-v1.json"

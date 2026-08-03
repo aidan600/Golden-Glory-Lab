@@ -1,0 +1,98 @@
+{
+  "schemaVersion": "1.0",
+  "artifactId": "aud-004-flame-link-reference-v1",
+  "artifactType": "mechanic-reference",
+  "auditId": "AUD-004",
+  "contractVersion": "1.0.0",
+  "targetGameVersion": "Path of Exile 1 3.29.1",
+  "verificationStatus": "supported",
+  "sourceIds": [
+    "ggg-poe-3-29-1-patch-notes",
+    "pob-release-2-66-0-flame-link",
+    "ggg-flame-link-3-16-announcement",
+    "ggg-flame-link-quality-3-23",
+    "ggg-merc-link-faq-3-26",
+    "poedb-flame-link-2026-08-03",
+    "repoe-flame-link-2022-8023a1d",
+    "ggg-poe-terms-2026-08-03",
+    "product-direction-first-release-2026-08-03"
+  ],
+  "scope": "Bounded Flame Link identity, ordinary level range, source-component mapping, target-class support, quality-duration reference, and calculation gates for PoE1 3.29.1. It is not a live-game formula or a copied level table.",
+  "retention": {
+    "sourceLicense": "PoB and RePoE software licences do not establish redistribution rights for included Grinding Gear Games game data; official and community pages have separate terms.",
+    "dataLicense": "No affirmative redistribution right for raw gem tables, extracted payloads, or copied page content was established.",
+    "provenance": "Manually reviewed field mappings and small anchor facts from the pinned PoB release, official notices, and labelled cross-checks recorded in AUD-004.",
+    "redistribution": "Only minimal identifiers, field mappings, range boundaries, anchor facts, and source locators are retained; raw tables and upstream payloads are not asserted redistributable.",
+    "derivation": "The artifact is a hand-authored bounded reference and gate contract, not a generated conversion of upstream data.",
+    "attribution": "Grinding Gear Games, Path of Building Community, PoEDB, and RePoE source locations are recorded in the source registry and AUD-004.",
+    "retainedMaterial": "Gem/effect identifiers, normal and exceptional range boundaries, field names, the 5 percent source-life term, compact anchors, and quality-duration metadata.",
+    "notVendored": "No raw PoB, RePoE, Trade, or website table; no full tooltip, image, asset, or executable source is vendored.",
+    "uncertainty": "The live 3.29.1 continuity, exceptional-level policy, permanent-link behavior, effect arithmetic, and rounding remain unresolved."
+  },
+  "records": [
+    {
+      "id": "poe1-flame-link-standard-reference",
+      "verificationStatus": "supported",
+      "claimIds": ["AUD-004-C02", "AUD-004-C03", "AUD-004-C04", "AUD-004-C06", "AUD-004-C07", "AUD-004-C12"],
+      "sourceIds": ["pob-release-2-66-0-flame-link", "ggg-flame-link-3-16-announcement", "ggg-flame-link-quality-3-23", "product-direction-first-release-2026-08-03"],
+      "evidenceLocation": "PoB 2.66.0 commit d1e5dc6ab85f5d6939eefbec0f9986c191db0ca9: Gems.lua#L13606, act_str.lua#L4283, active_skill_gem_stat_descriptions.lua#L5613, CalcTools.lua#L183-L205, and Misc.lua#L29-L30; official 3.16/3.23 announcements.",
+      "limitations": "The pinned structured source is 3.29.0, not a direct 3.29.1 proof. The record does not establish final scaling, active-link state, exceptional-level validity, order, or rounding.",
+      "loadBearing": true,
+      "downstreamConsumers": ["Flame Link reference panel", "future base-component adapter", "quality display", "AUD-004 gate fixture"],
+      "replacementRule": "Replace only with a reviewed target-version structured source and a superseding AUD-004 contract.",
+      "data": {
+        "stableReferenceId": "poe1-flame-link-standard",
+        "gemMetadataId": "Metadata/Items/Gems/SkillGemFlameLink",
+        "grantedEffectId": "FlameLink",
+        "sourceDataVersion": "Path of Exile 1 3.29.0",
+        "versionState": "supporting-source-version-mismatch",
+        "sourceCommitSha": "d1e5dc6ab85f5d6939eefbec0f9986c191db0ca9",
+        "sourceCommitUrl": "https://github.com/PathOfBuildingCommunity/PathOfBuilding/commit/d1e5dc6ab85f5d6939eefbec0f9986c191db0ca9",
+        "ordinaryLevelRange": {"minimum": 1, "maximum": 20},
+        "exceptionalSourceRows": {"minimum": 21, "maximum": 40, "firstReleaseState": "needs-review"},
+        "components": {
+          "levelDerivedFlatFire": {"minimumStatId": "flame_link_minimum_fire_damage", "maximumStatId": "flame_link_maximum_fire_damage", "retainedAs": "source-field-mapping-not-raw-table"},
+          "sourceMaximumLife": {"statId": "flame_link_added_fire_damage_from_life_%", "percent": 5, "actor": "link-source-parent", "basis": "maximum-life"}
+        },
+        "standardQuality": {"statId": "base_skill_effect_duration", "millisecondsPerQuality": 75, "quality20AdditionalBaseDurationMilliseconds": 1500, "affectsGrantedDamage": "not-established"},
+        "reproduction": {
+          "recordLocations": {"gem": "src/Data/Gems.lua#L13606", "skill": "src/Data/Skills/act_str.lua#L4283", "statDescription": "src/Data/StatDescriptions/active_skill_gem_stat_descriptions.lua#L5613", "interpolation": ["src/Modules/CalcTools.lua#L183-L205", "src/Data/Misc.lua#L29-L30"]},
+          "anchorProcedure": "Use the pinned FlameLink level record, its interpolation mode, and level requirement through PoB's documented interpolation support; do not treat raw effectiveness values as player-facing added Fire Damage.",
+          "compactAnchors": [{"level": 1, "requirementLevel": 34, "addedFireMinimum": 23, "addedFireMaximum": 35}, {"level": 20, "requirementLevel": 70, "addedFireMinimum": 169, "addedFireMaximum": 254}]
+        },
+        "presentation": {"allowedLabel": "Added Fire Damage granted to linked Mercenary", "prohibitedLabels": ["DPS", "total Mercenary damage", "combined build score"]}
+      }
+    },
+    {
+      "id": "poe1-flame-link-target-and-scaling-gate",
+      "verificationStatus": "unknown",
+      "claimIds": ["AUD-004-C05", "AUD-004-C08", "AUD-004-C09", "AUD-004-C10", "AUD-004-C13"],
+      "sourceIds": ["ggg-merc-link-faq-3-26", "pob-release-2-66-0-flame-link", "product-direction-first-release-2026-08-03"],
+      "evidenceLocation": "AUD-004 claim inventory, exact AUD-003 dependency table, and supporting Mercenary FAQ target-class statement.",
+      "limitations": "No reviewed source completes permanent-link behavior, exceptional-level policy, Golden Glory/direct-effect arithmetic, or live rounding. Product reporting states are not game-behavior proof.",
+      "loadBearing": true,
+      "downstreamConsumers": ["Flame Link calculation gate", "unavailable-result reporting", "future mechanics proof design"],
+      "replacementRule": "Replace with direct target-version behavior evidence plus a superseding AUD-003/AUD-004 calculation contract.",
+      "data": {
+        "targetClass": "allied-mercenary-supported-with-limits",
+        "linkReportingStates": {"active": "input-review-state", "inactive": "no-current-result", "unknown": "unavailable-not-zero"},
+        "finalScaledResult": "withheld",
+        "upstreamContract": {"auditId": "AUD-003", "contractVersion": "1.0.0"},
+        "upstreamDependencies": [
+          {"claimId": "AUD-003-C02", "minimumStatus": "confirmed", "appliesWhen": "Golden Glory is allocated or in scope", "unmetBehavior": "withhold only the Golden Glory contribution"},
+          {"claimId": "AUD-003-C03", "minimumStatus": "confirmed", "appliesWhen": "a recognized Default-tree Light Radius record is selected", "unmetBehavior": "do not recognize or sum that source"},
+          {"claimId": "AUD-003-C04", "minimumStatus": "confirmed", "appliesWhen": "a direct Link Buff Effect source is selected", "unmetBehavior": "do not recognize or sum that source"},
+          {"claimId": "AUD-003-C05", "minimumStatus": "confirmed", "appliesWhen": "Mastery effect 51424 is selected", "unmetBehavior": "withhold only its basis-dependent numeric consequence"},
+          {"claimId": "AUD-003-C08", "minimumStatus": "supported", "appliesWhen": "Powerful Bond is selected or in scope", "unmetBehavior": "withhold only Powerful Bond's conditional contribution"},
+          {"claimId": "AUD-003-C09", "minimumStatus": "confirmed", "appliesWhen": "Inspiring Bond is selected or in scope", "unmetBehavior": "retain reminder definition; runtime activation remains unknown under AUD-003-C12"},
+          {"claimId": "AUD-003-C12", "minimumStatus": "supported", "appliesWhen": "a definitive scaled result is requested", "unmetBehavior": "withhold the definitive scaled output and preserve independent inputs"}
+        ],
+        "unconditionalBlockingClaims": ["AUD-003-C12", "AUD-004-C09", "AUD-004-C10"],
+        "conditionalBlockingClaims": [{"claimId": "AUD-003-C08", "appliesWhen": "Powerful Bond selected or in scope", "unmetBehavior": "withhold-only-powerful-bond-contribution"}],
+        "unknownIsNotZero": true,
+        "exceptionalLevels": "needs-review"
+      }
+    }
+  ],
+  "notes": "The source-version mismatch is explicit. Compact anchors are reproducibility metadata, not a copied level table. The artifact is not runtime production data."
+}
