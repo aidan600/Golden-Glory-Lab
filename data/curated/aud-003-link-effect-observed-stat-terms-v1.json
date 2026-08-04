@@ -1,0 +1,101 @@
+{
+  "schemaVersion": "1.0",
+  "artifactId": "aud-003-link-effect-observed-stat-terms-v1",
+  "artifactType": "source-catalog",
+  "auditId": "AUD-003",
+  "contractVersion": "1.0.0",
+  "targetGameVersion": "Path of Exile 1 3.29.1",
+  "verificationStatus": "supported",
+  "sourceIds": [
+    "ggg-poe1-trade-stats-2026-08-03",
+    "ggg-poe1-crucible-standard-migration",
+    "ggg-poe-terms-2026-08-03"
+  ],
+  "scope": "Six direct Link Skill Buff Effect Crucible filter identifiers from the captured official Trade vocabulary. They are observed-recognition records, not current-league or acquisition records.",
+  "retention": {
+    "sourceLicense": "GGG's terms do not provide a reviewed affirmative licence for retaining or redistributing raw Trade data.",
+    "dataLicense": "No data licence for the full Trade response was established.",
+    "provenance": "Manually reviewed minimal Crucible term records from the hash-pinned official Trade capture and GGG's Standard migration announcement.",
+    "redistribution": "Only small identifiers, numeric values, and review states are retained; raw API responses are not vendored.",
+    "derivation": "Records classify source vocabulary and legacy status; they do not derive current availability.",
+    "attribution": "GGG endpoints, source IDs, capture hash, and migration notice are recorded in the registry and AUD-003.",
+    "retainedMaterial": "Trade IDs, values, signs, legacy/review flags, and limited classification metadata only.",
+    "notVendored": "No Trade payload, item listing, screenshot, Crucible tree, or raw game data is vendored.",
+    "uncertainty": "No current-league availability, acquisition, item slot, range, stacking, or applicability claim is made."
+  },
+  "records": [
+    {
+      "id": "poe1-trade-crucible-link-effect-15845",
+      "verificationStatus": "supported",
+      "claimIds": ["AUD-003-C06", "AUD-003-C11"],
+      "sourceIds": ["ggg-poe1-trade-stats-2026-08-03", "ggg-poe1-crucible-standard-migration"],
+      "evidenceLocation": "Trade stats capture crucible.mod_15845; GGG Crucible Standard-migration announcement",
+      "limitations": "Legacy/capture recognition only; no current availability or source offer is established.",
+      "loadBearing": false,
+      "downstreamConsumers": ["Observed-item recognizer", "Legacy/review UI"],
+      "replacementRule": "Replace through current availability evidence recorded in a superseding AUD-003.",
+      "data": {"tradeId": "crucible.mod_15845", "domain": "Crucible", "statFamily": "direct-link-buff-effect", "valuePercent": 8, "sign": "increase", "availability": "legacy-or-unknown", "offerAsImprovement": false, "acceptedForObservedInstance": true}
+    },
+    {
+      "id": "poe1-trade-crucible-link-effect-47594",
+      "verificationStatus": "supported",
+      "claimIds": ["AUD-003-C06", "AUD-003-C11"],
+      "sourceIds": ["ggg-poe1-trade-stats-2026-08-03", "ggg-poe1-crucible-standard-migration"],
+      "evidenceLocation": "Trade stats capture crucible.mod_47594; GGG Crucible Standard-migration announcement",
+      "limitations": "Legacy/capture recognition only; no current availability or source offer is established.",
+      "loadBearing": false,
+      "downstreamConsumers": ["Observed-item recognizer", "Legacy/review UI"],
+      "replacementRule": "Replace through current availability evidence recorded in a superseding AUD-003.",
+      "data": {"tradeId": "crucible.mod_47594", "domain": "Crucible", "statFamily": "direct-link-buff-effect", "valuePercent": 12, "sign": "increase", "availability": "legacy-or-unknown", "offerAsImprovement": false, "acceptedForObservedInstance": true}
+    },
+    {
+      "id": "poe1-trade-crucible-link-effect-41316",
+      "verificationStatus": "supported",
+      "claimIds": ["AUD-003-C06", "AUD-003-C11"],
+      "sourceIds": ["ggg-poe1-trade-stats-2026-08-03", "ggg-poe1-crucible-standard-migration"],
+      "evidenceLocation": "Trade stats capture crucible.mod_41316; GGG Crucible Standard-migration announcement",
+      "limitations": "Legacy/capture recognition only; no current availability or source offer is established.",
+      "loadBearing": false,
+      "downstreamConsumers": ["Observed-item recognizer", "Legacy/review UI"],
+      "replacementRule": "Replace through current availability evidence recorded in a superseding AUD-003.",
+      "data": {"tradeId": "crucible.mod_41316", "domain": "Crucible", "statFamily": "direct-link-buff-effect", "valuePercent": 16, "sign": "increase", "availability": "legacy-or-unknown", "offerAsImprovement": false, "acceptedForObservedInstance": true}
+    },
+    {
+      "id": "poe1-trade-crucible-link-effect-48159",
+      "verificationStatus": "supported",
+      "claimIds": ["AUD-003-C06", "AUD-003-C11"],
+      "sourceIds": ["ggg-poe1-trade-stats-2026-08-03", "ggg-poe1-crucible-standard-migration"],
+      "evidenceLocation": "Trade stats capture crucible.mod_48159; GGG Crucible Standard-migration announcement",
+      "limitations": "Legacy/capture recognition only; no current availability or source offer is established.",
+      "loadBearing": false,
+      "downstreamConsumers": ["Observed-item recognizer", "Legacy/review UI"],
+      "replacementRule": "Replace through current availability evidence recorded in a superseding AUD-003.",
+      "data": {"tradeId": "crucible.mod_48159", "domain": "Crucible", "statFamily": "direct-link-buff-effect", "valuePercent": 24, "sign": "increase", "availability": "legacy-or-unknown", "offerAsImprovement": false, "acceptedForObservedInstance": true}
+    },
+    {
+      "id": "poe1-trade-crucible-link-effect-41817",
+      "verificationStatus": "supported",
+      "claimIds": ["AUD-003-C06", "AUD-003-C11"],
+      "sourceIds": ["ggg-poe1-trade-stats-2026-08-03", "ggg-poe1-crucible-standard-migration"],
+      "evidenceLocation": "Trade stats capture crucible.mod_41817; GGG Crucible Standard-migration announcement",
+      "limitations": "Legacy/capture recognition only; no current availability or source offer is established.",
+      "loadBearing": false,
+      "downstreamConsumers": ["Observed-item recognizer", "Legacy/review UI"],
+      "replacementRule": "Replace through current availability evidence recorded in a superseding AUD-003.",
+      "data": {"tradeId": "crucible.mod_41817", "domain": "Crucible", "statFamily": "direct-link-buff-effect", "valuePercent": -20, "sign": "reduction", "availability": "legacy-or-unknown", "offerAsImprovement": false, "acceptedForObservedInstance": true}
+    },
+    {
+      "id": "poe1-trade-crucible-link-effect-45",
+      "verificationStatus": "supported",
+      "claimIds": ["AUD-003-C06", "AUD-003-C11"],
+      "sourceIds": ["ggg-poe1-trade-stats-2026-08-03", "ggg-poe1-crucible-standard-migration"],
+      "evidenceLocation": "Trade stats capture crucible.mod_45; GGG Crucible Standard-migration announcement",
+      "limitations": "Legacy/capture recognition only; no current availability or source offer is established.",
+      "loadBearing": false,
+      "downstreamConsumers": ["Observed-item recognizer", "Legacy/review UI"],
+      "replacementRule": "Replace through current availability evidence recorded in a superseding AUD-003.",
+      "data": {"tradeId": "crucible.mod_45", "domain": "Crucible", "statFamily": "direct-link-buff-effect", "valuePercent": -30, "sign": "reduction", "availability": "legacy-or-unknown", "offerAsImprovement": false, "acceptedForObservedInstance": true}
+    }
+  ],
+  "notes": "The data intentionally retains no item names or claims that a Crucible value is currently acquirable."
+}

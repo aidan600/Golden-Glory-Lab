@@ -1,0 +1,55 @@
+{
+  "schemaVersion": "1.0",
+  "artifactId": "aud-003-golden-glory-mechanic-v1",
+  "artifactType": "mechanic-reference",
+  "auditId": "AUD-003",
+  "contractVersion": "1.0.0",
+  "targetGameVersion": "Path of Exile 1 3.29.1",
+  "verificationStatus": "confirmed",
+  "sourceIds": [
+    "ggg-poe1-skilltree-export-3-29-1",
+    "ggg-poe-developer-data-docs",
+    "ggg-poe-terms-2026-08-03"
+  ],
+  "scope": "The literal 3.29.1 Default-tree Golden Glory record. This artifact deliberately records no arithmetic or combined calculation.",
+  "retention": {
+    "sourceLicense": "The official skilltree-export repository had no declared repository license at the pinned commit.",
+    "dataLicense": "No affirmative redistribution license for raw game data was established by the inspected source.",
+    "provenance": "Minimal factual record manually reviewed from pinned Default-tree node 31517.",
+    "redistribution": "A short mechanic phrase, identifier, and explicit unknown fields are retained; raw source data is not redistributed.",
+    "derivation": "No numeric formula is derived from the wording.",
+    "attribution": "Grinding Gear Games and the exact export commit, file, and hash are recorded in the source registry and AUD-003.",
+    "retainedMaterial": "One node ID, name, short wording, and bounded applicability/unknown metadata.",
+    "notVendored": "Raw data.json, other tree records, sprites, images, and any formula implementation are not vendored.",
+    "uncertainty": "Arithmetic, stacking, source inclusion, rounding, cap, and whether any basis override changes a numeric result remain unestablished."
+  },
+  "records": [
+    {
+      "id": "poe1-passive-node-31517",
+      "verificationStatus": "confirmed",
+      "claimIds": ["AUD-003-C02", "AUD-003-C12"],
+      "sourceIds": ["ggg-poe1-skilltree-export-3-29-1"],
+      "evidenceLocation": "data.json Default tree node 31517",
+      "limitations": "Literal wording does not specify an arithmetic operation, stacking group, order, cap, rounding, or final Flame Link effect.",
+      "loadBearing": true,
+      "downstreamConsumers": ["Golden Glory source panel", "AUD-004 Flame Link dependency gate"],
+      "replacementRule": "Replace through a versioned source/audit supersession with downstream claim review.",
+      "data": {
+        "nodeId": 31517,
+        "skillId": 31517,
+        "name": "Golden Glory",
+        "ascendancyName": "Luminary",
+        "literalEffect": "Increases and Reductions to Light Radius also apply to Effect of your Link Skill Buffs on your Mercenary",
+        "requiresAllocation": true,
+        "targetKind": "Mercenary",
+        "inputStatFamily": "light-radius-increases-and-reductions",
+        "outputStatFamily": "link-skill-buff-effect-on-mercenary",
+        "arithmetic": "unknown",
+        "stacking": "unknown",
+        "rounding": "unknown",
+        "cap": "unknown"
+      }
+    }
+  ],
+  "notes": "This is wording-only reference data. It must not be used as a substitute for the missing numeric contract."
+}

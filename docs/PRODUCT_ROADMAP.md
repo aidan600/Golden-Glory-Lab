@@ -18,12 +18,20 @@ without becoming a second product definition.
 
 | Order | Phase and intended outcome | Exit condition |
 | --- | --- | --- |
-| 1 | **First-release evidence-pack PR.** Deliver AUD-002 (permanent Mercenary passive-sheet contract), AUD-003 (Light Radius and direct Link Skill Buff Effect source contract), AUD-004 (Flame Link data and calculation contract), and AUD-005 (Enmity's Embrace calculation contract) sequentially as separate evidence records in one coherent PR. | Each audit remains independently evidenced and ends with an implementation contract naming required inputs, established rules, unsupported/provisional/manually required behavior, evidence-backed tables or fixtures, and the expected downstream module or user flow. |
-| 2 | **Desktop packaging PROOF consuming the adopted importer.** Test a Windows-first offline package that includes the actual adopted Python importer, calls the same public entry point, and parses a permanent fixture inside the package. | The package runs the retained importer and regression suite without adding a second importer or selecting a framework by assumption. |
-| 3 | **First usable desktop BUILD.** Extend the adopted packaged shell and importer with explicit item-set mapping, audited mechanics, local persistence, UI, and basic target/gap/cap/surplus reporting. | A user can complete the first-release workflow and save/reopen local build state. |
+| 1 | **First-release evidence-pack PR.** Deliver AUD-002 (permanent Mercenary passive-sheet contract), AUD-003 (Light Radius and direct Link Skill Buff Effect source contract), AUD-004 (Flame Link data and calculation contract), and AUD-005 (Enmity's Embrace calculation contract) sequentially as separate evidence records in one coherent PR. | All four audit deliverables are structurally complete **and every load-bearing claim required by the scoped downstream result, including exact upstream contract/version dependencies, is confirmed or supported.** A provisional, unknown, superseded, or version-mismatched dependency withholds its dependent result. |
+| 2 | **Desktop packaging PROOF consuming the adopted importer.** Test a Windows-first offline package that includes the adopted `golden_glory_lab.pob_import` module, calls `importPobRawXml` or `importPobShareCode`, and parses a permanent synthetic fixture inside the package. | The package runs the retained importer and its regression behavior from the packaged runtime without adding a second importer, selecting a framework by assumption, or implementing gated Flame Link/Enmity mechanics. |
+| 3 | **First usable desktop BUILD.** Extend the adopted packaged shell and importer with explicit item-set mapping, only mechanics whose exact claim/version gates are satisfied, local persistence, UI, and evidence-aware target/gap/cap/surplus reporting. | A user can complete the first-release workflow and save/reopen local build state, while blocked mechanics remain explicit unavailable/review states. |
 | 4 | **Completeness review and improvement patches.** Add reviewed/unreviewed and intentionally unused states, one-slot suggestions, and small multi-slot patches that preserve locked items and requirements. | Constraint-aware review explains practical changes without rewarding already-satisfied objectives. |
 | 5 | **Critical-strike audit and panel.** Keep critical-strike reconstruction independent and add a panel only after its dedicated audit. | The panel is bounded by its evidence and does not create a combined score. |
 | 6 | **Product hardening.** Strengthen the validated product through ordinary-user feedback, regression coverage, and release-readiness work. | Known first-release risks are resolved or explicitly accepted. |
+
+## Current Phase 1 status
+
+The first-release evidence pack is structurally complete as an AUDIT task, but
+Phase 1 exit is not achieved: load-bearing dependencies remain unknown or
+version-mismatched for the scoped mechanics results. The evidence-integrity repair adds regression guards for the recorded contracts, but it does not change any exit status or authorize a BUILD calculation.
+
+The evidence pack is structurally complete, but it does not yet authorize the affected BUILD calculation.
 
 The narrow evidence-batching and proof-adoption rules remain in
 [the audit workflow](AUDIT_WORKFLOW.md). The owner has decided that no
@@ -38,6 +46,8 @@ decision, not forgotten roadmap work.
 - Do not recreate Path of Building outside the agreed import boundary.
 - Reuse the adopted importer seam and regression suite; replacement requires
   explicit technical rationale and review.
+- BUILD consumers must inspect exact claim/version gates and render
+  unavailable/review states rather than infer missing mechanics.
 - Do not introduce a combined build score or make theoretical maximums the
   primary objective.
 - Do not require comprehensive Mercenary DPS before the first usable product.

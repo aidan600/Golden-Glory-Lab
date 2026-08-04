@@ -2,6 +2,307 @@
   "schemaVersion": "1.0",
   "sources": [
     {
+      "id": "pob-3-29-export-3a73a54",
+      "title": "Path of Building Community 3.29 export containing Enmity's Embrace",
+      "sourceClass": "pob-source",
+      "url": "https://github.com/PathOfBuildingCommunity/PathOfBuilding/commit/3a73a54bd3a9c92c4d3264c5d697a51b6c9063bc",
+      "publisherOrRepository": "PathOfBuildingCommunity/PathOfBuilding",
+      "gameOrSoftwareVersion": "Path of Building 3.29 export commit",
+      "accessedDate": "2026-08-03",
+      "supportedClaimsOrRecords": [
+        "Provides the pinned historical PoB 3.29 export commit containing the Enmity's Embrace record used as a reproducibility locator by AUD-005."
+      ],
+      "verificationStatus": "supported",
+      "limitations": "This establishes a PoB data-history locator, not official live 3.29.1 item continuity, acquisition, permanent-Mercenary mechanics, rounding, or redistribution rights for game data.",
+      "commitSha": "3a73a54bd3a9c92c4d3264c5d697a51b6c9063bc",
+      "notes": "No upstream item payload is retained. This pinned historical export locator contains the reviewed Enmity dynamic-stat-description record 3040; the current supporting snapshot is separately recorded as pob-dev-3-29-50d2236."
+    },
+    {
+      "id": "poedb-enmitys-embrace-2026-08-03",
+      "title": "PoEDB Enmity's Embrace reference page",
+      "sourceClass": "reference-site",
+      "url": "https://poedb.tw/us/Enmitys_Embrace",
+      "publisherOrRepository": "PoEDB",
+      "gameOrSoftwareVersion": "Current unpinned community reference page accessed during the Path of Exile 1 3.29.1 evidence freeze",
+      "accessedDate": "2026-08-03",
+      "supportedClaimsOrRecords": [
+        "Cross-checks Enmity's Embrace range presentation, overcap wording, and semantic modifier-family label used by AUD-005.",
+        "Exposes a current availability-label disagreement with the supporting PoB snapshot."
+      ],
+      "verificationStatus": "supported",
+      "limitations": "An unpinned community display is not authority for target-version item continuity, acquisition, permanent-Mercenary semantics, penalty order, rounding, aggregation, or underlying game-data licence rights.",
+      "notes": "Used only as a labelled corroborating/reference source. The page describes PoEDB site content as CC BY-NC-SA 3.0; that does not resolve underlying game-data rights. No page table, copied prose, image, or asset is retained."
+    },
+    {
+      "id": "golden-glory-lab-data-boundary-2026-08-03",
+      "title": "Golden Glory Lab agent data-boundary policy",
+      "sourceClass": "workflow-documentation",
+      "repositoryPath": "AGENTS.md",
+      "publisherOrRepository": "Golden Glory Lab repository",
+      "gameOrSoftwareVersion": "Repository policy reviewed 2026-08-03",
+      "accessedDate": "2026-08-03",
+      "supportedClaimsOrRecords": [
+        "Defines the product rule that observed item material is build-instance/review data, not general reference evidence; out-of-range observed values are preserved and not clamped."
+      ],
+      "verificationStatus": "confirmed",
+      "limitations": "This is a repository product/data policy, not evidence for any Path of Exile mechanic, current item range, availability, or ownership fact.",
+      "notes": "Used for AUD-005 observed-value handling only."
+    },
+    {
+      "id": "product-direction-first-release-2026-08-03",
+      "title": "Golden Glory Lab Product Direction",
+      "sourceClass": "workflow-documentation",
+      "repositoryPath": "docs/PRODUCT_DIRECTION.md",
+      "publisherOrRepository": "Golden Glory Lab repository",
+      "gameOrSoftwareVersion": "First-release product-direction record reviewed 2026-08-03",
+      "accessedDate": "2026-08-03",
+      "supportedClaimsOrRecords": [
+        "Defines the first-release boundary that Flame Link granted damage is not presented as DPS and that the product has no combined build score."
+      ],
+      "verificationStatus": "confirmed",
+      "limitations": "This is a product-policy source, not external evidence for Path of Exile mechanics, numerical values, availability, or rounding.",
+      "notes": "Used by AUD-004 and AUD-005 only for product presentation and objective constraints."
+    },
+    {
+      "id": "pob-release-2-66-0-flame-link",
+      "title": "Path of Building Community 2.66.0 Flame Link data snapshot",
+      "sourceClass": "pob-source",
+      "url": "https://github.com/PathOfBuildingCommunity/PathOfBuilding/commit/d1e5dc6ab85f5d6939eefbec0f9986c191db0ca9",
+      "publisherOrRepository": "PathOfBuildingCommunity/PathOfBuilding",
+      "gameOrSoftwareVersion": "Path of Building Community 2.66.0, released for Path of Exile 1 3.29.0",
+      "accessedDate": "2026-08-03",
+      "supportedClaimsOrRecords": [
+        "Supports AUD-004's bounded Flame Link identity, normal level range, field mappings, source Maximum Life term, quality-duration metadata, and PoB-model limitation.",
+        "Records a reproducible structured source that predates the 3.29.1 target freeze."
+      ],
+      "verificationStatus": "supported",
+      "limitations": "This is 3.29.0 PoB data, not official live 3.29.1 authority for permanent-Mercenary mechanics, scaling order, or rounding. The software licence does not establish redistribution rights for embedded GGG game data.",
+      "commitSha": "d1e5dc6ab85f5d6939eefbec0f9986c191db0ca9",
+      "notes": "Relevant paths: src/Data/Gems.lua, src/Data/Skills/act_str.lua, src/Data/StatDescriptions/active_skill_gem_stat_descriptions.lua, and interpolation support files. The raw table is not retained."
+    },
+    {
+      "id": "ggg-flame-link-3-16-announcement",
+      "title": "Path of Exile 3.16 Flame Link announcement",
+      "sourceClass": "official-ggg",
+      "url": "https://www.pathofexile.com/forum/view-thread/3186390/filter-account-type/staff",
+      "publisherOrRepository": "Grinding Gear Games",
+      "gameOrSoftwareVersion": "Path of Exile 1 3.16 announcement",
+      "accessedDate": "2026-08-03",
+      "supportedClaimsOrRecords": [
+        "Provides qualitative support for Flame Link's linked-target behavior and Maximum-Life basis."
+      ],
+      "verificationStatus": "supported",
+      "limitations": "Does not establish current 3.29.1 numerical values, permanent-Mercenary behavior details, effect stacking, or rounding.",
+      "notes": "Used only alongside the pinned structured source; no announcement text is copied into runtime data."
+    },
+    {
+      "id": "ggg-flame-link-quality-3-23",
+      "title": "Path of Exile 3.23 gem quality changes",
+      "sourceClass": "official-ggg",
+      "url": "https://www.pathofexile.com/forum/view-thread/3451455",
+      "publisherOrRepository": "Grinding Gear Games",
+      "gameOrSoftwareVersion": "Path of Exile 1 3.23 quality announcement",
+      "accessedDate": "2026-08-03",
+      "supportedClaimsOrRecords": [
+        "Supports the Flame Link standard-quality duration change used by AUD-004."
+      ],
+      "verificationStatus": "supported",
+      "limitations": "Does not prove the complete current gem record, granted-damage scaling, or 3.29.1 rounding behavior.",
+      "notes": "AUD-004 retains only the small duration metadata required for the reviewed product contract."
+    },
+    {
+      "id": "ggg-merc-link-faq-3-26",
+      "title": "Path of Exile Mercenaries FAQ: Link Skill target statement",
+      "sourceClass": "official-ggg",
+      "url": "https://www.pathofexile.com/forum/view-thread/3788501",
+      "publisherOrRepository": "Grinding Gear Games",
+      "gameOrSoftwareVersion": "Path of Exile 1 3.26-era Mercenaries FAQ",
+      "accessedDate": "2026-08-03",
+      "supportedClaimsOrRecords": [
+        "Supports that Link Skills can target an allied Mercenary."
+      ],
+      "verificationStatus": "supported",
+      "limitations": "Does not establish every 3.29.1 active-link, range, line-of-sight, death, attachment, or permanent-Mercenary behavior condition.",
+      "notes": "AUD-004 treats target class as supported with explicit behavior limits."
+    },
+    {
+      "id": "poedb-flame-link-2026-08-03",
+      "title": "PoEDB Flame Link reference page",
+      "sourceClass": "reference-site",
+      "url": "https://poedb.tw/us/Flame_Link",
+      "publisherOrRepository": "PoEDB",
+      "gameOrSoftwareVersion": "Current unpinned community reference page accessed during the 3.29.1 evidence freeze",
+      "accessedDate": "2026-08-03",
+      "supportedClaimsOrRecords": [
+        "Cross-checks the pinned PoB Flame Link level, target-stat, duration, and quality presentation."
+      ],
+      "verificationStatus": "supported",
+      "limitations": "An unpinned community display is not authority for target-version mechanics, availability, rounding, or licence rights in underlying game data.",
+      "notes": "Used for corroboration only; no page table or prose is retained."
+    },
+    {
+      "id": "repoe-flame-link-2022-8023a1d",
+      "title": "RePoE historical Flame Link extraction snapshot",
+      "sourceClass": "extraction-project",
+      "url": "https://github.com/brather1ng/RePoE/commit/8023a1d696dbddc836c05ac3fcedd072da1767d2",
+      "publisherOrRepository": "brather1ng/RePoE",
+      "gameOrSoftwareVersion": "Historical extraction commit dated 2022-09-06",
+      "accessedDate": "2026-08-03",
+      "supportedClaimsOrRecords": [
+        "Provides a historical cross-check for the reviewed Flame Link record only."
+      ],
+      "verificationStatus": "provisional",
+      "limitations": "The snapshot is years before 3.29.1 and cannot support a current game claim. Its code/data licence context does not establish a right to redistribute raw game data.",
+      "commitSha": "8023a1d696dbddc836c05ac3fcedd072da1767d2",
+      "notes": "No RePoE payload is retained or used as target-version authority."
+    },
+    {
+      "id": "ggg-poe-developer-data-docs",
+      "title": "Path of Exile Developer Docs: Data Exports",
+      "sourceClass": "official-ggg",
+      "url": "https://www.pathofexile.com/developer/docs/data",
+      "publisherOrRepository": "Grinding Gear Games",
+      "gameOrSoftwareVersion": "Path of Exile developer documentation accessed for the 3.29.1 evidence freeze",
+      "accessedDate": "2026-08-03",
+      "supportedClaimsOrRecords": [
+        "Identifies grindinggear/skilltree-export as GGG's official PoE1 Passive Skill Tree export.",
+        "States that the official PoE1 data-export exception covers the Passive and Atlas trees."
+      ],
+      "verificationStatus": "confirmed",
+      "limitations": "The documentation identifies the export but does not itself establish individual node mechanics, current item data, or redistribution rights for the raw export.",
+      "notes": "Used to establish official provenance for the separately pinned tree data record."
+    },
+    {
+      "id": "ggg-poe1-skilltree-export-3-29-1",
+      "title": "Official Path of Exile 1 Passive Skill Tree export, 3.29.1",
+      "sourceClass": "official-ggg",
+      "url": "https://github.com/grindinggear/skilltree-export/commit/8bd138b32ea2631455cac5935bfab089f826094f",
+      "publisherOrRepository": "grindinggear/skilltree-export",
+      "gameOrSoftwareVersion": "Path of Exile 1 3.29.1, commit message 3.29.1",
+      "accessedDate": "2026-08-03",
+      "supportedClaimsOrRecords": [
+        "Pins the Default tree used by AUD-003, including Golden Glory node 31517, Light Radius nodes, mastery effect 51424, direct Link Skill Buff Effect nodes, and relevant condition text.",
+        "Provides a bounded, reproducible Default-tree scan with 3,390 nodes at the recorded data.json hash."
+      ],
+      "verificationStatus": "confirmed",
+      "limitations": "The Default-tree export does not establish equipment availability, item ranges, source completeness outside the scanned tree, arithmetic, stacking, runtime condition state, rounding, or a redistribution grant for raw game data.",
+      "contentHash": "sha256:7e9f755e33152129ebf36c2ebdad639c527e4ad70d274b1fefb860f30ca01122 (data.json, UTF-8, 6666935 characters)",
+      "commitSha": "8bd138b32ea2631455cac5935bfab089f826094f",
+      "notes": "Relevant raw file: https://raw.githubusercontent.com/grindinggear/skilltree-export/8bd138b32ea2631455cac5935bfab089f826094f/data.json. The repository had no declared GitHub license or LICENSE file at inspection; raw data is not vendored."
+    },
+    {
+      "id": "ggg-poe1-trade-stats-2026-08-03",
+      "title": "Official Path of Exile Trade stats vocabulary capture",
+      "sourceClass": "official-ggg",
+      "url": "https://www.pathofexile.com/api/trade/data/stats",
+      "publisherOrRepository": "Grinding Gear Games",
+      "gameOrSoftwareVersion": "No patch-version field; captured during the Path of Exile 1 3.29.1 evidence freeze",
+      "accessedDate": "2026-08-03",
+      "supportedClaimsOrRecords": [
+        "Identifies the official Trade filter vocabulary for the Light Radius and direct Link Skill Buff Effect term records retained by AUD-003.",
+        "Supports identifier/text recognition only, not item availability or source completeness."
+      ],
+      "verificationStatus": "supported",
+      "limitations": "The endpoint has no embedded game-version field and does not establish a modifier's item slot, natural range, local/global scope, acquisition, current availability, or arithmetic behavior.",
+      "contentHash": "sha256:73b655dc76ebdb71192867d8ef12fcd95c06c229551f080c65d3760deccba56e (UTF-8, 2064498 characters, captured 2026-08-03T21:49:42Z)",
+      "notes": "The raw response is not retained. Minimal filter IDs and review states are retained in AUD-003 curated artifacts."
+    },
+    {
+      "id": "ggg-poe1-crucible-standard-migration",
+      "title": "Will the Crucible League go Core?",
+      "sourceClass": "official-ggg",
+      "url": "https://www.pathofexile.com/forum/view-thread/3408442",
+      "publisherOrRepository": "Grinding Gear Games",
+      "gameOrSoftwareVersion": "Path of Exile 1 announcement, 2023",
+      "accessedDate": "2026-08-03",
+      "supportedClaimsOrRecords": [
+        "States that Crucible would not go core and existing items with Crucible trees would move to Standard."
+      ],
+      "verificationStatus": "confirmed",
+      "limitations": "Does not establish a current item listing, acquisition route, range, active effect, or availability of any particular Crucible term in 3.29.1.",
+      "notes": "AUD-003 treats related Trade vocabulary as legacy-or-unknown rather than a current recommendation."
+    },
+    {
+      "id": "pob-dev-3-29-50d2236",
+      "title": "Path of Building Community dev snapshot with 3.29 data",
+      "sourceClass": "pob-source",
+      "url": "https://github.com/PathOfBuildingCommunity/PathOfBuilding/commit/50d22365b919c7435b5d12d892875e9f61d11133",
+      "publisherOrRepository": "PathOfBuildingCommunity/PathOfBuilding",
+      "gameOrSoftwareVersion": "dev commit 50d22365b919c7435b5d12d892875e9f61d11133, inspected 2026-08-03; includes 3_29 tree/data paths",
+      "accessedDate": "2026-08-03",
+      "supportedClaimsOrRecords": [
+        "Provides supporting parser/catalog cross-checks for signed Light Radius text and the documented Helmet corruption range disagreement.",
+        "Provides supporting source/data cross-checks for AUD-004 Flame Link and AUD-005 Enmity records without becoming permanent-Mercenary authority."
+      ],
+      "verificationStatus": "supported",
+      "limitations": "A moving development snapshot is not a target-version official game-data release or authority for permanent-Mercenary mechanics. Its LICENSE.md states MIT terms for software, while ring.lua is marked Item data (c) Grinding Gear Games; neither establishes redistribution rights for embedded game data.",
+      "commitSha": "50d22365b919c7435b5d12d892875e9f61d11133",
+      "notes": "Inspected without executing code. Relevant AUD-003 paths include src/TreeData/3_29/tree.lua, src/Data/ModExplicit.lua, src/Data/ModCorrupted.lua, src/Data/Crucible.lua, src/Data/ModItemExclusive.lua, and src/Data/ModCache.lua. Relevant AUD-005 paths are src/Data/Uniques/ring.lua, src/Data/StatDescriptions/stat_descriptions.lua record 3043, src/Modules/ModParser.lua, src/Modules/CalcDefence.lua, and src/Modules/CalcOffence.lua. The Enmity record is present in pinned 3.29 export commit 3a73a54bd3a9c92c4d3264c5d697a51b6c9063bc. Licence locator: https://raw.githubusercontent.com/PathOfBuildingCommunity/PathOfBuilding/50d22365b919c7435b5d12d892875e9f61d11133/LICENSE.md."
+    },
+    {
+      "id": "ggg-poe-terms-2026-08-03",
+      "title": "Path of Exile Terms of Use and Privacy Policy",
+      "sourceClass": "official-ggg",
+      "url": "https://www.pathofexile.com/legal/terms-of-use-and-privacy-policy",
+      "publisherOrRepository": "Grinding Gear Games",
+      "gameOrSoftwareVersion": "Terms page accessed 2026-08-03",
+      "accessedDate": "2026-08-03",
+      "supportedClaimsOrRecords": [
+        "Records the audit's retention risk: official game material should not be treated as affirmatively licensed for broad copying, storage, distribution, or derivative data publication without review."
+      ],
+      "verificationStatus": "supported",
+      "limitations": "This registry record is a provenance/risk note, not legal advice or a legal determination. It does not supersede a later reviewed licence or permission decision.",
+      "notes": "AUD artifacts retain minimal factual records, stable locators, hashes, and attribution rather than raw game-data payloads, broad copied prose, or image assets."
+    },
+    {
+      "id": "ggg-poe-3-29-1-patch-notes",
+      "title": "Path of Exile 3.29.1 Patch Notes",
+      "sourceClass": "official-ggg",
+      "url": "https://www.pathofexile.com/forum/view-thread/3991672",
+      "publisherOrRepository": "Grinding Gear Games",
+      "gameOrSoftwareVersion": "Path of Exile 1 3.29.1",
+      "accessedDate": "2026-08-03",
+      "supportedClaimsOrRecords": [
+        "Pins the evidence pack to Path of Exile 1 3.29.1 on 2026-08-03.",
+        "Provides the target-patch context for the first-release audits; it does not independently restate every 3.29.0 feature or item record."
+      ],
+      "verificationStatus": "confirmed",
+      "limitations": "Patch notes are not a complete game-data snapshot and do not establish unchanged behavior for features or items not discussed in the notes.",
+      "notes": "GGG page licensing was not stated in the inspected patch notes. Audit artifacts retain source locators and minimal factual records rather than copied prose or page assets."
+    },
+    {
+      "id": "ggg-poe-3-29-0-content-update",
+      "title": "Content Update 3.29.0 ? Path of Exile: Curse of the Allflame",
+      "sourceClass": "official-ggg",
+      "url": "https://www.pathofexile.com/forum/view-thread/3985332",
+      "publisherOrRepository": "Grinding Gear Games",
+      "gameOrSoftwareVersion": "Path of Exile 1 3.29.0, Curse of the Allflame",
+      "accessedDate": "2026-08-03",
+      "supportedClaimsOrRecords": [
+        "States that the Luminary can have up to three permanent Mercenaries with one active Mercenary.",
+        "States that a Luminary can change permanent-Mercenary equipment and inspect an information sheet listing passive stats.",
+        "Records the official 3.29.0 wording used to bound AUD-002 and the Light Radius corruption disagreement in AUD-003."
+      ],
+      "verificationStatus": "supported",
+      "limitations": "This is an announcement for 3.29.0, not a versioned 3.29.1 UI/data schema. It does not identify sheet labels, units, inclusion rules, precision, conditions, or every current modifier range.",
+      "notes": "GGG page licensing was not stated in the inspected announcement. No page assets or bulk text are retained."
+    },
+    {
+      "id": "community-luminary-defence-observation-2026-07-28",
+      "title": "Anonymous community report about a Luminary Mercenary Defence page",
+      "sourceClass": "community-research",
+      "url": "https://www.reddit.com/r/pathofexile/comments/1v8n5w7/questions_thread_july_28_2026/",
+      "publisherOrRepository": "r/pathofexile community thread",
+      "gameOrSoftwareVersion": "Reported as Path of Exile 1 3.29 context; exact client version and mode not preserved",
+      "accessedDate": "2026-08-03",
+      "supportedClaimsOrRecords": [
+        "Identifies a candidate question about whether a Mercenary Defence page updates for a player aura, motivating AUD-002's controlled-observation request."
+      ],
+      "verificationStatus": "provisional",
+      "limitations": "Anonymous text report only: no original image, exact Mercenary, level, equipment, field labels, aura, realm, zone, or controlled before/after state. It establishes no universal display or mechanics rule.",
+      "notes": "No Reddit content or image is retained in curated data; the audit retains only the locator and its limitation."
+    },
+    {
       "id": "pob-release-2-66-2",
       "title": "Path of Building Community 2.66.2 source snapshot",
       "sourceClass": "pob-source",

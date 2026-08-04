@@ -1,0 +1,113 @@
+{
+  "schemaVersion": "1.0",
+  "artifactId": "aud-003-light-radius-passive-sources-v1",
+  "artifactType": "source-catalog",
+  "auditId": "AUD-003",
+  "contractVersion": "1.0.0",
+  "targetGameVersion": "Path of Exile 1 3.29.1",
+  "verificationStatus": "confirmed",
+  "sourceIds": [
+    "ggg-poe1-skilltree-export-3-29-1",
+    "ggg-poe-developer-data-docs",
+    "ggg-poe-terms-2026-08-03"
+  ],
+  "scope": "All matching stats and nested mastery effects in the pinned 3.29.1 Default passive tree. It is not an equipment, item, alternate-tree, Ruthless, or historical completeness catalog.",
+  "retention": {
+    "sourceLicense": "The official skilltree-export repository had no declared repository license at the pinned commit.",
+    "dataLicense": "No affirmative redistribution license for raw game data was established by the inspected source.",
+    "provenance": "Manually reviewed records transcribed from the pinned official Default-tree export listed in AUD-003.",
+    "redistribution": "Only minimal factual identifiers, categories, and numeric values are retained; raw export redistribution is not asserted.",
+    "derivation": "Records are a manual bounded scan result, not a generated copy of the source payload.",
+    "attribution": "Grinding Gear Games and the exact repository commit, file, and hash are recorded in the source registry and AUD-003.",
+    "retainedMaterial": "Node/effect IDs, short labels, signed values, and limited classification metadata.",
+    "notVendored": "Raw data.json, sprites, image assets, full node text, and all unrelated tree records are not vendored.",
+    "uncertainty": "This does not establish selection multiplicity, arithmetic, target applicability, source completeness outside Default tree, or a game-data redistribution right."
+  },
+  "records": [
+    {
+      "id": "poe1-passive-node-27123",
+      "verificationStatus": "confirmed",
+      "claimIds": ["AUD-003-C03"],
+      "sourceIds": ["ggg-poe1-skilltree-export-3-29-1"],
+      "evidenceLocation": "data.json Default tree node 27123",
+      "limitations": "Only the Light Radius term is retained; this record does not prove item or cross-path arithmetic.",
+      "loadBearing": true,
+      "downstreamConsumers": ["Default-tree passive recognizer", "Light Radius source panel"],
+      "replacementRule": "Replace through a new pinned Default-tree scan recorded in a superseding AUD-003.",
+      "data": {"nodeId": 27123, "skillId": 27123, "name": "Mercenary Life, Light Radius", "ascendancyName": "Luminary", "sourceType": "passive-node", "statFamily": "light-radius", "valuePercent": 5, "sign": "increase", "availability": "Default-tree"}
+    },
+    {
+      "id": "poe1-passive-node-30675",
+      "verificationStatus": "confirmed",
+      "claimIds": ["AUD-003-C03"],
+      "sourceIds": ["ggg-poe1-skilltree-export-3-29-1"],
+      "evidenceLocation": "data.json Default tree node 30675",
+      "limitations": "Only the Light Radius term is retained; this record does not prove item or cross-path arithmetic.",
+      "loadBearing": true,
+      "downstreamConsumers": ["Default-tree passive recognizer", "Light Radius source panel"],
+      "replacementRule": "Replace through a new pinned Default-tree scan recorded in a superseding AUD-003.",
+      "data": {"nodeId": 30675, "skillId": 30675, "name": "Link Cast Speed, Light Radius", "ascendancyName": "Luminary", "sourceType": "passive-node", "statFamily": "light-radius", "valuePercent": 5, "sign": "increase", "availability": "Default-tree"}
+    },
+    {
+      "id": "poe1-passive-node-35877",
+      "verificationStatus": "confirmed",
+      "claimIds": ["AUD-003-C03"],
+      "sourceIds": ["ggg-poe1-skilltree-export-3-29-1"],
+      "evidenceLocation": "data.json Default tree node 35877",
+      "limitations": "Only the Light Radius term is retained; this record does not prove item or cross-path arithmetic.",
+      "loadBearing": true,
+      "downstreamConsumers": ["Default-tree passive recognizer", "Light Radius source panel"],
+      "replacementRule": "Replace through a new pinned Default-tree scan recorded in a superseding AUD-003.",
+      "data": {"nodeId": 35877, "skillId": 35877, "name": "Mercenary Damage, Light Radius", "ascendancyName": "Luminary", "sourceType": "passive-node", "statFamily": "light-radius", "valuePercent": 5, "sign": "increase", "availability": "Default-tree"}
+    },
+    {
+      "id": "poe1-passive-node-61133",
+      "verificationStatus": "confirmed",
+      "claimIds": ["AUD-003-C03"],
+      "sourceIds": ["ggg-poe1-skilltree-export-3-29-1"],
+      "evidenceLocation": "data.json Default tree node 61133",
+      "limitations": "Only the Light Radius term is retained; this record does not prove item or cross-path arithmetic.",
+      "loadBearing": true,
+      "downstreamConsumers": ["Default-tree passive recognizer", "Light Radius source panel"],
+      "replacementRule": "Replace through a new pinned Default-tree scan recorded in a superseding AUD-003.",
+      "data": {"nodeId": 61133, "skillId": 61133, "name": "Mercenary Life, Light Radius", "ascendancyName": "Luminary", "sourceType": "passive-node", "statFamily": "light-radius", "valuePercent": 5, "sign": "increase", "availability": "Default-tree"}
+    },
+    {
+      "id": "poe1-passive-node-63954",
+      "verificationStatus": "confirmed",
+      "claimIds": ["AUD-003-C03"],
+      "sourceIds": ["ggg-poe1-skilltree-export-3-29-1"],
+      "evidenceLocation": "data.json Default tree node 63954",
+      "limitations": "Only the Light Radius term is retained; this record does not prove item or cross-path arithmetic.",
+      "loadBearing": true,
+      "downstreamConsumers": ["Default-tree passive recognizer", "Light Radius source panel"],
+      "replacementRule": "Replace through a new pinned Default-tree scan recorded in a superseding AUD-003.",
+      "data": {"nodeId": 63954, "skillId": 63954, "name": "Link Cast Speed, Light Radius", "ascendancyName": "Luminary", "sourceType": "passive-node", "statFamily": "light-radius", "valuePercent": 5, "sign": "increase", "availability": "Default-tree"}
+    },
+    {
+      "id": "poe1-passive-node-54694",
+      "verificationStatus": "confirmed",
+      "claimIds": ["AUD-003-C03"],
+      "sourceIds": ["ggg-poe1-skilltree-export-3-29-1"],
+      "evidenceLocation": "data.json Default tree node 54694",
+      "limitations": "Only the Light Radius term is retained; this record does not prove item or cross-path arithmetic.",
+      "loadBearing": true,
+      "downstreamConsumers": ["Default-tree passive recognizer", "Light Radius source panel"],
+      "replacementRule": "Replace through a new pinned Default-tree scan recorded in a superseding AUD-003.",
+      "data": {"nodeId": 54694, "skillId": 54694, "name": "Light of Divinity", "sourceType": "passive-node", "statFamily": "light-radius", "valuePercent": 10, "sign": "increase", "availability": "Default-tree"}
+    },
+    {
+      "id": "poe1-mastery-effect-51424",
+      "verificationStatus": "confirmed",
+      "claimIds": ["AUD-003-C03", "AUD-003-C05"],
+      "sourceIds": ["ggg-poe1-skilltree-export-3-29-1"],
+      "evidenceLocation": "data.json Default tree Energy Shield Mastery effect 51424",
+      "limitations": "Do not count every selectable Mastery location as a separately stackable record; the basis override has no established Golden Glory arithmetic.",
+      "loadBearing": true,
+      "downstreamConsumers": ["Light Radius source classifier", "Golden Glory gate"],
+      "replacementRule": "Replace through direct mechanics evidence or a new pinned tree scan in a superseding AUD-003.",
+      "data": {"masteryEffectId": 51424, "masteryName": "Energy Shield Mastery", "selectionNodeIds": [857, 3471, 6338, 10729, 18240, 27307], "sourceType": "mastery-effect", "statFamily": "light-radius", "valuePercent": 30, "sign": "increase", "basisOverride": "energy-shield-instead-of-life", "availability": "Default-tree"}
+    }
+  ],
+  "notes": "The five Luminary 5% records and one 10% passive are individually identifiable. The Mastery effect is stored once despite six selectable locations."
+}

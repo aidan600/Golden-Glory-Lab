@@ -1,0 +1,150 @@
+{
+  "schemaVersion": "1.0",
+  "artifactId": "aud-003-light-radius-observed-stat-terms-v1",
+  "artifactType": "source-catalog",
+  "auditId": "AUD-003",
+  "contractVersion": "1.0.0",
+  "targetGameVersion": "Path of Exile 1 3.29.1",
+  "verificationStatus": "provisional",
+  "sourceIds": [
+    "ggg-poe1-trade-stats-2026-08-03",
+    "ggg-poe-3-29-0-content-update",
+    "pob-dev-3-29-50d2236",
+    "ggg-poe-terms-2026-08-03"
+  ],
+  "scope": "Official Trade filter vocabulary captured at the version freeze plus one unresolved Helmet-corruption range. These are recognition/review terms, not a current item availability catalog.",
+  "retention": {
+    "sourceLicense": "GGG's terms do not provide a reviewed affirmative licence for retaining or redistributing raw Trade data.",
+    "dataLicense": "No data licence for the full Trade response was established.",
+    "provenance": "Manually reviewed minimal term records from the hash-pinned official Trade capture and the documented 3.29.0/PoB disagreement.",
+    "redistribution": "Only small identifiers, domains, and semantic flags are retained; raw API responses are not vendored.",
+    "derivation": "Records classify existing identifiers and preserve an unresolved range rather than derive a complete catalog.",
+    "attribution": "GGG endpoints, source IDs, capture hash, and PoB support source are recorded in the registry and AUD-003.",
+    "retainedMaterial": "Trade IDs, domains, signed-value semantics, and limited review metadata only.",
+    "notVendored": "No Trade payload, raw PoB data, source tables, screenshots, or item listings are vendored.",
+    "uncertainty": "Availability, slot, range, local/global applicability, and current patch binding are not established by the Trade vocabulary."
+  },
+  "records": [
+    {
+      "id": "poe1-trade-light-radius-explicit-1263695895",
+      "verificationStatus": "supported",
+      "claimIds": ["AUD-003-C06", "AUD-003-C07"],
+      "sourceIds": ["ggg-poe1-trade-stats-2026-08-03", "pob-dev-3-29-50d2236"],
+      "evidenceLocation": "Trade stats capture Explicit stat_1263695895; PoB ModExplicit signed-text mapping",
+      "limitations": "Identifier/text does not establish a current item, slot, range, or applicability.",
+      "loadBearing": false,
+      "downstreamConsumers": ["Observed-item recognizer", "Range-difference review UI"],
+      "replacementRule": "Replace through a versioned current modifier extraction or a new capture reviewed by AUD-003.",
+      "data": {"tradeId": "explicit.stat_1263695895", "domain": "Explicit", "statFamily": "light-radius", "valueType": "signed-percent", "naturalRange": null, "availability": "unknown", "offerAsImprovement": false, "acceptedForObservedInstance": true}
+    },
+    {
+      "id": "poe1-trade-light-radius-implicit-1263695895",
+      "verificationStatus": "supported",
+      "claimIds": ["AUD-003-C06", "AUD-003-C07"],
+      "sourceIds": ["ggg-poe1-trade-stats-2026-08-03", "pob-dev-3-29-50d2236"],
+      "evidenceLocation": "Trade stats capture Implicit stat_1263695895; PoB ModExplicit signed-text mapping",
+      "limitations": "Identifier/text does not establish a current item, slot, range, or applicability.",
+      "loadBearing": false,
+      "downstreamConsumers": ["Observed-item recognizer", "Range-difference review UI"],
+      "replacementRule": "Replace through a versioned current modifier extraction or a new capture reviewed by AUD-003.",
+      "data": {"tradeId": "implicit.stat_1263695895", "domain": "Implicit", "statFamily": "light-radius", "valueType": "signed-percent", "naturalRange": null, "availability": "unknown", "offerAsImprovement": false, "acceptedForObservedInstance": true}
+    },
+    {
+      "id": "poe1-trade-light-radius-fractured-1263695895",
+      "verificationStatus": "supported",
+      "claimIds": ["AUD-003-C06", "AUD-003-C07"],
+      "sourceIds": ["ggg-poe1-trade-stats-2026-08-03", "pob-dev-3-29-50d2236"],
+      "evidenceLocation": "Trade stats capture Fractured stat_1263695895; PoB ModExplicit signed-text mapping",
+      "limitations": "Identifier/text does not establish a current item, slot, range, or applicability.",
+      "loadBearing": false,
+      "downstreamConsumers": ["Observed-item recognizer", "Range-difference review UI"],
+      "replacementRule": "Replace through a versioned current modifier extraction or a new capture reviewed by AUD-003.",
+      "data": {"tradeId": "fractured.stat_1263695895", "domain": "Fractured", "statFamily": "light-radius", "valueType": "signed-percent", "naturalRange": null, "availability": "unknown", "offerAsImprovement": false, "acceptedForObservedInstance": true}
+    },
+    {
+      "id": "poe1-trade-light-radius-enchant-1263695895",
+      "verificationStatus": "supported",
+      "claimIds": ["AUD-003-C06", "AUD-003-C07"],
+      "sourceIds": ["ggg-poe1-trade-stats-2026-08-03", "pob-dev-3-29-50d2236"],
+      "evidenceLocation": "Trade stats capture Enchant stat_1263695895; PoB ModExplicit signed-text mapping",
+      "limitations": "Identifier/text does not establish a current item, slot, range, or applicability.",
+      "loadBearing": false,
+      "downstreamConsumers": ["Observed-item recognizer", "Range-difference review UI"],
+      "replacementRule": "Replace through a versioned current modifier extraction or a new capture reviewed by AUD-003.",
+      "data": {"tradeId": "enchant.stat_1263695895", "domain": "Enchant", "statFamily": "light-radius", "valueType": "signed-percent", "naturalRange": null, "availability": "unknown", "offerAsImprovement": false, "acceptedForObservedInstance": true}
+    },
+    {
+      "id": "poe1-trade-light-radius-scourge-1263695895",
+      "verificationStatus": "supported",
+      "claimIds": ["AUD-003-C06", "AUD-003-C07"],
+      "sourceIds": ["ggg-poe1-trade-stats-2026-08-03", "pob-dev-3-29-50d2236"],
+      "evidenceLocation": "Trade stats capture Scourge stat_1263695895; PoB ModExplicit signed-text mapping",
+      "limitations": "Scourge status and availability are not established by this vocabulary record.",
+      "loadBearing": false,
+      "downstreamConsumers": ["Observed-item recognizer", "Range-difference review UI"],
+      "replacementRule": "Replace through a versioned current modifier extraction or a new capture reviewed by AUD-003.",
+      "data": {"tradeId": "scourge.stat_1263695895", "domain": "Scourge", "statFamily": "light-radius", "valueType": "signed-percent", "naturalRange": null, "availability": "legacy-or-unknown", "offerAsImprovement": false, "acceptedForObservedInstance": true}
+    },
+    {
+      "id": "poe1-trade-light-radius-during-effect-2745936267",
+      "verificationStatus": "supported",
+      "claimIds": ["AUD-003-C06"],
+      "sourceIds": ["ggg-poe1-trade-stats-2026-08-03"],
+      "evidenceLocation": "Trade stats capture Explicit stat_2745936267",
+      "limitations": "The API term does not identify the relevant effect, item, range, or activation behavior.",
+      "loadBearing": false,
+      "downstreamConsumers": ["Observed-item recognizer", "Condition review UI"],
+      "replacementRule": "Replace through a versioned current modifier extraction or a new capture reviewed by AUD-003.",
+      "data": {"tradeId": "explicit.stat_2745936267", "domain": "Explicit", "statFamily": "light-radius", "valueType": "signed-percent", "condition": "unspecified-effect", "naturalRange": null, "availability": "unknown", "offerAsImprovement": false, "acceptedForObservedInstance": true}
+    },
+    {
+      "id": "poe1-trade-light-radius-basis-explicit-3836017971",
+      "verificationStatus": "supported",
+      "claimIds": ["AUD-003-C06"],
+      "sourceIds": ["ggg-poe1-trade-stats-2026-08-03"],
+      "evidenceLocation": "Trade stats capture Explicit stat_3836017971",
+      "limitations": "This is a basis override, not a numeric Light Radius contribution or established Golden Glory input.",
+      "loadBearing": false,
+      "downstreamConsumers": ["Light Radius source classifier", "Golden Glory gate"],
+      "replacementRule": "Replace through direct mechanics evidence or a versioned current modifier extraction.",
+      "data": {"tradeId": "explicit.stat_3836017971", "domain": "Explicit", "statFamily": "light-radius-basis", "valueType": "basis-override", "basis": "energy-shield-instead-of-life", "availability": "unknown", "offerAsImprovement": false, "acceptedForObservedInstance": true}
+    },
+    {
+      "id": "poe1-trade-light-radius-basis-fractured-3836017971",
+      "verificationStatus": "supported",
+      "claimIds": ["AUD-003-C06"],
+      "sourceIds": ["ggg-poe1-trade-stats-2026-08-03"],
+      "evidenceLocation": "Trade stats capture Fractured stat_3836017971",
+      "limitations": "This is a basis override, not a numeric Light Radius contribution or established Golden Glory input.",
+      "loadBearing": false,
+      "downstreamConsumers": ["Light Radius source classifier", "Golden Glory gate"],
+      "replacementRule": "Replace through direct mechanics evidence or a versioned current modifier extraction.",
+      "data": {"tradeId": "fractured.stat_3836017971", "domain": "Fractured", "statFamily": "light-radius-basis", "valueType": "basis-override", "basis": "energy-shield-instead-of-life", "availability": "unknown", "offerAsImprovement": false, "acceptedForObservedInstance": true}
+    },
+    {
+      "id": "poe1-trade-light-radius-basis-crafted-3836017971",
+      "verificationStatus": "supported",
+      "claimIds": ["AUD-003-C06"],
+      "sourceIds": ["ggg-poe1-trade-stats-2026-08-03"],
+      "evidenceLocation": "Trade stats capture Crafted stat_3836017971",
+      "limitations": "This is a basis override, not a numeric Light Radius contribution or established Golden Glory input.",
+      "loadBearing": false,
+      "downstreamConsumers": ["Light Radius source classifier", "Golden Glory gate"],
+      "replacementRule": "Replace through direct mechanics evidence or a versioned current modifier extraction.",
+      "data": {"tradeId": "crafted.stat_3836017971", "domain": "Crafted", "statFamily": "light-radius-basis", "valueType": "basis-override", "basis": "energy-shield-instead-of-life", "availability": "unknown", "offerAsImprovement": false, "acceptedForObservedInstance": true}
+    },
+    {
+      "id": "poe1-helmet-corruption-light-radius-range",
+      "verificationStatus": "provisional",
+      "claimIds": ["AUD-003-C10"],
+      "sourceIds": ["ggg-poe-3-29-0-content-update", "pob-dev-3-29-50d2236"],
+      "evidenceLocation": "GGG 3.29.0 content-update Helmet corruption list; PoB src/Data/ModCorrupted.lua",
+      "limitations": "The official 3.29.0 and PoB values disagree, and neither establishes the target-version natural range.",
+      "loadBearing": false,
+      "downstreamConsumers": ["Range-difference review UI", "Unreviewed-source reporting"],
+      "replacementRule": "Replace only with target-version primary structured modifier evidence.",
+      "data": {"sourceType": "helmet-corruption", "statFamily": "light-radius", "official3290RangePercent": [20, 30], "pobSupportingRangePercent": [25, 30], "currentNaturalRangePercent": null, "availability": "unknown", "offerAsImprovement": false, "acceptedForObservedInstance": true}
+    }
+  ],
+  "notes": "Every Trade term is a recognition candidate only. Observed values are preserved without clamping; unknown availability is not converted into an offer."
+}
