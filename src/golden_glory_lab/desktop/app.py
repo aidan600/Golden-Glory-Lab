@@ -394,11 +394,36 @@ class GoldenGloryApp(tk.Tk):
         widget.insert("1.0", value)
         widget.configure(state="disabled")
 
+    def _refresh_notes(self) -> None:
+        notes = self.service.state["userNotes"]
+        if self.notes_text.get("1.0", "end-1c") != notes:
+            self.notes_text.delete("1.0", "end")
+            self.notes_text.insert("1.0", notes)
+        self.notes_text.edit_modified(False)
+
+    def _refresh_title(self) -> None:
+        path = self.service.current_path
+        title_path = str(path) if path is not None else "Unsaved build"
+        marker = " *" if self.service.dirty else ""
+        self.title(f"Golden Glory Lab - {title_path}{marker}")
+
+    def _restore_rejected_edit(self) -> None:
+        was_refreshing = self._refreshing
+        self._refreshing = True
+        try:
+            self._refresh_status()
+            self._refresh_mapping()
+            self._refresh_notes()
+            self._refresh_title()
+        finally:
+            self._refreshing = was_refreshing
+
     def _guard(self, action: Any) -> bool:
         try:
             action()
         except BuildStateError as error:
             messagebox.showerror(error.code, error.message, parent=self)
+            self._restore_rejected_edit()
             return False
         except OSError as error:
             messagebox.showerror("File operation failed", str(error), parent=self)
@@ -588,8 +613,11 @@ class GoldenGloryApp(tk.Tk):
             self.service.set_user_notes(value)
         except BuildStateError as error:
             messagebox.showerror(error.code, error.message, parent=self)
+            self._restore_rejected_edit()
+            return
         self.notes_text.edit_modified(False)
         self._refresh_status()
+        self._refresh_title()
 
     def _exit(self) -> None:
         if self._maybe_discard("exit"):
@@ -604,15 +632,8 @@ class GoldenGloryApp(tk.Tk):
             self._refresh_import_review()
             self._refresh_manual()
             self._refresh_evidence()
-            notes = self.service.state["userNotes"]
-            if self.notes_text.get("1.0", "end-1c") != notes:
-                self.notes_text.delete("1.0", "end")
-                self.notes_text.insert("1.0", notes)
-            self.notes_text.edit_modified(False)
-            path = self.service.current_path
-            title_path = str(path) if path is not None else "Unsaved build"
-            marker = " *" if self.service.dirty else ""
-            self.title(f"Golden Glory Lab - {title_path}{marker}")
+            self._refresh_notes()
+            self._refresh_title()
         finally:
             self._refreshing = False
 
@@ -806,11 +827,17 @@ class GoldenGloryApp(tk.Tk):
             )
 
     def _assignment_by_id(self, identifier: str) -> dict[str, Any] | None:
-        for item_set in self.service.item_sets():
-            for assignment in item_set["assignments"]:
-                if assignment["occurrenceId"] == identifier:
-                    return assignment
-        return None
+        item_set = self._selected_occurrence()
+        if item_set is None:
+            return None
+        return next(
+            (
+                assignment
+                for assignment in item_set["assignments"]
+                if assignment["occurrenceId"] == identifier
+            ),
+            None,
+        )
 
     def _show_assignment_detail(self, _event: tk.Event[Any]) -> None:
         selected = self.assignment_tree.selection()

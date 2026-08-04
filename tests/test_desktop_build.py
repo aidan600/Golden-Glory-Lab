@@ -12,8 +12,13 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from golden_glory_lab.build_state import (  # noqa: E402
     BuildStateError,
+    imported_result_digest,
     serialize,
 )
+from golden_glory_lab.build_state.codec import (  # noqa: E402
+    MAX_USER_NOTES_CHARACTERS,
+)
+from golden_glory_lab.desktop.app import GoldenGloryApp  # noqa: E402
 from golden_glory_lab.desktop.dialogs import ManualEntryDialog  # noqa: E402
 from golden_glory_lab.desktop.evidence import (  # noqa: E402
     MECHANICS_STATUS,
@@ -32,6 +37,55 @@ from golden_glory_lab.pob_import import (  # noqa: E402
 )
 
 FIXTURES = ROOT / "fixtures" / "pob" / "proof"
+
+
+class FakeValue:
+    def __init__(self, value: str = "") -> None:
+        self.value = value
+
+    def get(self) -> str:
+        return self.value
+
+    def set(self, value: str) -> None:
+        self.value = value
+
+
+class FakeCombo(FakeValue):
+    def __init__(self, value: str = "") -> None:
+        super().__init__(value)
+        self.configuration: dict = {}
+
+    def configure(self, **values: object) -> None:
+        self.configuration.update(values)
+
+
+class FakeText:
+    def __init__(self, value: str = "") -> None:
+        self.value = value
+        self.modified = False
+
+    def get(self, _start: str, _end: str) -> str:
+        return self.value
+
+    def delete(self, _start: str, _end: str) -> None:
+        self.value = ""
+
+    def insert(self, _index: str, value: str) -> None:
+        self.value += value
+
+    def edit_modified(self, value: bool | None = None) -> bool:
+        if value is None:
+            return self.modified
+        self.modified = value
+        return self.modified
+
+
+class FakeTree:
+    def __init__(self, selected: str) -> None:
+        self.selected = selected
+
+    def selection(self) -> tuple[str, ...]:
+        return (self.selected,)
 
 
 def fixture_text(name: str) -> str:
@@ -239,6 +293,154 @@ class ApplicationServiceTests(unittest.TestCase):
             first["resolution"]["candidateOccurrences"], ["item-0001"]
         )
 
+
+class RejectedEditPresentationTests(unittest.TestCase):
+    def _saved_service(self, directory: Path) -> ApplicationService:
+        service = ApplicationService()
+        self.assertEqual(
+            service.attempt_raw_xml(FIXTURES / "comprehensive.xml"), "imported"
+        )
+        service.set_player_mapping("item-set-0001")
+        service.set_mercenary_source("mapped-item-set", "item-set-0002")
+        service.save(directory / "presentation.json")
+        return service
+
+    def _headless_app(self, service: ApplicationService) -> GoldenGloryApp:
+        app = GoldenGloryApp.__new__(GoldenGloryApp)
+        app.service = service
+        app._refreshing = False
+        state = service.state
+        app.player_combo = FakeCombo(state["playerItemSetOccurrenceId"] or "")
+        app.mercenary_combo = FakeCombo(
+            state["mercenaryItemSetOccurrenceId"] or ""
+        )
+        app.mercenary_mode_var = FakeValue(state["mercenarySourceMode"])
+        app.notes_text = FakeText(state["userNotes"])
+        app.status_var = FakeValue()
+        app.failed_var = FakeValue()
+        app.title = Mock()
+        app._restore_rejected_edit()
+        return app
+
+    def test_same_occurrence_rejection_restores_both_mapping_directions(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            service = self._saved_service(Path(temporary))
+            app = self._headless_app(service)
+            canonical = service.state
+            with patch(
+                "golden_glory_lab.desktop.app.messagebox.showerror"
+            ) as showerror:
+                app.player_combo.set("item-set-0002")
+                app._set_player_mapping(None)
+                self.assertEqual(
+                    app.player_combo.get(), canonical["playerItemSetOccurrenceId"]
+                )
+                self.assertEqual(
+                    app.mercenary_combo.get(),
+                    canonical["mercenaryItemSetOccurrenceId"],
+                )
+                self.assertEqual(
+                    app.mercenary_mode_var.get(), canonical["mercenarySourceMode"]
+                )
+
+                app.mercenary_combo.set("item-set-0001")
+                app._set_mercenary_mapping(None)
+                self.assertEqual(
+                    app.player_combo.get(), canonical["playerItemSetOccurrenceId"]
+                )
+                self.assertEqual(
+                    app.mercenary_combo.get(),
+                    canonical["mercenaryItemSetOccurrenceId"],
+                )
+                self.assertEqual(
+                    app.mercenary_mode_var.get(), canonical["mercenarySourceMode"]
+                )
+
+            self.assertEqual(showerror.call_count, 2)
+            self.assertEqual(service.state, canonical)
+            self.assertFalse(service.dirty)
+            self.assertEqual(service.file_state, "saved")
+            self.assertTrue(service.readiness()["intakeReady"])
+            self.assertIn("File: saved", app.status_var.get())
+            self.assertIn("Intake ready: yes", app.status_var.get())
+            self.assertFalse(app.title.call_args.args[0].endswith(" *"))
+
+    def test_notes_exact_limit_and_rejected_character_restore_visible_state(self) -> None:
+        maximum = "n" * MAX_USER_NOTES_CHARACTERS
+        with tempfile.TemporaryDirectory() as temporary:
+            service = self._saved_service(Path(temporary))
+            app = self._headless_app(service)
+
+            app.notes_text.value = maximum
+            app.notes_text.modified = True
+            with patch(
+                "golden_glory_lab.desktop.app.messagebox.showerror"
+            ) as showerror:
+                app._notes_modified(None)
+            showerror.assert_not_called()
+            self.assertEqual(service.state["userNotes"], maximum)
+            self.assertEqual(app.notes_text.value, maximum)
+            self.assertFalse(app.notes_text.modified)
+            self.assertTrue(service.dirty)
+            self.assertIn("File: modified", app.status_var.get())
+            self.assertTrue(app.title.call_args.args[0].endswith(" *"))
+
+            service.save()
+            app._restore_rejected_edit()
+            app.notes_text.value = maximum + "x"
+            app.notes_text.modified = True
+            with patch(
+                "golden_glory_lab.desktop.app.messagebox.showerror"
+            ) as showerror:
+                app._notes_modified(None)
+            self.assertEqual(showerror.call_args.args[0], "USER_NOTES_LIMIT")
+            self.assertEqual(service.state["userNotes"], maximum)
+            self.assertEqual(app.notes_text.value, maximum)
+            self.assertFalse(app.notes_text.modified)
+            self.assertFalse(service.dirty)
+            self.assertEqual(service.file_state, "saved")
+            self.assertIn("File: saved", app.status_var.get())
+            self.assertFalse(app.title.call_args.args[0].endswith(" *"))
+
+            with patch(
+                "golden_glory_lab.desktop.app.messagebox.askyesno"
+            ) as askyesno:
+                self.assertTrue(app._maybe_discard("continue"))
+                askyesno.assert_not_called()
+
+            service.set_user_notes(maximum[:-1])
+            with patch(
+                "golden_glory_lab.desktop.app.messagebox.askyesno",
+                return_value=False,
+            ) as askyesno:
+                self.assertFalse(app._maybe_discard("continue"))
+                askyesno.assert_called_once()
+
+    def test_assignment_lookup_is_scoped_to_selected_item_set(self) -> None:
+        service = ApplicationService()
+        self.assertEqual(
+            service.attempt_raw_xml(FIXTURES / "comprehensive.xml"), "imported"
+        )
+        document = service.state
+        item_sets = document["importedResult"]["document"]["itemSets"]
+        shared_id = item_sets[0]["assignments"][0]["occurrenceId"]
+        item_sets[1]["assignments"][0]["occurrenceId"] = shared_id
+        document["importedResultSha256"] = imported_result_digest(
+            document["importedResult"]
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "scoped-assignment.json"
+            path.write_bytes(serialize(document))
+            scoped_service = ApplicationService()
+            scoped_service.open(path)
+            app = GoldenGloryApp.__new__(GoldenGloryApp)
+            app.service = scoped_service
+            app.set_tree = FakeTree(item_sets[1]["occurrenceId"])
+            observed = app._assignment_by_id(shared_id)
+        self.assertIsNotNone(observed)
+        self.assertEqual(
+            observed["sourcePath"], item_sets[1]["assignments"][0]["sourcePath"]
+        )
 
 class EvidenceStatusTests(unittest.TestCase):
     def test_blocked_mechanics_are_referenced_nonnumeric_and_not_persisted(self) -> None:

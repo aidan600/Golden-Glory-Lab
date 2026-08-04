@@ -16,7 +16,7 @@ from collections.abc import Callable, Iterable, Mapping
 from pathlib import Path
 from typing import Any, NoReturn
 
-from golden_glory_lab.pob_import import deterministic_json_bytes
+from golden_glory_lab.pob_import import DEFAULT_IMPORT_LIMITS, deterministic_json_bytes
 
 DOCUMENT_TYPE = "golden-glory-lab-build-state"
 BUILD_STATE_SCHEMA_VERSION = "1.0.0"
@@ -34,6 +34,45 @@ MANUAL_ENTRY_LIMITS = {
     "maxNoteCharacters": 10_000,
 }
 MAX_USER_NOTES_CHARACTERS = 100_000
+
+# Saved files retain the complete neutral result. This support envelope is
+# derived from current producer limits rather than an arbitrary round number.
+# Eight conservative XML copies cover the envelope input, decoded XML, source
+# tree, item character projection, ordered child material, classified unknown
+# material, retained report material, and metadata/attribute projection. The
+# bound then adds the separately retained share-code envelope, structural
+# indentation across every permitted element/depth pair, every maximum
+# manual/user string at the twelve-byte maximum for one non-BMP Python
+# character, and 1 MiB for fixed contract/report metadata. Externally authored
+# files above this envelope are unsupported even if they resemble the schema.
+_JSON_ESCAPE_BYTES_PER_SOURCE_BYTE = 6
+_JSON_ESCAPE_BYTES_PER_PYTHON_CHARACTER = 12
+_NEUTRAL_XML_RETENTION_COPIES = 8
+_STRUCTURAL_BYTES_PER_ELEMENT_DEPTH = 32
+_FIXED_CONTRACT_AND_REPORT_BYTES = 1_048_576
+_MAX_MANUAL_AND_NOTE_CHARACTERS = (
+    MANUAL_ENTRY_LIMITS["maxEntries"]
+    * (
+        80  # entryId runtime maximum
+        + MANUAL_ENTRY_LIMITS["maxSlotLabelCharacters"]
+        + MANUAL_ENTRY_LIMITS["maxRawTextCharacters"]
+        + MANUAL_ENTRY_LIMITS["maxNoteCharacters"]
+    )
+    + MAX_USER_NOTES_CHARACTERS
+)
+MAX_SAVED_STATE_FILE_BYTES = (
+    DEFAULT_IMPORT_LIMITS.maxRawXmlBytes
+    * _NEUTRAL_XML_RETENTION_COPIES
+    * _JSON_ESCAPE_BYTES_PER_SOURCE_BYTE
+    + DEFAULT_IMPORT_LIMITS.maxShareCodeCharacters
+    * _JSON_ESCAPE_BYTES_PER_SOURCE_BYTE
+    + DEFAULT_IMPORT_LIMITS.maxXmlElements
+    * DEFAULT_IMPORT_LIMITS.maxXmlDepth
+    * _STRUCTURAL_BYTES_PER_ELEMENT_DEPTH
+    + _MAX_MANUAL_AND_NOTE_CHARACTERS * _JSON_ESCAPE_BYTES_PER_PYTHON_CHARACTER
+    + _FIXED_CONTRACT_AND_REPORT_BYTES
+)
+
 
 _DOCUMENT_KEYS = {
     "documentType",
@@ -117,6 +156,11 @@ def imported_result_digest(imported_result: Mapping[str, Any]) -> str:
         _fail("IMPORTED_RESULT_TYPE", "Imported result must be an object")
     try:
         encoded = deterministic_json_bytes(imported_result)
+    except RecursionError:
+        _fail(
+            "IMPORTED_RESULT_NESTING",
+            "Imported result exceeds deterministic serialization nesting limits",
+        )
     except (TypeError, ValueError) as error:
         _fail(
             "IMPORTED_RESULT_SERIALIZATION",
@@ -142,6 +186,20 @@ def _require_string(value: Any, context: str, *, nullable: bool = False) -> str 
         return None
     if not isinstance(value, str):
         _fail("SHAPE_TYPE", f"{context} must be a string")
+    return value
+
+
+def _require_nonempty_string(value: Any, context: str) -> str:
+    result = _require_string(value, context)
+    assert result is not None
+    if not result:
+        _fail("NEUTRAL_RESULT_SHAPE", f"{context} must be nonempty")
+    return result
+
+
+def _require_nonnegative_integer(value: Any, context: str) -> int:
+    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+        _fail("NEUTRAL_RESULT_SHAPE", f"{context} must be a nonnegative integer")
     return value
 
 
@@ -175,7 +233,7 @@ def _validate_raw_state(value: Any, context: str) -> None:
     raw = _require_object(value, context)
     if set(raw) != {"state", "value"}:
         _fail("NEUTRAL_RESULT_SHAPE", f"{context} must contain state and value")
-    state = raw["state"]
+    state = _require_string(raw["state"], f"{context}.state")
     if state not in {"missing", "empty", "present"}:
         _fail("NEUTRAL_RESULT_SHAPE", f"{context}.state is not recognized")
     observed = raw["value"]
@@ -198,14 +256,17 @@ def _validate_boolean_value(value: Any, context: str) -> None:
         _fail("NEUTRAL_RESULT_SHAPE", f"{context}.parsed must be boolean or null")
 
 
-def _validate_resolution(value: Any, context: str) -> None:
+def _validate_resolution(
+    value: Any, context: str, *, equipment: bool = False
+) -> None:
     resolution = _require_object(value, context)
     if set(resolution) != {"state", "candidateOccurrences"}:
         _fail(
             "NEUTRAL_RESULT_SHAPE",
             f"{context} must contain state and candidateOccurrences",
         )
-    if resolution["state"] not in {
+    state = _require_string(resolution["state"], f"{context}.state")
+    if state not in {
         "missing",
         "malformed",
         "empty-reference",
@@ -214,12 +275,26 @@ def _validate_resolution(value: Any, context: str) -> None:
         "resolved",
     }:
         _fail("NEUTRAL_RESULT_SHAPE", f"{context}.state is not recognized")
-    _require_string_list(
+    candidates = _require_list(
         resolution["candidateOccurrences"], f"{context}.candidateOccurrences"
     )
+    if not all(isinstance(candidate, str) for candidate in candidates):
+        _fail(
+            "NEUTRAL_RESULT_SHAPE",
+            f"{context}.candidateOccurrences must contain only strings",
+        )
+    if equipment and state == "missing":
+        _fail("NEUTRAL_RESULT_SHAPE", f"{context}.state cannot be missing")
+    expected_zero = {"missing", "malformed", "empty-reference", "unresolved"}
+    if state in expected_zero and candidates:
+        _fail("NEUTRAL_RESULT_SHAPE", f"{context} requires zero candidates")
+    if state == "resolved" and len(candidates) != 1:
+        _fail("NEUTRAL_RESULT_SHAPE", f"{context} requires exactly one candidate")
+    if state == "ambiguous" and len(candidates) < 2:
+        _fail("NEUTRAL_RESULT_SHAPE", f"{context} requires at least two candidates")
 
 
-def _validate_assignment(value: Any, context: str) -> None:
+def _validate_assignment(value: Any, context: str) -> str:
     assignment = _require_object(value, context)
     consumed = {
         "occurrenceId",
@@ -239,20 +314,25 @@ def _validate_assignment(value: Any, context: str) -> None:
             "NEUTRAL_RESULT_SHAPE",
             f"{context} is missing consumed fields: {', '.join(missing)}",
         )
-    _require_string(assignment["occurrenceId"], f"{context}.occurrenceId")
-    source_index = assignment["sourceOccurrenceIndex"]
-    if isinstance(source_index, bool) or not isinstance(source_index, int):
-        _fail("NEUTRAL_RESULT_SHAPE", f"{context}.sourceOccurrenceIndex is invalid")
+    occurrence_id = _require_nonempty_string(
+        assignment["occurrenceId"], f"{context}.occurrenceId"
+    )
+    _require_nonnegative_integer(
+        assignment["sourceOccurrenceIndex"], f"{context}.sourceOccurrenceIndex"
+    )
     _require_string(assignment["sourcePath"], f"{context}.sourcePath")
     _validate_raw_state(assignment["originalSlotName"], f"{context}.originalSlotName")
     _validate_raw_state(assignment["rawItemReference"], f"{context}.rawItemReference")
     _require_integer_or_none(assignment["parsedItemId"], f"{context}.parsedItemId")
     _validate_boolean_value(assignment["active"], f"{context}.active")
-    _validate_resolution(assignment["resolution"], f"{context}.resolution")
+    _validate_resolution(
+        assignment["resolution"], f"{context}.resolution", equipment=True
+    )
     parent = assignment["derivedAbyssalParent"]
     if parent is not None and not isinstance(parent, dict):
         _fail("NEUTRAL_RESULT_SHAPE", f"{context}.derivedAbyssalParent is invalid")
     _require_string_list(assignment["warnings"], f"{context}.warnings")
+    return occurrence_id
 
 
 def _validate_imported_result(value: Any) -> set[str]:
@@ -293,8 +373,9 @@ def _validate_imported_result(value: Any) -> set[str]:
         ):
             if field not in item:
                 _fail("NEUTRAL_RESULT_SHAPE", f"{context} is missing {field}")
-        occurrence = _require_string(item["occurrenceId"], f"{context}.occurrenceId")
-        assert occurrence is not None
+        occurrence = _require_nonempty_string(
+            item["occurrenceId"], f"{context}.occurrenceId"
+        )
         if occurrence in item_occurrences:
             _fail("NEUTRAL_RESULT_SHAPE", f"Duplicate item occurrence {occurrence}")
         item_occurrences.add(occurrence)
@@ -321,53 +402,86 @@ def _validate_imported_result(value: Any) -> set[str]:
         ):
             if field not in item_set:
                 _fail("NEUTRAL_RESULT_SHAPE", f"{context} is missing {field}")
-        occurrence = _require_string(
+        occurrence = _require_nonempty_string(
             item_set["occurrenceId"], f"{context}.occurrenceId"
         )
-        assert occurrence is not None
         if occurrence in occurrences:
             _fail("NEUTRAL_RESULT_SHAPE", f"Duplicate item-set occurrence {occurrence}")
         occurrences.add(occurrence)
-        source_index = item_set["sourceOccurrenceIndex"]
-        if isinstance(source_index, bool) or not isinstance(source_index, int):
-            _fail("NEUTRAL_RESULT_SHAPE", f"{context}.sourceOccurrenceIndex is invalid")
+        _require_nonnegative_integer(
+            item_set["sourceOccurrenceIndex"], f"{context}.sourceOccurrenceIndex"
+        )
         _require_string(item_set["sourcePath"], f"{context}.sourcePath")
         _validate_raw_state(item_set["rawId"], f"{context}.rawId")
         _validate_raw_state(item_set["title"], f"{context}.title")
         _validate_boolean_value(
             item_set["useSecondWeaponSet"], f"{context}.useSecondWeaponSet"
         )
+        assignment_occurrences: set[str] = set()
         for assignment_index, assignment in enumerate(
             _require_list(item_set["assignments"], f"{context}.assignments")
         ):
-            _validate_assignment(
+            assignment_occurrence = _validate_assignment(
                 assignment, f"{context}.assignments[{assignment_index}]"
             )
+            if assignment_occurrence in assignment_occurrences:
+                _fail(
+                    "NEUTRAL_RESULT_SHAPE",
+                    f"Duplicate assignment occurrence {assignment_occurrence} in {context}",
+                )
+            assignment_occurrences.add(assignment_occurrence)
         _require_string_list(item_set["warnings"], f"{context}.warnings")
 
+    categories = {
+        "recognized",
+        "ignored as irrelevant",
+        "unrecognized",
+        "ambiguous",
+        "manually required",
+        "malformed",
+    }
+    stages = {
+        "envelope",
+        "decompression",
+        "xml",
+        "semantic",
+        "resolution",
+        "mapping",
+        "reporting",
+    }
+    report_ids: set[str] = set()
     for index, value_entry in enumerate(_require_list(result["report"], "report")):
         context = f"importedResult.report[{index}]"
         entry = _require_object(value_entry, context)
         for field in (
+            "reportId",
             "code",
             "category",
             "stage",
             "location",
+            "occurrenceId",
             "sourcePointer",
+            "retainedMaterial",
             "explanation",
             "candidateTargets",
         ):
             if field not in entry:
                 _fail("NEUTRAL_RESULT_SHAPE", f"{context} is missing {field}")
-        for field in (
-            "code",
-            "category",
-            "stage",
-            "location",
-            "sourcePointer",
-            "explanation",
-        ):
-            _require_string(entry[field], f"{context}.{field}")
+        report_id = _require_nonempty_string(entry["reportId"], f"{context}.reportId")
+        if report_id in report_ids:
+            _fail("NEUTRAL_RESULT_SHAPE", f"Duplicate report ID {report_id}")
+        report_ids.add(report_id)
+        _require_string(entry["code"], f"{context}.code")
+        category = _require_string(entry["category"], f"{context}.category")
+        if category not in categories:
+            _fail("NEUTRAL_RESULT_SHAPE", f"{context}.category is not recognized")
+        stage = _require_string(entry["stage"], f"{context}.stage")
+        if stage not in stages:
+            _fail("NEUTRAL_RESULT_SHAPE", f"{context}.stage is not recognized")
+        _require_string(entry["location"], f"{context}.location")
+        _require_string(entry["occurrenceId"], f"{context}.occurrenceId", nullable=True)
+        _require_string(entry["sourcePointer"], f"{context}.sourcePointer")
+        _require_string(entry["explanation"], f"{context}.explanation")
         _require_string_list(entry["candidateTargets"], f"{context}.candidateTargets")
     return occurrences
 
@@ -457,7 +571,7 @@ def validate_document(document_value: Any) -> None:
             "Player and Mercenary must use different item-set occurrences",
         )
 
-    mode = document["mercenarySourceMode"]
+    mode = _require_string(document["mercenarySourceMode"], "mercenarySourceMode")
     if mode not in MERCENARY_SOURCE_MODES:
         _fail("MERCENARY_SOURCE_MODE", "Mercenary source mode is not recognized")
     if mode == "mapped-item-set" and mercenary is None:
@@ -512,6 +626,8 @@ def serialize(document: Mapping[str, Any]) -> bytes:
             separators=(",", ": "),
             sort_keys=False,
         )
+    except RecursionError:
+        _fail("SERIALIZATION_NESTING", "Build state exceeds JSON nesting limits")
     except (TypeError, ValueError) as error:
         _fail("SERIALIZATION", f"Build state is not JSON serializable: {error}")
     return (text + "\n").encode("utf-8")
@@ -552,16 +668,42 @@ def deserialize(data: bytes) -> dict[str, Any]:
             "OPEN_JSON",
             f"Build-state file is not strict JSON at line {error.lineno}, column {error.colno}",
         )
+    except RecursionError:
+        _fail("OPEN_JSON_NESTING", "Build-state JSON exceeds decoder nesting limits")
+    except ValueError as error:
+        _fail(
+            "OPEN_JSON_NUMERIC_LIMIT",
+            f"Build-state JSON exceeds the interpreter numeric resource limit: {error}",
+        )
     validate_document(document)
-    return copy.deepcopy(document)
+    try:
+        return copy.deepcopy(document)
+    except RecursionError:
+        _fail("OPEN_JSON_NESTING", "Build-state JSON exceeds copy nesting limits")
 
 
 def load_file(path_value: str | os.PathLike[str]) -> tuple[dict[str, Any], bytes]:
     path = Path(path_value)
     try:
-        data = path.read_bytes()
+        observed_size = path.stat().st_size
     except OSError as error:
-        _fail("OPEN_FILE", f"Could not read build-state file: {error}")
+        _fail("OPEN_FILE_ACCESS", f"Could not inspect build-state file: {error}")
+    if observed_size > MAX_SAVED_STATE_FILE_BYTES:
+        _fail(
+            "OPEN_FILE_TOO_LARGE",
+            f"Build-state file is {observed_size} bytes; the supported limit is "
+            f"{MAX_SAVED_STATE_FILE_BYTES} bytes",
+        )
+    try:
+        with path.open("rb") as handle:
+            data = handle.read(MAX_SAVED_STATE_FILE_BYTES + 1)
+    except OSError as error:
+        _fail("OPEN_FILE_ACCESS", f"Could not read build-state file: {error}")
+    if len(data) > MAX_SAVED_STATE_FILE_BYTES:
+        _fail(
+            "OPEN_FILE_GREW",
+            "Build-state file grew past the supported limit while it was being read",
+        )
     return deserialize(data), data
 
 

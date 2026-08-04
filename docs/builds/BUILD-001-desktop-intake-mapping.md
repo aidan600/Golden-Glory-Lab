@@ -106,6 +106,27 @@ to 80 characters, exact raw text to 100,000, each manual note to 10,000, and
 user notes to 100,000 characters. Observed raw values are preserved rather
 than clamped to a natural range.
 
+Saved-state open has a separately derived support envelope of 597,251,456
+bytes. It consists of eight conservative retained or projected copies of the
+8,000,000-byte XML envelope at six JSON bytes per source byte (384,000,000):
+envelope input, decoded XML, source tree, item character projection, ordered
+child material, classified unknown material, retained report material, and
+metadata or attribute projection. The 4,000,000-character share-code envelope
+is then included at the same conservative factor
+(24,000,000), 50,000 elements by depth 64 at 32 structural bytes per pair
+(102,400,000), all maximum manual and user strings at 12 JSON bytes per Python
+character (85,802,880), and 1 MiB for fixed contract and report material
+(1,048,576). Files above that producer-derived envelope are unsupported even
+when externally authored content otherwise resembles the schema.
+
+Open stats before reading, rejects an already oversized file without opening
+it, reads at most the limit plus one byte, and rejects growth during the read.
+Stable failures distinguish file access, initial size, growth, invalid UTF-8,
+JSON syntax, excessive JSON nesting, and Python's integer-string conversion
+limit. Only expected boundary failures are contained; resource exhaustion such
+as `MemoryError` is deliberately not converted into an ordinary validation
+result.
+
 ## Import attempts
 
 A failed desktop boundary check or importer result is transient. It preserves
@@ -155,6 +176,23 @@ schema provides the complete test-time composition with
 `pob-neutral-import-v1.schema.json`; it is not a production dependency or a
 duplicate runtime schema engine.
 
+The consumed neutral boundary now also requires nonempty globally unique item
+and item-set occurrence IDs, nonnegative integer source indices (excluding
+booleans), and nonempty assignment IDs unique within their item set. Resolution
+candidate cardinality must match the resolution state; an equipment assignment
+cannot claim `missing`. All ten report fields are required, report IDs are
+nonempty and unique, category and stage use the adopted enum values, and
+candidate targets are strings. `retainedMaterial` remains intentionally opaque
+and survives round trips. Runtime-only Treeview identifier uniqueness is tested
+alongside shared runtime/schema parity; assignment IDs may repeat across
+different item sets because selection is occurrence-scoped.
+
+Serialization, digesting, and defensive copying translate deterministic
+recursion failures into stable build-state errors. Open remains transactional:
+size, growth, numeric, nesting, report, ID, source-index, resolution, and
+serialization failures leave the current document, baseline, path, dirty state,
+readiness, mappings, manual equipment, and notes unchanged.
+
 ## Evidence states
 
 Seven outputs are explicit nonnumeric unavailable states:
@@ -176,11 +214,13 @@ is persisted in the canonical document.
 
 Final validation built the installed wheel in a disposable environment and
 copied a PyInstaller one-directory Windows GUI application outside the
-repository. The result contained 989 files and 27,859,745 bytes. The GUI
-executable SHA-256 was
-`33f07a758a4b4493302934983b8e1c71f3febb1c44c067b9accd8a2c189311c0`;
+repository. The repaired result contained 989 files and 27,862,491 bytes. The
+GUI executable SHA-256 was
+`f9e46f7b7c532541da8ce98def7ef9f72d32704ee7369a69fddd25d5517ddd45`;
 the bundle tree SHA-256 was
-`d0e4127ab7c537a68a83b658d5276932563230f91062f7a9a4d7621ef0f5ec60`.
+`3a3b66dcda3c4b07daaf74bc4152a26307623394eb6a41984c7d8d4d97877553`.
+The installed wheel SHA-256 was
+`503139ee1c2f55196d774bf3f6d3223aa13d550119d056ac9c91d956bad321db`.
 
 The executable uses Windows GUI subsystem 2 and therefore has no console
 window. The bundle contains `_tkinter.pyd`, Tcl and Tk initializer trees, and
@@ -221,6 +261,16 @@ The copied corrected package was walked through on Windows 11 Home
     raw text, and note survived;
 14. all seven mechanics remained unavailable and nonnumeric.
 
+The focused repair was then exercised in the repaired package against a saved
+mapped state. Attempting to map Player to the selected Mercenary occurrence
+showed `SAME_OCCURRENCE_MAPPING` and restored Player to `item-set-0001` while
+Mercenary remained `item-set-0002`. Attempting the reverse mapping showed the
+same stable error and restored the same visible selections. Notes accepted and
+saved exactly 100,000 characters. A 100,001st character showed
+`USER_NOTES_LIMIT`; after dismissal the visible editor again contained exactly
+the prior 100,000 characters, the title had no dirty marker, and status remained
+saved and intake-ready. The application then closed normally.
+
 At 1220 by 820 the main split view, tab labels, tree headers, and scrollbars
 were readable with no application clipping. Focus behavior was normal in the
 application. The automation host had unrelated always-on-top and multi-monitor
@@ -233,16 +283,21 @@ Broader DPI and multi-monitor ordinary-user testing also remains.
 
 ## Verification
 
-Focused BUILD-001 tests cover empty/imported/mapped/manual round trips, strict
+The final 81-test suite covers empty/imported/mapped/manual round trips, strict
 and unknown-version failures, digest/order preservation, runtime/schema parity,
 fixture validity, atomic failure safety, transient attempt preservation,
-replacement confirmation, pre-read boundaries, both adopted importer calls,
-occurrence mapping, manual mode, evidence states, and multiline dialog input.
+replacement confirmation, exact and over-limit saved-state boundaries, file
+growth, numeric and nesting containment, deterministic recursion failures,
+complete consumed-report and occurrence validation, transactional malformed
+open, both adopted importer calls, occurrence-scoped mapping, rejected-edit UI
+restoration, manual mode, evidence states, and multiline dialog input.
 
-The required final command set and results are recorded in the draft PR and
-completion report. Generated wheels, executables, virtual environments,
-PyInstaller work/spec trees, screenshots, and walkthrough state remain outside
-the repository and are not committed.
+The fixture generator dry run, Draft 2020-12 schema self-check and fixture gate,
+focused negative corpus, Ruff, compileall, diff whitespace check, evidence gate,
+repository gate, installed-wheel package build, and three copied-package
+self-tests are rerun for the repaired boundary. Generated wheels, executables,
+virtual environments, PyInstaller work/spec trees, screenshots, and walkthrough
+state remain outside the repository and are not committed.
 
 ## Limitations and next BUILD slice
 

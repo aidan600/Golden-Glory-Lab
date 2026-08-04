@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import copy
+import io
 import json
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
 
 from jsonschema import Draft202012Validator, ValidationError
 from referencing import Registry, Resource
@@ -15,6 +18,7 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from golden_glory_lab.build_state import (  # noqa: E402
     BuildStateError,
+    MAX_SAVED_STATE_FILE_BYTES,
     atomic_save,
     deserialize,
     empty_document,
@@ -40,6 +44,25 @@ def imported_document(name: str = "comprehensive.xml") -> dict:
     document["importedResult"] = result
     document["importedResultSha256"] = imported_result_digest(result)
     return document
+
+
+def external_document_bytes(document: dict) -> bytes:
+    return (
+        json.dumps(
+            document,
+            ensure_ascii=True,
+            allow_nan=False,
+            indent=2,
+            separators=(",", ": "),
+        )
+        + "\n"
+    ).encode("utf-8")
+
+
+def refresh_imported_digest(document: dict) -> None:
+    document["importedResultSha256"] = imported_result_digest(
+        document["importedResult"]
+    )
 
 
 def schema_validator() -> Draft202012Validator:
@@ -126,6 +149,18 @@ class BuildStateCodecTests(unittest.TestCase):
             {"preserved": ["without", "runtime", "interpretation"]},
         )
 
+    def test_report_retained_material_remains_opaque_and_preserved(self) -> None:
+        document = imported_document()
+        retained = {
+            "nested": [1, {"future": ["opaque", None, True]}],
+            "producerOwned": {"shape": "uninterpreted"},
+        }
+        document["importedResult"]["report"][0]["retainedMaterial"] = retained
+        refresh_imported_digest(document)
+        reopened = deserialize(serialize(document))
+        self.assertEqual(
+            reopened["importedResult"]["report"][0]["retainedMaterial"], retained
+        )
     def test_atomic_failure_preserves_prior_file_and_cleans_temporary(self) -> None:
         prior = empty_document()
         changed = copy.deepcopy(prior)
@@ -224,6 +259,340 @@ class BuildStateCodecTests(unittest.TestCase):
             self.assertNotIn(field, encoded)
 
 
+class SavedStateBoundaryTests(unittest.TestCase):
+    def test_limit_derivation_is_stable(self) -> None:
+        self.assertEqual(MAX_SAVED_STATE_FILE_BYTES, 597_251_456)
+
+    def test_exact_boundary_is_accepted(self) -> None:
+        expected = serialize(empty_document())
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "exact.json"
+            path.write_bytes(expected)
+            with patch(
+                "golden_glory_lab.build_state.codec.MAX_SAVED_STATE_FILE_BYTES",
+                len(expected),
+            ):
+                loaded, raw = load_file(path)
+        self.assertEqual(loaded, empty_document())
+        self.assertEqual(raw, expected)
+
+    def test_one_byte_over_is_rejected_without_opening(self) -> None:
+        expected = serialize(empty_document())
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "one-over.json"
+            path.write_bytes(expected + b" ")
+            with (
+                patch(
+                    "golden_glory_lab.build_state.codec.MAX_SAVED_STATE_FILE_BYTES",
+                    len(expected),
+                ),
+                patch.object(
+                    Path,
+                    "open",
+                    side_effect=AssertionError("over-limit state must not be opened"),
+                ),
+                self.assertRaises(BuildStateError) as raised,
+            ):
+                load_file(path)
+        self.assertEqual(raised.exception.code, "OPEN_FILE_TOO_LARGE")
+
+    def test_growth_after_stat_is_rejected(self) -> None:
+        expected = serialize(empty_document())
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "grew.json"
+            path.write_bytes(expected)
+            with (
+                patch(
+                    "golden_glory_lab.build_state.codec.MAX_SAVED_STATE_FILE_BYTES",
+                    len(expected),
+                ),
+                patch.object(
+                    Path,
+                    "stat",
+                    return_value=SimpleNamespace(st_size=len(expected)),
+                ),
+                patch.object(Path, "open", return_value=io.BytesIO(expected + b" ")),
+                self.assertRaises(BuildStateError) as raised,
+            ):
+                load_file(path)
+        self.assertEqual(raised.exception.code, "OPEN_FILE_GREW")
+
+    def test_file_access_failure_has_stable_code(self) -> None:
+        with (
+            self.subTest(stage="stat"),
+            patch.object(Path, "stat", side_effect=OSError("denied")),
+            self.assertRaises(BuildStateError) as raised,
+        ):
+            load_file("unreadable.json")
+        self.assertEqual(raised.exception.code, "OPEN_FILE_ACCESS")
+
+        with (
+            self.subTest(stage="read"),
+            patch.object(Path, "stat", return_value=SimpleNamespace(st_size=0)),
+            patch.object(Path, "open", side_effect=OSError("denied")),
+            self.assertRaises(BuildStateError) as raised,
+        ):
+            load_file("unreadable.json")
+        self.assertEqual(raised.exception.code, "OPEN_FILE_ACCESS")
+
+
+class TransactionalMalformedOpenTests(unittest.TestCase):
+    def _saved_service(self, directory: Path) -> ApplicationService:
+        service = ApplicationService()
+        self.assertEqual(
+            service.attempt_raw_xml(POB_FIXTURES / "comprehensive.xml"), "imported"
+        )
+        service.set_player_mapping("item-set-0001")
+        service.set_mercenary_source("manual-equipment")
+        service.add_manual_entry(
+            "Ring 1", "Opaque +999% observed value", "Preserve this entry."
+        )
+        service.set_user_notes("Preserve saved notes")
+        service.set_mercenary_source("mapped-item-set", "item-set-0002")
+        service.save(directory / "prior-valid.json")
+        self.assertFalse(service.dirty)
+        return service
+
+    def _snapshot(self, service: ApplicationService) -> dict:
+        state = service.state
+        return {
+            "state": state,
+            "bytes": service.canonical_bytes,
+            "path": service.current_path,
+            "dirty": service.dirty,
+            "fileState": service.file_state,
+            "readiness": service.readiness(),
+            "player": state["playerItemSetOccurrenceId"],
+            "mercenary": state["mercenaryItemSetOccurrenceId"],
+            "manual": state["manualMercenaryEquipment"],
+            "notes": state["userNotes"],
+        }
+
+    def _assert_preserved(
+        self, service: ApplicationService, before: dict
+    ) -> None:
+        self.assertEqual(self._snapshot(service), before)
+        service.set_user_notes(before["notes"] + " changed")
+        self.assertTrue(service.dirty)
+        self.assertEqual(service.file_state, "modified")
+        service.set_user_notes(before["notes"])
+        self.assertFalse(service.dirty)
+        self.assertEqual(service.file_state, "saved")
+
+    def _write_mutation(self, path: Path, document: dict) -> None:
+        refresh_imported_digest(document)
+        path.write_bytes(external_document_bytes(document))
+
+    def test_consumed_neutral_mutations_are_transactional(self) -> None:
+        base = imported_document()
+        mutations: list[tuple[str, dict]] = []
+
+        missing_report_id = copy.deepcopy(base)
+        del missing_report_id["importedResult"]["report"][0]["reportId"]
+        mutations.append(("missing-report-id", missing_report_id))
+
+        nonstring_report_id = copy.deepcopy(base)
+        nonstring_report_id["importedResult"]["report"][0]["reportId"] = 1
+        mutations.append(("nonstring-report-id", nonstring_report_id))
+
+        empty_report_id = copy.deepcopy(base)
+        empty_report_id["importedResult"]["report"][0]["reportId"] = ""
+        mutations.append(("empty-report-id", empty_report_id))
+
+        duplicate_report_id = copy.deepcopy(base)
+        duplicate_report_id["importedResult"]["report"][1]["reportId"] = (
+            duplicate_report_id["importedResult"]["report"][0]["reportId"]
+        )
+        mutations.append(("duplicate-report-id", duplicate_report_id))
+
+        invalid_category = copy.deepcopy(base)
+        invalid_category["importedResult"]["report"][0]["category"] = "other"
+        mutations.append(("invalid-report-category", invalid_category))
+
+        invalid_stage = copy.deepcopy(base)
+        invalid_stage["importedResult"]["report"][0]["stage"] = "other"
+        mutations.append(("invalid-report-stage", invalid_stage))
+
+        negative_index = copy.deepcopy(base)
+        negative_index["importedResult"]["document"]["itemSets"][0][
+            "sourceOccurrenceIndex"
+        ] = -1
+        mutations.append(("negative-source-index", negative_index))
+
+        negative_assignment_index = copy.deepcopy(base)
+        negative_assignment_index["importedResult"]["document"]["itemSets"][0][
+            "assignments"
+        ][0]["sourceOccurrenceIndex"] = -1
+        mutations.append(("negative-assignment-source-index", negative_assignment_index))
+
+        boolean_set_index = copy.deepcopy(base)
+        boolean_set_index["importedResult"]["document"]["itemSets"][0][
+            "sourceOccurrenceIndex"
+        ] = True
+        mutations.append(("boolean-item-set-source-index", boolean_set_index))
+
+        boolean_assignment_index = copy.deepcopy(base)
+        boolean_assignment_index["importedResult"]["document"]["itemSets"][0][
+            "assignments"
+        ][0]["sourceOccurrenceIndex"] = True
+        mutations.append(("boolean-assignment-source-index", boolean_assignment_index))
+
+        duplicate_assignment = copy.deepcopy(base)
+        assignments = duplicate_assignment["importedResult"]["document"]["itemSets"][
+            0
+        ]["assignments"]
+        assignments[1]["occurrenceId"] = assignments[0]["occurrenceId"]
+        mutations.append(("duplicate-assignment-id", duplicate_assignment))
+
+        resolved_zero = copy.deepcopy(base)
+        resolution = resolved_zero["importedResult"]["document"]["itemSets"][0][
+            "assignments"
+        ][0]["resolution"]
+        resolution["state"] = "resolved"
+        resolution["candidateOccurrences"] = []
+        mutations.append(("resolved-zero", resolved_zero))
+
+        resolved_many = copy.deepcopy(base)
+        resolution = resolved_many["importedResult"]["document"]["itemSets"][0][
+            "assignments"
+        ][0]["resolution"]
+        resolution["state"] = "resolved"
+        resolution["candidateOccurrences"] = ["item-0001", "item-0002"]
+        mutations.append(("resolved-many", resolved_many))
+
+        ambiguous_one = copy.deepcopy(base)
+        resolution = ambiguous_one["importedResult"]["document"]["itemSets"][0][
+            "assignments"
+        ][0]["resolution"]
+        resolution["state"] = "ambiguous"
+        resolution["candidateOccurrences"] = ["item-0001"]
+        mutations.append(("ambiguous-one", ambiguous_one))
+
+        unresolved_candidate = copy.deepcopy(base)
+        resolution = unresolved_candidate["importedResult"]["document"]["itemSets"][
+            0
+        ]["assignments"][0]["resolution"]
+        resolution["state"] = "unresolved"
+        resolution["candidateOccurrences"] = ["item-0001"]
+        mutations.append(("unresolved-candidate", unresolved_candidate))
+
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            service = self._saved_service(directory)
+            before = self._snapshot(service)
+            for name, mutation in mutations:
+                with self.subTest(name=name):
+                    path = directory / f"{name}.json"
+                    self._write_mutation(path, mutation)
+                    with self.assertRaises(BuildStateError) as raised:
+                        service.open(path)
+                    expected_code = (
+                        "SHAPE_TYPE"
+                        if name == "nonstring-report-id"
+                        else "NEUTRAL_RESULT_SHAPE"
+                    )
+                    self.assertEqual(raised.exception.code, expected_code)
+                    self._assert_preserved(service, before)
+
+    def test_size_and_growth_failures_are_transactional(self) -> None:
+        expected = serialize(empty_document())
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            service = self._saved_service(directory)
+            before = self._snapshot(service)
+            candidate = directory / "candidate.json"
+            candidate.write_bytes(expected + b" ")
+
+            with (
+                patch.object(Path, "stat", side_effect=OSError("denied")),
+                self.assertRaises(BuildStateError) as raised,
+            ):
+                service.open(candidate)
+            self.assertEqual(raised.exception.code, "OPEN_FILE_ACCESS")
+            self._assert_preserved(service, before)
+
+            with (
+                patch(
+                    "golden_glory_lab.build_state.codec.MAX_SAVED_STATE_FILE_BYTES",
+                    len(expected),
+                ),
+                patch.object(
+                    Path,
+                    "open",
+                    side_effect=AssertionError("over-limit state must not be opened"),
+                ),
+                self.assertRaises(BuildStateError) as raised,
+            ):
+                service.open(candidate)
+            self.assertEqual(raised.exception.code, "OPEN_FILE_TOO_LARGE")
+            self._assert_preserved(service, before)
+
+            with (
+                patch(
+                    "golden_glory_lab.build_state.codec.MAX_SAVED_STATE_FILE_BYTES",
+                    len(expected),
+                ),
+                patch.object(
+                    Path,
+                    "stat",
+                    return_value=SimpleNamespace(st_size=len(expected)),
+                ),
+                patch.object(Path, "open", return_value=io.BytesIO(expected + b" ")),
+                self.assertRaises(BuildStateError) as raised,
+            ):
+                service.open(candidate)
+            self.assertEqual(raised.exception.code, "OPEN_FILE_GREW")
+            self._assert_preserved(service, before)
+
+    def test_json_resource_failures_are_transactional(self) -> None:
+        cases = (
+            (
+                "deep.json",
+                ("[" * 10_000 + "]" * 10_000).encode("ascii"),
+                "OPEN_JSON_NESTING",
+            ),
+            (
+                "large-integer.json",
+                ('{"value": ' + "1" * 5_000 + "}").encode("ascii"),
+                "OPEN_JSON_NUMERIC_LIMIT",
+            ),
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            service = self._saved_service(directory)
+            before = self._snapshot(service)
+            for name, data, code in cases:
+                with self.subTest(name=name):
+                    path = directory / name
+                    path.write_bytes(data)
+                    with self.assertRaises(BuildStateError) as raised:
+                        service.open(path)
+                    self.assertEqual(raised.exception.code, code)
+                    self._assert_preserved(service, before)
+
+    def test_deterministic_serialization_recursion_is_transactional(self) -> None:
+        candidate = imported_document()
+        candidate["importedResult"]["futureOpaqueImporterMaterial"] = {
+            "nested": ["retained"]
+        }
+        refresh_imported_digest(candidate)
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            path = directory / "nested-imported-material.json"
+            path.write_bytes(external_document_bytes(candidate))
+            service = self._saved_service(directory)
+            before = self._snapshot(service)
+            with (
+                patch(
+                    "golden_glory_lab.build_state.codec.deterministic_json_bytes",
+                    side_effect=RecursionError("simulated nested importer material"),
+                ),
+                self.assertRaises(BuildStateError) as raised,
+            ):
+                service.open(path)
+            self.assertEqual(raised.exception.code, "IMPORTED_RESULT_NESTING")
+            self._assert_preserved(service, before)
+
 class BuildStateSchemaParityTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -284,6 +653,100 @@ class BuildStateSchemaParityTests(unittest.TestCase):
             validate_document(same)
         self.assertEqual(raised.exception.code, "SAME_OCCURRENCE_MAPPING")
 
+    def test_schema_shared_rules_and_runtime_only_consumer_invariants(self) -> None:
+        shared: list[tuple[str, dict]] = []
+
+        missing_report_id = imported_document()
+        del missing_report_id["importedResult"]["report"][0]["reportId"]
+        shared.append(("missing-report-id", missing_report_id))
+
+        invalid_category = imported_document()
+        invalid_category["importedResult"]["report"][0]["category"] = "other"
+        shared.append(("invalid-category", invalid_category))
+
+        invalid_stage = imported_document()
+        invalid_stage["importedResult"]["report"][0]["stage"] = "other"
+        shared.append(("invalid-stage", invalid_stage))
+
+        negative_index = imported_document()
+        negative_index["importedResult"]["document"]["itemSets"][0][
+            "sourceOccurrenceIndex"
+        ] = -1
+        shared.append(("negative-index", negative_index))
+
+        negative_assignment_index = imported_document()
+        negative_assignment_index["importedResult"]["document"]["itemSets"][0][
+            "assignments"
+        ][0]["sourceOccurrenceIndex"] = -1
+        shared.append(("negative-assignment-index", negative_assignment_index))
+
+        for state, candidates, name in (
+            ("resolved", [], "resolved-zero"),
+            ("resolved", ["item-0001", "item-0002"], "resolved-many"),
+            ("ambiguous", ["item-0001"], "ambiguous-one"),
+            ("unresolved", ["item-0001"], "unresolved-with-candidate"),
+            ("missing", [], "equipment-resolution-missing"),
+        ):
+            mutation = imported_document()
+            resolution = mutation["importedResult"]["document"]["itemSets"][0][
+                "assignments"
+            ][0]["resolution"]
+            resolution["state"] = state
+            resolution["candidateOccurrences"] = candidates
+            shared.append((name, mutation))
+
+        for name, mutation in shared:
+            with self.subTest(shared=name):
+                refresh_imported_digest(mutation)
+                with self.assertRaises(BuildStateError):
+                    validate_document(mutation)
+                with self.assertRaises(ValidationError):
+                    self.validator.validate(mutation)
+
+        runtime_only: list[tuple[str, dict]] = []
+        empty_report_id = imported_document()
+        empty_report_id["importedResult"]["report"][0]["reportId"] = ""
+        runtime_only.append(("empty-report-id", empty_report_id))
+
+        empty_item_id = imported_document()
+        empty_item_id["importedResult"]["document"]["items"][0]["occurrenceId"] = ""
+        runtime_only.append(("empty-item-id", empty_item_id))
+
+        empty_item_set_id = imported_document()
+        empty_item_set_id["importedResult"]["document"]["itemSets"][0][
+            "occurrenceId"
+        ] = ""
+        runtime_only.append(("empty-item-set-id", empty_item_set_id))
+
+        duplicate_report_id = imported_document()
+        duplicate_report_id["importedResult"]["report"][1]["reportId"] = (
+            duplicate_report_id["importedResult"]["report"][0]["reportId"]
+        )
+        runtime_only.append(("duplicate-report-id", duplicate_report_id))
+
+        duplicate_assignment = imported_document()
+        assignments = duplicate_assignment["importedResult"]["document"]["itemSets"][
+            0
+        ]["assignments"]
+        assignments[1]["occurrenceId"] = assignments[0]["occurrenceId"]
+        runtime_only.append(("duplicate-assignment-id", duplicate_assignment))
+
+        for name, mutation in runtime_only:
+            with self.subTest(runtime_only=name):
+                refresh_imported_digest(mutation)
+                self.validator.validate(mutation)
+                with self.assertRaises(BuildStateError) as raised:
+                    validate_document(mutation)
+                self.assertEqual(raised.exception.code, "NEUTRAL_RESULT_SHAPE")
+
+        scoped_duplicate = imported_document()
+        item_sets = scoped_duplicate["importedResult"]["document"]["itemSets"]
+        item_sets[1]["assignments"][0]["occurrenceId"] = item_sets[0][
+            "assignments"
+        ][0]["occurrenceId"]
+        refresh_imported_digest(scoped_duplicate)
+        self.validator.validate(scoped_duplicate)
+        validate_document(scoped_duplicate)
     def test_file_loader_returns_validated_content_and_bytes(self) -> None:
         document = imported_document("equivalent.xml")
         with tempfile.TemporaryDirectory() as temporary:
