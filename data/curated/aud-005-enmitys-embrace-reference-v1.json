@@ -98,6 +98,13 @@
           {"claimId": "AUD-002-C05", "contractVersion": "1.0.0", "gateMode": "requires-positive-capability", "minimumStatus": "supported", "appliesWhen": "a comparable derived value is requested", "unmetBehavior": "withhold-derived-result-require-manual-shared-context"}
         ],
         "manualOutputGate": {"requiredEnmityEquippedState": "equipped", "requiresIntegralInputs": true, "requiresMeasurementContext": true, "requiresEquipmentInclusionStateRecorded": true, "unknownIsNotZero": true},
+        "manualOutputCapabilityDependencies": [
+          {"claimId": "AUD-005-C03", "contractVersion": "1.0.0", "gateMode": "requires-positive-capability", "minimumStatus": "supported", "appliesWhen": "a manual isolated Enmity output is requested", "unmetBehavior": "withhold-manual-output-preserve-entered-review-state"},
+          {"claimId": "AUD-005-C04", "contractVersion": "1.0.0", "gateMode": "requires-positive-capability", "minimumStatus": "supported", "appliesWhen": "a manual isolated Enmity output is requested", "unmetBehavior": "withhold-manual-output-preserve-entered-review-state"}
+        ],
+        "requiredPolicyClaims": [
+          {"claimId": "AUD-002-C06", "contractVersion": "1.0.0", "policyMode": "requires-adopted-policy", "appliesWhen": "a manual isolated Enmity output is requested", "unmetBehavior": "do-not-offer-manual-output-preserve-entered-review-state"}
+        ],
         "derivedPath": "unavailable",
         "aggregation": "unavailable",
         "prohibitedOutputs": ["total-fire-penetration", "enemy-effective-resistance", "damage", "DPS", "combined-build-score"]

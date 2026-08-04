@@ -16,9 +16,7 @@ The evidence pack is structurally complete, but it does not yet authorize the af
 
 The pack is protected by `node scripts/validate/check_first_release_evidence_pack.mjs`:
 it invokes a pinned isolated Draft 2020-12 validator for all ten artifacts and then
-checks the claim-inventory polarity, source manifests, source/claim containment,
-capability-only dependency objects, Enmity locators, synthetic formula cases, and
-withheld Flame Link fixture states. These regression guards make the existing evidence
+checks claim-inventory polarity, source manifests, source/claim containment, separate policy prerequisites, ordinal capability thresholds/ranks, Enmity locators, synthetic formula cases, withheld Flame Link fixture states, and real negative mutations. These regression guards make the existing evidence
 contract reviewable; they do not upgrade any mechanics conclusion or satisfy a Phase 1
 exit gate.
 
@@ -31,7 +29,7 @@ claim and contract-version dependencies recorded by each audit.
 
 | Audit | Record status | Narrowly supported | Load-bearing gate that remains |
 | --- | --- | --- | --- |
-| [AUD-002](AUD-002.md) | blocked | Permanent-Mercenary/info-sheet scope and a manual-final-value safety contract. | `C03-C05` block derived sheet or sheet-plus-equipment values. `C06` permits only manual final values with explicit context and inclusion state. |
+| [AUD-002](AUD-002.md) | blocked | Permanent-Mercenary/info-sheet scope and a manual-final-value safety contract. | `C03-C05` block derived sheet or sheet-plus-equipment values. `C06` is the separate adopted manual-input safety policy; it permits only manual final values with explicit context and inclusion state. |
 | [AUD-003](AUD-003.md) | supported | Pinned Default-tree recognition and literal Golden Glory/direct-Link source facts. | `C08` leaves Powerful Bond unknown only when selected; `C12` withholds complete source coverage, arithmetic, stacking, activation, rounding, and a scaled result. |
 | [AUD-004](AUD-004.md) | supported | Flame Link reference/ordinary-level facts, target eligibility, quality display, and reporting-state boundary. | `C09-C10` withhold a definitive scaled result; `C08` separately gates exceptional levels, and the 3.29.0 supporting source remains version-mismatched to the 3.29.1 target. |
 | [AUD-005](AUD-005.md) | supported | Explicit-Enmity-equipped, same-context, integral manual `U`/`M` isolated arithmetic and Enmity-only target reporting. | `C05-C07` and AUD-002 `C03-C05` block penalty derivation, sheet-derived values, aggregation, enemy resistance, damage, and DPS. |

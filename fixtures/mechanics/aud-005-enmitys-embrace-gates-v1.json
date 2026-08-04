@@ -133,7 +133,7 @@
       "loadBearing": true,
       "downstreamConsumers": ["Manual-output gate", "review UI"],
       "replacementRule": "Replace through a reviewed AUD-002/AUD-005 input-contract supersession.",
-      "data": {"inputCases": [{"enmityEquippedState": "equipped", "expectedState": "manual-input-eligible-pending-other-inputs"}, {"enmityEquippedState": "not-equipped", "expectedState": "not-applicable"}, {"enmityEquippedState": "unknown", "expectedState": "unavailable"}], "expectedNumericZero": false}
+      "data": {"inputCases": [{"enmityEquippedState": "equipped", "expectedState": "manual-input-eligible-pending-other-inputs"}, {"enmityEquippedState": "not-equipped", "expectedState": "not-applicable"}, {"enmityEquippedState": "unknown", "expectedState": "unavailable"}], "expectedNumericZero": false, "manualOutputCapabilityDependencies": [{"claimId": "AUD-005-C03", "contractVersion": "1.0.0", "gateMode": "requires-positive-capability", "minimumStatus": "supported", "appliesWhen": "an equipped manual attestation is evaluated", "unmetBehavior": "withhold-manual-output-preserve-entered-review-state"}, {"claimId": "AUD-005-C04", "contractVersion": "1.0.0", "gateMode": "requires-positive-capability", "minimumStatus": "supported", "appliesWhen": "an equipped manual attestation is evaluated", "unmetBehavior": "withhold-manual-output-preserve-entered-review-state"}], "requiredPolicyClaims": [{"claimId": "AUD-002-C06", "contractVersion": "1.0.0", "policyMode": "requires-adopted-policy", "appliesWhen": "a manual isolated Enmity output is requested", "unmetBehavior": "do-not-offer-manual-output-preserve-entered-review-state"}]}
     },
     {
       "id": "enmity-fractional-manual-gate",
