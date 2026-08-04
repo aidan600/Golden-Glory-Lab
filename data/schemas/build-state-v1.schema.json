@@ -1,0 +1,187 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://goldenglorylab.local/schemas/build-state-v1.schema.json",
+  "title": "Golden Glory Lab build state v1",
+  "description": "Canonical saved BUILD-001 content. Session and derived state are intentionally excluded.",
+  "type": "object",
+  "required": [
+    "documentType",
+    "schemaVersion",
+    "applicationDataContractVersion",
+    "importerContractVersion",
+    "importedResult",
+    "importedResultSha256",
+    "playerItemSetOccurrenceId",
+    "mercenarySourceMode",
+    "mercenaryItemSetOccurrenceId",
+    "manualMercenaryEquipment",
+    "userNotes"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "documentType": {
+      "const": "golden-glory-lab-build-state"
+    },
+    "schemaVersion": {
+      "const": "1.0.0"
+    },
+    "applicationDataContractVersion": {
+      "const": "1.0.0"
+    },
+    "importerContractVersion": {
+      "const": "1.0.0"
+    },
+    "importedResult": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "pob-neutral-import-v1.schema.json"
+        }
+      ]
+    },
+    "importedResultSha256": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      ]
+    },
+    "playerItemSetOccurrenceId": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1
+    },
+    "mercenarySourceMode": {
+      "enum": [
+        "not-yet-selected",
+        "mapped-item-set",
+        "manual-equipment"
+      ]
+    },
+    "mercenaryItemSetOccurrenceId": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1
+    },
+    "manualMercenaryEquipment": {
+      "type": "array",
+      "maxItems": 64,
+      "items": {
+        "$ref": "#/$defs/manualEquipment"
+      }
+    },
+    "userNotes": {
+      "type": "string",
+      "maxLength": 100000
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "importedResult": {
+            "type": "null"
+          }
+        },
+        "required": [
+          "importedResult"
+        ]
+      },
+      "then": {
+        "properties": {
+          "importedResultSha256": {
+            "type": "null"
+          },
+          "playerItemSetOccurrenceId": {
+            "type": "null"
+          },
+          "mercenaryItemSetOccurrenceId": {
+            "type": "null"
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "importedResultSha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "mercenarySourceMode": {
+            "const": "mapped-item-set"
+          }
+        },
+        "required": [
+          "mercenarySourceMode"
+        ]
+      },
+      "then": {
+        "properties": {
+          "mercenaryItemSetOccurrenceId": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "mercenaryItemSetOccurrenceId": {
+            "type": "null"
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "manualEquipment": {
+      "type": "object",
+      "required": [
+        "entryId",
+        "slotLabel",
+        "rawText",
+        "reviewState",
+        "note"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "entryId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "slotLabel": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "rawText": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100000
+        },
+        "reviewState": {
+          "const": "unparsed-manual"
+        },
+        "note": {
+          "type": "string",
+          "maxLength": 10000
+        }
+      }
+    }
+  }
+}
