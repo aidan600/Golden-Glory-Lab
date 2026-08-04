@@ -44,6 +44,16 @@ const expectedRecordIds = new Map([
 const isObject = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
 const clone = (value) => JSON.parse(JSON.stringify(value));
 const sameArray = (left, right) => Array.isArray(left) && Array.isArray(right) && left.length === right.length && left.every((value, index) => value === right[index]);
+const sameValue = (left, right) => {
+  if (left === right) return true;
+  if (Array.isArray(left) || Array.isArray(right)) return Array.isArray(left) && Array.isArray(right) && left.length === right.length && left.every((value, index) => sameValue(value, right[index]));
+  if (isObject(left) && isObject(right)) {
+    const leftKeys = Object.keys(left).sort();
+    const rightKeys = Object.keys(right).sort();
+    return leftKeys.length === rightKeys.length && leftKeys.every((key, index) => key === rightKeys[index] && sameValue(left[key], right[key]));
+  }
+  return false;
+};
 const record = (artifact, id) => artifact?.records?.find((entry) => entry.id === id);
 const fail = (errors, message) => errors.push(message);
 const claim = (inventories, claimId) => inventories.get(claimId?.split("-C")[0])?.get(claimId);
@@ -188,27 +198,45 @@ function validateDependencies(value, location, inventories, errors) {
 
 function validateAud003(artifacts, errors) {
   const passive = artifacts.get(manifest[1].path);
+  const passiveTuples = new Map([
+    ["poe1-passive-node-27123", { nodeId: 27123, skillId: 27123, name: "Mercenary Life, Light Radius", ascendancyName: "Luminary", sourceType: "passive-node", statFamily: "light-radius", valuePercent: 5, sign: "increase", availability: "Default-tree" }],
+    ["poe1-passive-node-30675", { nodeId: 30675, skillId: 30675, name: "Link Cast Speed, Light Radius", ascendancyName: "Luminary", sourceType: "passive-node", statFamily: "light-radius", valuePercent: 5, sign: "increase", availability: "Default-tree" }],
+    ["poe1-passive-node-35877", { nodeId: 35877, skillId: 35877, name: "Mercenary Damage, Light Radius", ascendancyName: "Luminary", sourceType: "passive-node", statFamily: "light-radius", valuePercent: 5, sign: "increase", availability: "Default-tree" }],
+    ["poe1-passive-node-61133", { nodeId: 61133, skillId: 61133, name: "Mercenary Life, Light Radius", ascendancyName: "Luminary", sourceType: "passive-node", statFamily: "light-radius", valuePercent: 5, sign: "increase", availability: "Default-tree" }],
+    ["poe1-passive-node-63954", { nodeId: 63954, skillId: 63954, name: "Link Cast Speed, Light Radius", ascendancyName: "Luminary", sourceType: "passive-node", statFamily: "light-radius", valuePercent: 5, sign: "increase", availability: "Default-tree" }],
+    ["poe1-passive-node-54694", { nodeId: 54694, skillId: 54694, name: "Light of Divinity", sourceType: "passive-node", statFamily: "light-radius", valuePercent: 10, sign: "increase", availability: "Default-tree" }],
+    ["poe1-mastery-effect-51424", { masteryEffectId: 51424, masteryName: "Energy Shield Mastery", selectionNodeIds: [857, 3471, 6338, 10729, 18240, 27307], sourceType: "mastery-effect", statFamily: "light-radius", valuePercent: 30, sign: "increase", basisOverride: "energy-shield-instead-of-life", availability: "Default-tree" }]
+  ]);
   for (const item of passive?.records || []) {
     const mastery = item.id === "poe1-mastery-effect-51424";
     const expectedClaims = mastery ? ["AUD-003-C03", "AUD-003-C05"] : ["AUD-003-C03"];
-    if (!sameArray(item.claimIds, expectedClaims) || !sameArray(item.sourceIds, ["ggg-poe1-skilltree-export-3-29-1"]) || item.data?.availability !== "Default-tree" || item.data?.statFamily !== "light-radius") fail(errors, "AUD-003 Light Radius passive source mapping is not canonical at " + item.id);
+    if (!sameArray(item.claimIds, expectedClaims) || !sameArray(item.sourceIds, ["ggg-poe1-skilltree-export-3-29-1"]) || !sameValue(item.data, passiveTuples.get(item.id))) fail(errors, "AUD-003 Light Radius passive tuple is not canonical at " + item.id);
   }
   const observed = artifacts.get(manifest[2].path);
   for (const item of observed?.records || []) if (item.data?.offerAsImprovement !== false || item.data?.acceptedForObservedInstance !== true) fail(errors, "AUD-003 observed Light Radius boundary is not canonical at " + item.id);
   const direct = artifacts.get(manifest[3].path);
+  const directTuples = new Map([
+    ["poe1-passive-node-3089", { nodeId: 3089, skillId: 3089, name: "Link Effect", sourceType: "passive-node", statFamily: "direct-link-buff-effect", valuePercent: 5, sign: "increase", condition: "always-on-if-allocated", availability: "Default-tree" }],
+    ["poe1-passive-node-57404", { nodeId: 57404, skillId: 57404, name: "Link Effect", sourceType: "passive-node", statFamily: "direct-link-buff-effect", valuePercent: 5, sign: "increase", condition: "always-on-if-allocated", availability: "Default-tree" }],
+    ["poe1-passive-node-60145", { nodeId: 60145, skillId: 60145, name: "Link Effect", sourceType: "passive-node", statFamily: "direct-link-buff-effect", valuePercent: 5, sign: "increase", condition: "always-on-if-allocated", availability: "Default-tree" }],
+    ["poe1-passive-node-60781", { nodeId: 60781, skillId: 60781, name: "Inspiring Bond", sourceType: "passive-node", statFamily: "direct-link-buff-effect", valuePercent: 20, sign: "increase", condition: { kind: "linked-recently", windowSeconds: 4, defaultState: "unknown" }, availability: "Default-tree" }],
+    ["poe1-passive-node-46471", { nodeId: 46471, skillId: 46471, name: "Powerful Bond", sourceType: "passive-node", statFamily: "direct-link-buff-effect", valuePercent: 20, sign: "increase", condition: { kind: "half-link-duration-expired", thresholdPercent: 50, defaultState: "unknown" }, availability: "Default-tree" }],
+    ["poe1-passive-node-15900", { nodeId: 15900, skillId: 15900, name: "Oath of Fealty", sourceType: "related-condition-node", attachmentDuration: "infinite", directLinkBuffEffectPercent: null, availability: "Default-tree" }]
+  ]);
   const directClaims = new Map([["poe1-passive-node-3089", ["AUD-003-C04"]], ["poe1-passive-node-57404", ["AUD-003-C04"]], ["poe1-passive-node-60145", ["AUD-003-C04"]], ["poe1-passive-node-60781", ["AUD-003-C04", "AUD-003-C09", "AUD-003-C12"]], ["poe1-passive-node-46471", ["AUD-003-C04", "AUD-003-C08"]], ["poe1-passive-node-15900", ["AUD-003-C08"]]]);
-  for (const item of direct?.records || []) if (!sameArray(item.claimIds, directClaims.get(item.id)) || !sameArray(item.sourceIds, ["ggg-poe1-skilltree-export-3-29-1"])) fail(errors, "AUD-003 direct Link source mapping is not canonical at " + item.id);
+  for (const item of direct?.records || []) if (!sameArray(item.claimIds, directClaims.get(item.id)) || !sameArray(item.sourceIds, ["ggg-poe1-skilltree-export-3-29-1"]) || !sameValue(item.data, directTuples.get(item.id))) fail(errors, "AUD-003 direct Link tuple is not canonical at " + item.id);
   const golden = record(artifacts.get(manifest[5].path), "poe1-passive-node-31517");
   const data = golden?.data || {};
   if (!sameArray(golden?.claimIds, ["AUD-003-C02", "AUD-003-C12"]) || !sameArray(golden?.sourceIds, ["ggg-poe1-skilltree-export-3-29-1"]) || data.nodeId !== 31517 || data.skillId !== 31517 || data.name !== "Golden Glory" || data.targetKind !== "Mercenary" || data.literalEffect !== "Increases and Reductions to Light Radius also apply to Effect of your Link Skill Buffs on your Mercenary" || !["arithmetic", "stacking", "rounding", "cap"].every((key) => data[key] === "unknown")) fail(errors, "AUD-003 Golden Glory canonical facts are not exact");
 }
-
 function validateFlame(artifacts, inventories, errors) {
   const reference = artifacts.get(manifest[6].path);
   const fixture = artifacts.get(manifest[7].path);
   const standard = record(reference, "poe1-flame-link-standard-reference")?.data;
   const gate = record(reference, "poe1-flame-link-target-and-scaling-gate")?.data;
   if (standard?.gemMetadataId !== "Metadata/Items/Gems/SkillGemFlameLink" || standard?.grantedEffectId !== "FlameLink" || standard?.sourceDataVersion !== "Path of Exile 1 3.29.0" || standard?.versionState !== "supporting-source-version-mismatch" || standard?.ordinaryLevelRange?.minimum !== 1 || standard?.ordinaryLevelRange?.maximum !== 20 || standard?.components?.levelDerivedFlatFire?.minimumStatId !== "flame_link_minimum_fire_damage" || standard?.components?.levelDerivedFlatFire?.maximumStatId !== "flame_link_maximum_fire_damage" || standard?.components?.sourceMaximumLife?.statId !== "flame_link_added_fire_damage_from_life_%" || standard?.components?.sourceMaximumLife?.percent !== 5 || standard?.standardQuality?.millisecondsPerQuality !== 75 || standard?.standardQuality?.quality20AdditionalBaseDurationMilliseconds !== 1500) fail(errors, "AUD-004 Flame Link canonical reference facts are not exact");
+  const compactAnchors = [{ level: 1, requirementLevel: 34, addedFireMinimum: 23, addedFireMaximum: 35 }, { level: 20, requirementLevel: 70, addedFireMinimum: 169, addedFireMaximum: 254 }];
+  if (!sameValue(standard?.reproduction?.compactAnchors, compactAnchors)) fail(errors, "AUD-004 Flame Link compact anchors are not exact");
   const blockers = gate?.unconditionalBlockingDependencies || [];
   if (gate?.finalScaledResult !== "withheld" || gate?.unknownIsNotZero !== true || !sameArray(blockers.map((entry) => entry.claimId), ["AUD-003-C12", "AUD-004-C09", "AUD-004-C10"])) fail(errors, "AUD-004 definitive scaled Flame Link result must remain explicitly withheld");
   for (const [index, blocker] of blockers.entries()) if (validateCapability(blocker, "AUD-004 unconditional blocker[" + index + "]", inventories, errors).qualified) fail(errors, "AUD-004 lists a satisfied capability as an unresolved blocker: " + blocker.claimId);
@@ -309,7 +337,9 @@ function runSemanticMutationTests() {
   reject("released Flame Link scaling", changedArtifact(manifest[6].path, (item) => { item.records[1].data.finalScaledResult = "calculated"; }), "definitive scaled Flame Link result must remain explicitly withheld");
   reject("invalid Flame Link state", changedArtifact(manifest[7].path, (item) => { item.records[0].data.expectedState = "calculated-anyway"; }), "Flame Link fixture is not canonical");
   reject("wrong Golden Glory node", changedArtifact(manifest[5].path, (item) => { item.records[0].data.nodeId = 999; }), "Golden Glory canonical facts are not exact");
-  return { count: 20, failures };
+  reject("Light Radius five percent inflated", changedArtifact(manifest[1].path, (item) => { item.records[0].data.valuePercent = 500; }), "Light Radius passive tuple is not canonical");
+  reject("Flame Link level-twenty compact anchor replaced", changedArtifact(manifest[6].path, (item) => { item.records[0].data.reproduction.compactAnchors[1].addedFireMinimum = 999; item.records[0].data.reproduction.compactAnchors[1].addedFireMaximum = 1000; }), "Flame Link compact anchors are not exact");
+  return { count: 22, failures };
 }
 
 function discoverPython() {

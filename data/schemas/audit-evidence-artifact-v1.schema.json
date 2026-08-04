@@ -749,53 +749,16 @@
                   "minLength": 1
                 },
                 "data": {
-                  "type": "object",
-                  "required": [
-                    "nodeId",
-                    "skillId",
-                    "name",
-                    "ascendancyName",
-                    "sourceType",
-                    "statFamily",
-                    "valuePercent",
-                    "sign",
-                    "availability"
-                  ],
-                  "additionalProperties": false,
-                  "properties": {
-                    "nodeId": {
-                      "type": "number"
-                    },
-                    "skillId": {
-                      "type": "number"
-                    },
-                    "name": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "ascendancyName": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "sourceType": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "statFamily": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "valuePercent": {
-                      "type": "number"
-                    },
-                    "sign": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "availability": {
-                      "type": "string",
-                      "minLength": 1
-                    }
+                  "const": {
+                    "nodeId": 27123,
+                    "skillId": 27123,
+                    "name": "Mercenary Life, Light Radius",
+                    "ascendancyName": "Luminary",
+                    "sourceType": "passive-node",
+                    "statFamily": "light-radius",
+                    "valuePercent": 5,
+                    "sign": "increase",
+                    "availability": "Default-tree"
                   }
                 }
               }
@@ -864,53 +827,16 @@
                   "minLength": 1
                 },
                 "data": {
-                  "type": "object",
-                  "required": [
-                    "nodeId",
-                    "skillId",
-                    "name",
-                    "ascendancyName",
-                    "sourceType",
-                    "statFamily",
-                    "valuePercent",
-                    "sign",
-                    "availability"
-                  ],
-                  "additionalProperties": false,
-                  "properties": {
-                    "nodeId": {
-                      "type": "number"
-                    },
-                    "skillId": {
-                      "type": "number"
-                    },
-                    "name": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "ascendancyName": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "sourceType": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "statFamily": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "valuePercent": {
-                      "type": "number"
-                    },
-                    "sign": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "availability": {
-                      "type": "string",
-                      "minLength": 1
-                    }
+                  "const": {
+                    "nodeId": 30675,
+                    "skillId": 30675,
+                    "name": "Link Cast Speed, Light Radius",
+                    "ascendancyName": "Luminary",
+                    "sourceType": "passive-node",
+                    "statFamily": "light-radius",
+                    "valuePercent": 5,
+                    "sign": "increase",
+                    "availability": "Default-tree"
                   }
                 }
               }
@@ -979,53 +905,16 @@
                   "minLength": 1
                 },
                 "data": {
-                  "type": "object",
-                  "required": [
-                    "nodeId",
-                    "skillId",
-                    "name",
-                    "ascendancyName",
-                    "sourceType",
-                    "statFamily",
-                    "valuePercent",
-                    "sign",
-                    "availability"
-                  ],
-                  "additionalProperties": false,
-                  "properties": {
-                    "nodeId": {
-                      "type": "number"
-                    },
-                    "skillId": {
-                      "type": "number"
-                    },
-                    "name": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "ascendancyName": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "sourceType": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "statFamily": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "valuePercent": {
-                      "type": "number"
-                    },
-                    "sign": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "availability": {
-                      "type": "string",
-                      "minLength": 1
-                    }
+                  "const": {
+                    "nodeId": 35877,
+                    "skillId": 35877,
+                    "name": "Mercenary Damage, Light Radius",
+                    "ascendancyName": "Luminary",
+                    "sourceType": "passive-node",
+                    "statFamily": "light-radius",
+                    "valuePercent": 5,
+                    "sign": "increase",
+                    "availability": "Default-tree"
                   }
                 }
               }
@@ -1094,53 +983,16 @@
                   "minLength": 1
                 },
                 "data": {
-                  "type": "object",
-                  "required": [
-                    "nodeId",
-                    "skillId",
-                    "name",
-                    "ascendancyName",
-                    "sourceType",
-                    "statFamily",
-                    "valuePercent",
-                    "sign",
-                    "availability"
-                  ],
-                  "additionalProperties": false,
-                  "properties": {
-                    "nodeId": {
-                      "type": "number"
-                    },
-                    "skillId": {
-                      "type": "number"
-                    },
-                    "name": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "ascendancyName": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "sourceType": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "statFamily": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "valuePercent": {
-                      "type": "number"
-                    },
-                    "sign": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "availability": {
-                      "type": "string",
-                      "minLength": 1
-                    }
+                  "const": {
+                    "nodeId": 61133,
+                    "skillId": 61133,
+                    "name": "Mercenary Life, Light Radius",
+                    "ascendancyName": "Luminary",
+                    "sourceType": "passive-node",
+                    "statFamily": "light-radius",
+                    "valuePercent": 5,
+                    "sign": "increase",
+                    "availability": "Default-tree"
                   }
                 }
               }
@@ -1209,53 +1061,16 @@
                   "minLength": 1
                 },
                 "data": {
-                  "type": "object",
-                  "required": [
-                    "nodeId",
-                    "skillId",
-                    "name",
-                    "ascendancyName",
-                    "sourceType",
-                    "statFamily",
-                    "valuePercent",
-                    "sign",
-                    "availability"
-                  ],
-                  "additionalProperties": false,
-                  "properties": {
-                    "nodeId": {
-                      "type": "number"
-                    },
-                    "skillId": {
-                      "type": "number"
-                    },
-                    "name": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "ascendancyName": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "sourceType": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "statFamily": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "valuePercent": {
-                      "type": "number"
-                    },
-                    "sign": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "availability": {
-                      "type": "string",
-                      "minLength": 1
-                    }
+                  "const": {
+                    "nodeId": 63954,
+                    "skillId": 63954,
+                    "name": "Link Cast Speed, Light Radius",
+                    "ascendancyName": "Luminary",
+                    "sourceType": "passive-node",
+                    "statFamily": "light-radius",
+                    "valuePercent": 5,
+                    "sign": "increase",
+                    "availability": "Default-tree"
                   }
                 }
               }
@@ -1324,48 +1139,15 @@
                   "minLength": 1
                 },
                 "data": {
-                  "type": "object",
-                  "required": [
-                    "nodeId",
-                    "skillId",
-                    "name",
-                    "sourceType",
-                    "statFamily",
-                    "valuePercent",
-                    "sign",
-                    "availability"
-                  ],
-                  "additionalProperties": false,
-                  "properties": {
-                    "nodeId": {
-                      "type": "number"
-                    },
-                    "skillId": {
-                      "type": "number"
-                    },
-                    "name": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "sourceType": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "statFamily": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "valuePercent": {
-                      "type": "number"
-                    },
-                    "sign": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "availability": {
-                      "type": "string",
-                      "minLength": 1
-                    }
+                  "const": {
+                    "nodeId": 54694,
+                    "skillId": 54694,
+                    "name": "Light of Divinity",
+                    "sourceType": "passive-node",
+                    "statFamily": "light-radius",
+                    "valuePercent": 10,
+                    "sign": "increase",
+                    "availability": "Default-tree"
                   }
                 }
               }
@@ -1434,57 +1216,23 @@
                   "minLength": 1
                 },
                 "data": {
-                  "type": "object",
-                  "required": [
-                    "masteryEffectId",
-                    "masteryName",
-                    "selectionNodeIds",
-                    "sourceType",
-                    "statFamily",
-                    "valuePercent",
-                    "sign",
-                    "basisOverride",
-                    "availability"
-                  ],
-                  "additionalProperties": false,
-                  "properties": {
-                    "masteryEffectId": {
-                      "type": "number"
-                    },
-                    "masteryName": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "selectionNodeIds": {
-                      "type": "array",
-                      "minItems": 1,
-                      "items": {
-                        "type": "number"
-                      }
-                    },
-                    "sourceType": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "statFamily": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "valuePercent": {
-                      "type": "number"
-                    },
-                    "sign": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "basisOverride": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "availability": {
-                      "type": "string",
-                      "minLength": 1
-                    }
+                  "const": {
+                    "masteryEffectId": 51424,
+                    "masteryName": "Energy Shield Mastery",
+                    "selectionNodeIds": [
+                      857,
+                      3471,
+                      6338,
+                      10729,
+                      18240,
+                      27307
+                    ],
+                    "sourceType": "mastery-effect",
+                    "statFamily": "light-radius",
+                    "valuePercent": 30,
+                    "sign": "increase",
+                    "basisOverride": "energy-shield-instead-of-life",
+                    "availability": "Default-tree"
                   }
                 }
               }
@@ -2905,53 +2653,16 @@
                   "minLength": 1
                 },
                 "data": {
-                  "type": "object",
-                  "required": [
-                    "nodeId",
-                    "skillId",
-                    "name",
-                    "sourceType",
-                    "statFamily",
-                    "valuePercent",
-                    "sign",
-                    "condition",
-                    "availability"
-                  ],
-                  "additionalProperties": false,
-                  "properties": {
-                    "nodeId": {
-                      "type": "number"
-                    },
-                    "skillId": {
-                      "type": "number"
-                    },
-                    "name": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "sourceType": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "statFamily": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "valuePercent": {
-                      "type": "number"
-                    },
-                    "sign": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "condition": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "availability": {
-                      "type": "string",
-                      "minLength": 1
-                    }
+                  "const": {
+                    "nodeId": 3089,
+                    "skillId": 3089,
+                    "name": "Link Effect",
+                    "sourceType": "passive-node",
+                    "statFamily": "direct-link-buff-effect",
+                    "valuePercent": 5,
+                    "sign": "increase",
+                    "condition": "always-on-if-allocated",
+                    "availability": "Default-tree"
                   }
                 }
               }
@@ -3020,53 +2731,16 @@
                   "minLength": 1
                 },
                 "data": {
-                  "type": "object",
-                  "required": [
-                    "nodeId",
-                    "skillId",
-                    "name",
-                    "sourceType",
-                    "statFamily",
-                    "valuePercent",
-                    "sign",
-                    "condition",
-                    "availability"
-                  ],
-                  "additionalProperties": false,
-                  "properties": {
-                    "nodeId": {
-                      "type": "number"
-                    },
-                    "skillId": {
-                      "type": "number"
-                    },
-                    "name": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "sourceType": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "statFamily": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "valuePercent": {
-                      "type": "number"
-                    },
-                    "sign": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "condition": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "availability": {
-                      "type": "string",
-                      "minLength": 1
-                    }
+                  "const": {
+                    "nodeId": 57404,
+                    "skillId": 57404,
+                    "name": "Link Effect",
+                    "sourceType": "passive-node",
+                    "statFamily": "direct-link-buff-effect",
+                    "valuePercent": 5,
+                    "sign": "increase",
+                    "condition": "always-on-if-allocated",
+                    "availability": "Default-tree"
                   }
                 }
               }
@@ -3135,53 +2809,16 @@
                   "minLength": 1
                 },
                 "data": {
-                  "type": "object",
-                  "required": [
-                    "nodeId",
-                    "skillId",
-                    "name",
-                    "sourceType",
-                    "statFamily",
-                    "valuePercent",
-                    "sign",
-                    "condition",
-                    "availability"
-                  ],
-                  "additionalProperties": false,
-                  "properties": {
-                    "nodeId": {
-                      "type": "number"
-                    },
-                    "skillId": {
-                      "type": "number"
-                    },
-                    "name": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "sourceType": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "statFamily": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "valuePercent": {
-                      "type": "number"
-                    },
-                    "sign": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "condition": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "availability": {
-                      "type": "string",
-                      "minLength": 1
-                    }
+                  "const": {
+                    "nodeId": 60145,
+                    "skillId": 60145,
+                    "name": "Link Effect",
+                    "sourceType": "passive-node",
+                    "statFamily": "direct-link-buff-effect",
+                    "valuePercent": 5,
+                    "sign": "increase",
+                    "condition": "always-on-if-allocated",
+                    "availability": "Default-tree"
                   }
                 }
               }
@@ -3250,71 +2887,20 @@
                   "minLength": 1
                 },
                 "data": {
-                  "type": "object",
-                  "required": [
-                    "nodeId",
-                    "skillId",
-                    "name",
-                    "sourceType",
-                    "statFamily",
-                    "valuePercent",
-                    "sign",
-                    "condition",
-                    "availability"
-                  ],
-                  "additionalProperties": false,
-                  "properties": {
-                    "nodeId": {
-                      "type": "number"
-                    },
-                    "skillId": {
-                      "type": "number"
-                    },
-                    "name": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "sourceType": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "statFamily": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "valuePercent": {
-                      "type": "number"
-                    },
-                    "sign": {
-                      "type": "string",
-                      "minLength": 1
-                    },
+                  "const": {
+                    "nodeId": 60781,
+                    "skillId": 60781,
+                    "name": "Inspiring Bond",
+                    "sourceType": "passive-node",
+                    "statFamily": "direct-link-buff-effect",
+                    "valuePercent": 20,
+                    "sign": "increase",
                     "condition": {
-                      "type": "object",
-                      "required": [
-                        "kind",
-                        "windowSeconds",
-                        "defaultState"
-                      ],
-                      "additionalProperties": false,
-                      "properties": {
-                        "kind": {
-                          "type": "string",
-                          "minLength": 1
-                        },
-                        "windowSeconds": {
-                          "type": "number"
-                        },
-                        "defaultState": {
-                          "type": "string",
-                          "minLength": 1
-                        }
-                      }
+                      "kind": "linked-recently",
+                      "windowSeconds": 4,
+                      "defaultState": "unknown"
                     },
-                    "availability": {
-                      "type": "string",
-                      "minLength": 1
-                    }
+                    "availability": "Default-tree"
                   }
                 }
               }
@@ -3383,71 +2969,20 @@
                   "minLength": 1
                 },
                 "data": {
-                  "type": "object",
-                  "required": [
-                    "nodeId",
-                    "skillId",
-                    "name",
-                    "sourceType",
-                    "statFamily",
-                    "valuePercent",
-                    "sign",
-                    "condition",
-                    "availability"
-                  ],
-                  "additionalProperties": false,
-                  "properties": {
-                    "nodeId": {
-                      "type": "number"
-                    },
-                    "skillId": {
-                      "type": "number"
-                    },
-                    "name": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "sourceType": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "statFamily": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "valuePercent": {
-                      "type": "number"
-                    },
-                    "sign": {
-                      "type": "string",
-                      "minLength": 1
-                    },
+                  "const": {
+                    "nodeId": 46471,
+                    "skillId": 46471,
+                    "name": "Powerful Bond",
+                    "sourceType": "passive-node",
+                    "statFamily": "direct-link-buff-effect",
+                    "valuePercent": 20,
+                    "sign": "increase",
                     "condition": {
-                      "type": "object",
-                      "required": [
-                        "kind",
-                        "thresholdPercent",
-                        "defaultState"
-                      ],
-                      "additionalProperties": false,
-                      "properties": {
-                        "kind": {
-                          "type": "string",
-                          "minLength": 1
-                        },
-                        "thresholdPercent": {
-                          "type": "number"
-                        },
-                        "defaultState": {
-                          "type": "string",
-                          "minLength": 1
-                        }
-                      }
+                      "kind": "half-link-duration-expired",
+                      "thresholdPercent": 50,
+                      "defaultState": "unknown"
                     },
-                    "availability": {
-                      "type": "string",
-                      "minLength": 1
-                    }
+                    "availability": "Default-tree"
                   }
                 }
               }
@@ -3516,43 +3051,14 @@
                   "minLength": 1
                 },
                 "data": {
-                  "type": "object",
-                  "required": [
-                    "nodeId",
-                    "skillId",
-                    "name",
-                    "sourceType",
-                    "attachmentDuration",
-                    "directLinkBuffEffectPercent",
-                    "availability"
-                  ],
-                  "additionalProperties": false,
-                  "properties": {
-                    "nodeId": {
-                      "type": "number"
-                    },
-                    "skillId": {
-                      "type": "number"
-                    },
-                    "name": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "sourceType": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "attachmentDuration": {
-                      "type": "string",
-                      "minLength": 1
-                    },
-                    "directLinkBuffEffectPercent": {
-                      "type": "null"
-                    },
-                    "availability": {
-                      "type": "string",
-                      "minLength": 1
-                    }
+                  "const": {
+                    "nodeId": 15900,
+                    "skillId": 15900,
+                    "name": "Oath of Fealty",
+                    "sourceType": "related-condition-node",
+                    "attachmentDuration": "infinite",
+                    "directLinkBuffEffectPercent": null,
+                    "availability": "Default-tree"
                   }
                 }
               }
@@ -4988,32 +4494,20 @@
                           "minLength": 1
                         },
                         "compactAnchors": {
-                          "type": "array",
-                          "minItems": 1,
-                          "items": {
-                            "type": "object",
-                            "required": [
-                              "level",
-                              "requirementLevel",
-                              "addedFireMinimum",
-                              "addedFireMaximum"
-                            ],
-                            "additionalProperties": false,
-                            "properties": {
-                              "level": {
-                                "type": "number"
-                              },
-                              "requirementLevel": {
-                                "type": "number"
-                              },
-                              "addedFireMinimum": {
-                                "type": "number"
-                              },
-                              "addedFireMaximum": {
-                                "type": "number"
-                              }
+                          "const": [
+                            {
+                              "level": 1,
+                              "requirementLevel": 34,
+                              "addedFireMinimum": 23,
+                              "addedFireMaximum": 35
+                            },
+                            {
+                              "level": 20,
+                              "requirementLevel": 70,
+                              "addedFireMinimum": 169,
+                              "addedFireMaximum": 254
                             }
-                          }
+                          ]
                         }
                       }
                     },
