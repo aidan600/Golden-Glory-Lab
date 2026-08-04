@@ -51,9 +51,17 @@ adopted public importer runs from a copied PyInstaller one-directory bundle
 without a source checkout or ambient Python path. A Python-free clean-machine
 run and directly enforced outbound-network denial remain named limitations.
 
-The first usable desktop BUILD has not started. It may consume this packaged
-seam after human review, but its mechanics must still respect every exact
-evidence gate recorded above, and its UI toolkit remains a BUILD decision.
+## Current Phase 3 status
+
+Phase 3 is in progress. [BUILD-001](builds/BUILD-001-desktop-intake-mapping.md)
+delivers the offline desktop intake, source-order item-set review, explicit
+Player/Mercenary mapping, opaque manual Mercenary equipment, and deterministic
+local save/open workflow.
+
+Phase 3 is not complete. Evidence-gated recognized item parsing, calculations,
+and target/gap/cap/surplus reporting remain later BUILD slices. Mechanics below
+their exact claim/version gates continue to render as nonnumeric unavailable
+states; BUILD-001 does not resolve OQ-002 through OQ-007.
 
 ## Roadmap guardrails
 

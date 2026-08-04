@@ -67,3 +67,35 @@ access, and reports output bytes and SHA-256. After intentional regeneration,
 review the changed artifact and rerun the generator followed by
 `git diff --exit-code -- fixtures/pob/golden/comprehensive.raw.neutral-v1.json`
 to prove a clean second regeneration.
+Run the BUILD-001 focused Windows package gate with:
+
+    py scripts/validate/run_desktop_build.py
+
+The runner creates a fresh virtual environment, installs the exact packaging
+pins, builds and installs the current wheel, verifies a real build-interpreter
+Tk root, freezes the installed launcher as a PyInstaller one-directory Windows
+GUI application, and rejects repository-source module origins. It verifies the
+GUI subsystem, `_tkinter`, Tcl/Tk scripts, bundled permanent fixture, production
+metadata, and source networking imports. It copies the package outside the
+repository, runs its self-test at least three times from an empty directory
+with a sanitized environment, compares deterministic output bytes, reports
+hashes/inventory/runtime versions, and removes disposable build material. Use
+`--copy-output` only with a nonexistent path outside the repository when a
+validated bundle is needed for manual inspection.
+
+Regenerate and compare the deterministic BUILD-001 state fixtures with:
+
+    py scripts/generate_build_state_fixtures.py
+    py scripts/generate_build_state_fixtures.py --write
+
+The generator has no network behavior. It reports added, removed, changed, and
+human-review records; `--write` is required for intentional updates.
+
+Run the exact isolated BUILD-001 Ruff gate with:
+
+    py scripts/validate/run_build_quality.py
+
+That runner creates a disposable virtual environment, installs only the exact
+`requirements/build-quality.txt` pin with `--no-deps`, verifies the executable
+version and location, runs the repository-local `pyproject.toml` rule set with
+no cache, and removes the environment. Do not substitute an ambient Ruff.
