@@ -65,6 +65,105 @@ def refresh_imported_digest(document: dict) -> None:
     )
 
 
+def malformed_item_mutations(document: dict) -> list[tuple[str, dict, str]]:
+    delete_field = object()
+    usage_counts = {
+        "equipmentCandidateReferenceCount": 0,
+        "passiveCandidateReferenceCount": 0,
+    }
+    cases: list[tuple[str, str, object, str]] = [
+        ("missing-raw-id", "rawId", delete_field, "NEUTRAL_RESULT_SHAPE"),
+        ("null-raw-id", "rawId", None, "SHAPE_TYPE"),
+        ("scalar-raw-id", "rawId", "bad", "SHAPE_TYPE"),
+        ("array-raw-id", "rawId", [], "SHAPE_TYPE"),
+        ("numeric-raw-id", "rawId", 7, "SHAPE_TYPE"),
+        ("raw-id-missing-state", "rawId", {"value": None}, "NEUTRAL_RESULT_SHAPE"),
+        ("raw-id-missing-value", "rawId", {"state": "missing"}, "NEUTRAL_RESULT_SHAPE"),
+        (
+            "raw-id-extra-field",
+            "rawId",
+            {"state": "missing", "value": None, "extra": True},
+            "NEUTRAL_RESULT_SHAPE",
+        ),
+        (
+            "raw-id-invalid-state",
+            "rawId",
+            {"state": "other", "value": None},
+            "NEUTRAL_RESULT_SHAPE",
+        ),
+        (
+            "raw-id-inconsistent-value",
+            "rawId",
+            {"state": "missing", "value": ""},
+            "NEUTRAL_RESULT_SHAPE",
+        ),
+        ("missing-usage", "usage", delete_field, "NEUTRAL_RESULT_SHAPE"),
+        ("null-usage", "usage", None, "SHAPE_TYPE"),
+        ("scalar-usage", "usage", "bad", "SHAPE_TYPE"),
+        ("array-usage", "usage", [], "SHAPE_TYPE"),
+        ("numeric-usage", "usage", 7, "SHAPE_TYPE"),
+        ("usage-missing-state", "usage", usage_counts, "NEUTRAL_RESULT_SHAPE"),
+        (
+            "usage-nonstring-state",
+            "usage",
+            {"state": 1, **usage_counts},
+            "SHAPE_TYPE",
+        ),
+        (
+            "usage-unsupported-state",
+            "usage",
+            {"state": "other", **usage_counts},
+            "NEUTRAL_RESULT_SHAPE",
+        ),
+        (
+            "missing-item-source-index",
+            "sourceOccurrenceIndex",
+            delete_field,
+            "NEUTRAL_RESULT_SHAPE",
+        ),
+        (
+            "negative-item-source-index",
+            "sourceOccurrenceIndex",
+            -1,
+            "NEUTRAL_RESULT_SHAPE",
+        ),
+        (
+            "boolean-item-source-index",
+            "sourceOccurrenceIndex",
+            True,
+            "NEUTRAL_RESULT_SHAPE",
+        ),
+        (
+            "string-item-source-index",
+            "sourceOccurrenceIndex",
+            "0",
+            "NEUTRAL_RESULT_SHAPE",
+        ),
+        (
+            "float-item-source-index",
+            "sourceOccurrenceIndex",
+            0.5,
+            "NEUTRAL_RESULT_SHAPE",
+        ),
+        (
+            "null-item-source-index",
+            "sourceOccurrenceIndex",
+            None,
+            "NEUTRAL_RESULT_SHAPE",
+        ),
+    ]
+    mutations: list[tuple[str, dict, str]] = []
+    for name, field, value, expected_code in cases:
+        candidate = copy.deepcopy(document)
+        item = candidate["importedResult"]["document"]["items"][0]
+        if value is delete_field:
+            del item[field]
+        else:
+            item[field] = copy.deepcopy(value)
+        mutations.append((name, candidate, expected_code))
+    return mutations
+
+
 def schema_validator() -> Draft202012Validator:
     build_schema = json.loads(
         (ROOT / "data" / "schemas" / "build-state-v1.schema.json").read_text(
@@ -161,6 +260,42 @@ class BuildStateCodecTests(unittest.TestCase):
         self.assertEqual(
             reopened["importedResult"]["report"][0]["retainedMaterial"], retained
         )
+
+    def test_importer_items_reopen_deterministically_with_review_fields(self) -> None:
+        document = imported_document()
+        expected_items = copy.deepcopy(document["importedResult"]["document"]["items"])
+        encoded = serialize(document)
+        reopened = deserialize(encoded)
+        observed_items = reopened["importedResult"]["document"]["items"]
+
+        self.assertEqual(serialize(reopened), encoded)
+        self.assertEqual(
+            [item["occurrenceId"] for item in observed_items],
+            [item["occurrenceId"] for item in expected_items],
+        )
+        self.assertEqual(
+            [item["sourceOccurrenceIndex"] for item in observed_items],
+            list(range(len(observed_items))),
+        )
+        for expected, observed in zip(expected_items, observed_items, strict=True):
+            self.assertEqual(observed["rawId"], expected["rawId"])
+            self.assertEqual(observed["usage"], expected["usage"])
+        self.assertEqual(observed_items, expected_items)
+
+        future_usage = copy.deepcopy(document)
+        opaque_usage_material = {"futureCounts": [1, {"producerOwned": True}]}
+        future_usage["importedResult"]["document"]["items"][0]["usage"].update(
+            opaque_usage_material
+        )
+        refresh_imported_digest(future_usage)
+        future_reopened = deserialize(serialize(future_usage))
+        reopened_usage = future_reopened["importedResult"]["document"]["items"][0][
+            "usage"
+        ]
+        self.assertEqual(
+            reopened_usage["futureCounts"], opaque_usage_material["futureCounts"]
+        )
+
     def test_atomic_failure_preserves_prior_file_and_cleans_temporary(self) -> None:
         prior = empty_document()
         changed = copy.deepcopy(prior)
@@ -363,6 +498,7 @@ class TransactionalMalformedOpenTests(unittest.TestCase):
             "fileState": service.file_state,
             "readiness": service.readiness(),
             "player": state["playerItemSetOccurrenceId"],
+            "mercenaryMode": state["mercenarySourceMode"],
             "mercenary": state["mercenaryItemSetOccurrenceId"],
             "manual": state["manualMercenaryEquipment"],
             "notes": state["userNotes"],
@@ -491,6 +627,21 @@ class TransactionalMalformedOpenTests(unittest.TestCase):
                         if name == "nonstring-report-id"
                         else "NEUTRAL_RESULT_SHAPE"
                     )
+                    self.assertEqual(raised.exception.code, expected_code)
+                    self._assert_preserved(service, before)
+
+    def test_consumed_item_mutations_are_transactional(self) -> None:
+        mutations = malformed_item_mutations(imported_document())
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            service = self._saved_service(directory)
+            before = self._snapshot(service)
+            for name, mutation, expected_code in mutations:
+                with self.subTest(name=name):
+                    path = directory / f"{name}.json"
+                    self._write_mutation(path, mutation)
+                    with self.assertRaises(BuildStateError) as raised:
+                        service.open(path)
                     self.assertEqual(raised.exception.code, expected_code)
                     self._assert_preserved(service, before)
 
@@ -747,6 +898,19 @@ class BuildStateSchemaParityTests(unittest.TestCase):
         refresh_imported_digest(scoped_duplicate)
         self.validator.validate(scoped_duplicate)
         validate_document(scoped_duplicate)
+
+    def test_item_consumer_mutations_are_shared_schema_runtime_rules(self) -> None:
+        for name, mutation, expected_code in malformed_item_mutations(
+            imported_document()
+        ):
+            with self.subTest(name=name):
+                refresh_imported_digest(mutation)
+                with self.assertRaises(BuildStateError) as raised:
+                    validate_document(mutation)
+                self.assertEqual(raised.exception.code, expected_code)
+                with self.assertRaises(ValidationError):
+                    self.validator.validate(mutation)
+
     def test_file_loader_returns_validated_content_and_bytes(self) -> None:
         document = imported_document("equivalent.xml")
         with tempfile.TemporaryDirectory() as temporary:

@@ -81,15 +81,50 @@ class FakeText:
 
 
 class FakeTree:
-    def __init__(self, selected: str) -> None:
+    def __init__(self, selected: str | None = None) -> None:
         self.selected = selected
+        self.rows: dict[str, tuple[object, ...]] = {}
 
     def selection(self) -> tuple[str, ...]:
-        return (self.selected,)
+        return () if self.selected is None else (self.selected,)
+
+    def selection_set(self, selected: str) -> None:
+        self.selected = selected
+
+    def get_children(self) -> tuple[str, ...]:
+        return tuple(self.rows)
+
+    def delete(self, *identifiers: str) -> None:
+        for identifier in identifiers:
+            self.rows.pop(identifier, None)
+
+    def insert(
+        self,
+        _parent: str,
+        _index: str,
+        *,
+        iid: str,
+        values: tuple[object, ...],
+    ) -> str:
+        self.rows[iid] = tuple(values)
+        return iid
 
 
 def fixture_text(name: str) -> str:
     return (FIXTURES / name).read_text(encoding="utf-8")
+
+
+def external_document_bytes(document: dict) -> bytes:
+    return (
+        json.dumps(
+            document,
+            ensure_ascii=True,
+            allow_nan=False,
+            indent=2,
+            separators=(",", ": "),
+        )
+        + "\n"
+    ).encode("utf-8")
 
 
 class DesktopImportBoundaryTests(unittest.TestCase):
@@ -441,6 +476,72 @@ class RejectedEditPresentationTests(unittest.TestCase):
         self.assertEqual(
             observed["sourcePath"], item_sets[1]["assignments"][0]["sourcePath"]
         )
+
+
+class ImportedItemPresentationBoundaryTests(unittest.TestCase):
+    def test_rejected_malformed_item_never_reaches_review_presentation(self) -> None:
+        marker = "malformed-item-candidate-marker"
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            valid_path = directory / "valid-presentation.json"
+            source_service = ApplicationService()
+            self.assertEqual(
+                source_service.attempt_raw_xml(FIXTURES / "comprehensive.xml"),
+                "imported",
+            )
+            source_service.set_player_mapping("item-set-0001")
+            source_service.set_mercenary_source("manual-equipment")
+            source_service.add_manual_entry(
+                "Ring 1", "Opaque observed item", "Preserve presentation baseline."
+            )
+            source_service.set_user_notes("Preserve item review")
+            source_service.set_mercenary_source("mapped-item-set", "item-set-0002")
+            source_service.save(valid_path)
+
+            service = ApplicationService()
+            service.open(valid_path)
+            expected_items = service.imported_items()
+            self.assertGreater(len(expected_items), 0)
+
+            malformed = service.state
+            malformed_item = malformed["importedResult"]["document"]["items"][0]
+            malformed_item["rawId"] = "bad"
+            malformed_item["sourcePath"] = marker
+            malformed["importedResultSha256"] = imported_result_digest(
+                malformed["importedResult"]
+            )
+            malformed_path = directory / "malformed-presentation.json"
+            malformed_path.write_bytes(external_document_bytes(malformed))
+
+            with self.assertRaises(BuildStateError) as raised:
+                service.open(malformed_path)
+            self.assertEqual(raised.exception.code, "SHAPE_TYPE")
+            self.assertEqual(service.imported_items(), expected_items)
+
+            app = GoldenGloryApp.__new__(GoldenGloryApp)
+            app.service = service
+            app.item_tree = FakeTree()
+            app.report_tree = FakeTree()
+            app.failed_detail = object()
+            app.item_detail = object()
+            app._set_readonly_text = Mock()
+            app._refresh_import_review()
+
+            expected_ids = [item["occurrenceId"] for item in expected_items]
+            self.assertEqual(list(app.item_tree.rows), expected_ids)
+            for item in expected_items:
+                row = app.item_tree.rows[item["occurrenceId"]]
+                self.assertEqual(row[2], item["usage"]["state"])
+            self.assertNotIn(marker, repr(app.item_tree.rows))
+
+            app.item_tree.selection_set(expected_ids[0])
+            app._set_readonly_text.reset_mock()
+            app._show_item_detail(None)
+            app._set_readonly_text.assert_called_once()
+            rendered_detail = json.loads(app._set_readonly_text.call_args.args[1])
+            self.assertEqual(rendered_detail, expected_items[0])
+            self.assertNotIn(marker, app._set_readonly_text.call_args.args[1])
+
 
 class EvidenceStatusTests(unittest.TestCase):
     def test_blocked_mechanics_are_referenced_nonnumeric_and_not_persisted(self) -> None:

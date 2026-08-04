@@ -176,22 +176,30 @@ schema provides the complete test-time composition with
 `pob-neutral-import-v1.schema.json`; it is not a production dependency or a
 duplicate runtime schema engine.
 
-The consumed neutral boundary now also requires nonempty globally unique item
-and item-set occurrence IDs, nonnegative integer source indices (excluding
-booleans), and nonempty assignment IDs unique within their item set. Resolution
-candidate cardinality must match the resolution state; an equipment assignment
-cannot claim `missing`. All ten report fields are required, report IDs are
-nonempty and unique, category and stage use the adopted enum values, and
-candidate targets are strings. `retainedMaterial` remains intentionally opaque
-and survives round trips. Runtime-only Treeview identifier uniqueness is tested
-alongside shared runtime/schema parity; assignment IDs may repeat across
-different item sets because selection is occurrence-scoped.
+The consumed imported-item boundary requires nonempty globally unique item
+occurrence IDs; nonnegative, non-boolean source occurrence indices; raw ID
+state/value shape; exact raw character value; ordered child material; a usage
+object whose displayed state is `unused` or `referenced`; and string warnings.
+The complete importer-produced `rawId` and `usage` objects, source order, raw
+text, and child material survive deterministic save/reopen. Other
+importer-owned item fields remain opaque and preserved.
+
+Item-set occurrence IDs are nonempty and globally unique, item-set source
+indices are nonnegative integers excluding booleans, and assignment IDs are
+nonempty and unique within their item set. Resolution candidate cardinality
+must match the resolution state; an equipment assignment cannot claim
+`missing`. All ten report fields are required, report IDs are nonempty and
+unique, category and stage use the adopted enum values, and candidate targets
+are strings. `retainedMaterial` remains intentionally opaque and survives
+round trips. Runtime-only Treeview identifier uniqueness is tested alongside
+shared runtime/schema parity; assignment IDs may repeat across different item
+sets because selection is occurrence-scoped.
 
 Serialization, digesting, and defensive copying translate deterministic
 recursion failures into stable build-state errors. Open remains transactional:
-size, growth, numeric, nesting, report, ID, source-index, resolution, and
-serialization failures leave the current document, baseline, path, dirty state,
-readiness, mappings, manual equipment, and notes unchanged.
+size, growth, numeric, nesting, imported-item, report, ID, source-index,
+resolution, and serialization failures leave the current document, baseline,
+path, dirty state, readiness, mappings, manual equipment, and notes unchanged.
 
 ## Evidence states
 
@@ -214,13 +222,13 @@ is persisted in the canonical document.
 
 Final validation built the installed wheel in a disposable environment and
 copied a PyInstaller one-directory Windows GUI application outside the
-repository. The repaired result contained 989 files and 27,862,491 bytes. The
+repository. The repaired result contained 989 files and 27,862,679 bytes. The
 GUI executable SHA-256 was
-`f9e46f7b7c532541da8ce98def7ef9f72d32704ee7369a69fddd25d5517ddd45`;
+`26d74815009bc13c4537eb985ab529a07883c4dc802fee7632f252ff43cc55bb`;
 the bundle tree SHA-256 was
-`3a3b66dcda3c4b07daaf74bc4152a26307623394eb6a41984c7d8d4d97877553`.
+`e4bebca15a64ab5459a06c1e66a55e179aa4282b8df3f9782d7ca7ca7a120609`.
 The installed wheel SHA-256 was
-`503139ee1c2f55196d774bf3f6d3223aa13d550119d056ac9c91d956bad321db`.
+`1d4be92e9c4481f44da6c3093b7719f27f9fc35079ebf660ec958ccc637d48fb`.
 
 The executable uses Windows GUI subsystem 2 and therefore has no console
 window. The bundle contains `_tkinter.pyd`, Tcl and Tk initializer trees, and
@@ -283,14 +291,19 @@ Broader DPI and multi-monitor ordinary-user testing also remains.
 
 ## Verification
 
-The final 81-test suite covers empty/imported/mapped/manual round trips, strict
+The final 85-test suite covers empty/imported/mapped/manual round trips, strict
 and unknown-version failures, digest/order preservation, runtime/schema parity,
 fixture validity, atomic failure safety, transient attempt preservation,
 replacement confirmation, exact and over-limit saved-state boundaries, file
 growth, numeric and nesting containment, deterministic recursion failures,
-complete consumed-report and occurrence validation, transactional malformed
+complete consumed-item/report/occurrence validation, transactional malformed
 open, both adopted importer calls, occurrence-scoped mapping, rejected-edit UI
-restoration, manual mode, evidence states, and multiline dialog input.
+restoration, manual mode, evidence states, and multiline dialog input. The
+imported-item matrix sends malformed raw IDs, usage values, and source indices
+through a real saved `ApplicationService.open`; shared schema/runtime parity
+rejects every candidate, and a headless item-review rebuild proves rejected
+material cannot reach a row or detail while valid source-order items still
+render.
 
 The fixture generator dry run, Draft 2020-12 schema self-check and fixture gate,
 focused negative corpus, Ruff, compileall, diff whitespace check, evidence gate,

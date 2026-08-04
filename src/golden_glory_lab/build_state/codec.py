@@ -366,9 +366,12 @@ def _validate_imported_result(value: Any) -> set[str]:
         item = _require_object(value_item, context)
         for field in (
             "occurrenceId",
+            "sourceOccurrenceIndex",
             "sourcePath",
+            "rawId",
             "xmlCharacterValue",
             "orderedChildMaterial",
+            "usage",
             "warnings",
         ):
             if field not in item:
@@ -379,9 +382,19 @@ def _validate_imported_result(value: Any) -> set[str]:
         if occurrence in item_occurrences:
             _fail("NEUTRAL_RESULT_SHAPE", f"Duplicate item occurrence {occurrence}")
         item_occurrences.add(occurrence)
+        _require_nonnegative_integer(
+            item["sourceOccurrenceIndex"], f"{context}.sourceOccurrenceIndex"
+        )
         _require_string(item["sourcePath"], f"{context}.sourcePath")
+        _validate_raw_state(item["rawId"], f"{context}.rawId")
         _require_string(item["xmlCharacterValue"], f"{context}.xmlCharacterValue")
         _require_list(item["orderedChildMaterial"], f"{context}.orderedChildMaterial")
+        usage = _require_object(item["usage"], f"{context}.usage")
+        if "state" not in usage:
+            _fail("NEUTRAL_RESULT_SHAPE", f"{context}.usage is missing state")
+        usage_state = _require_string(usage["state"], f"{context}.usage.state")
+        if usage_state not in {"unused", "referenced"}:
+            _fail("NEUTRAL_RESULT_SHAPE", f"{context}.usage.state is not recognized")
         _require_string_list(item["warnings"], f"{context}.warnings")
 
     occurrences: set[str] = set()
