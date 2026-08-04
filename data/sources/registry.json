@@ -15,7 +15,7 @@
       "verificationStatus": "supported",
       "limitations": "This establishes a PoB data-history locator, not official live 3.29.1 item continuity, acquisition, permanent-Mercenary mechanics, rounding, or redistribution rights for game data.",
       "commitSha": "3a73a54bd3a9c92c4d3264c5d697a51b6c9063bc",
-      "notes": "No upstream item payload is retained. This is a pinned historical export locator; the current supporting snapshot is separately recorded as pob-dev-3-29-50d2236."
+      "notes": "No upstream item payload is retained. This pinned historical export locator contains the reviewed Enmity dynamic-stat-description record 3040; the current supporting snapshot is separately recorded as pob-dev-3-29-50d2236."
     },
     {
       "id": "poedb-enmitys-embrace-2026-08-03",
@@ -237,7 +237,7 @@
       "verificationStatus": "supported",
       "limitations": "A moving development snapshot is not a target-version official game-data release or authority for permanent-Mercenary mechanics. Its LICENSE.md states MIT terms for software, while ring.lua is marked Item data (c) Grinding Gear Games; neither establishes redistribution rights for embedded game data.",
       "commitSha": "50d22365b919c7435b5d12d892875e9f61d11133",
-      "notes": "Inspected without executing code. Relevant AUD-003 paths include src/TreeData/3_29/tree.lua, src/Data/ModExplicit.lua, src/Data/ModCorrupted.lua, src/Data/Crucible.lua, src/Data/ModItemExclusive.lua, and src/Data/ModCache.lua. Relevant AUD-005 paths are src/Data/Uniques/ring.lua, src/Data/StatDescriptions/stat_descriptions.lua record 2919, src/Modules/ModParser.lua, src/Modules/CalcDefence.lua, and src/Modules/CalcOffence.lua. The Enmity record is present in pinned 3.29 export commit 3a73a54bd3a9c92c4d3264c5d697a51b6c9063bc. Licence locator: https://raw.githubusercontent.com/PathOfBuildingCommunity/PathOfBuilding/50d22365b919c7435b5d12d892875e9f61d11133/LICENSE.md."
+      "notes": "Inspected without executing code. Relevant AUD-003 paths include src/TreeData/3_29/tree.lua, src/Data/ModExplicit.lua, src/Data/ModCorrupted.lua, src/Data/Crucible.lua, src/Data/ModItemExclusive.lua, and src/Data/ModCache.lua. Relevant AUD-005 paths are src/Data/Uniques/ring.lua, src/Data/StatDescriptions/stat_descriptions.lua record 3043, src/Modules/ModParser.lua, src/Modules/CalcDefence.lua, and src/Modules/CalcOffence.lua. The Enmity record is present in pinned 3.29 export commit 3a73a54bd3a9c92c4d3264c5d697a51b6c9063bc. Licence locator: https://raw.githubusercontent.com/PathOfBuildingCommunity/PathOfBuilding/50d22365b919c7435b5d12d892875e9f61d11133/LICENSE.md."
     },
     {
       "id": "ggg-poe-terms-2026-08-03",

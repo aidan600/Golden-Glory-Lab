@@ -9,7 +9,19 @@ Run baseline repository validation with:
 
     node scripts/validate/check_repository.mjs
 
-Run the complete reusable PoB importer proof with:
+
+Run the first-release evidence-integrity gate with:
+
+    node scripts/validate/check_first_release_evidence_pack.mjs
+
+It invokes the isolated, pinned Draft 2020-12 validator for all ten evidence
+artifacts, then verifies selected-artifact completeness, source-manifest containment,
+claim inventory polarity, gate dependencies, corrected Enmity locators, and synthetic
+formula/withheld-output fixtures. Use `--audit AUD-002` through `AUD-005` for a
+focused audit check; schema validation still covers the full pack. It has no runtime
+network access, aside from provisioning the existing pinned test-only package set in a
+temporary directory.
+`nRun the complete reusable PoB importer proof with:
 
     py scripts/validate/run_pob_import_proof.py
 

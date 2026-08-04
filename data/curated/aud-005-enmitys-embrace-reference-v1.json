@@ -34,7 +34,7 @@
       "verificationStatus": "supported",
       "claimIds": ["AUD-005-C01", "AUD-005-C02", "AUD-005-C08", "AUD-005-C09"],
       "sourceIds": ["pob-3-29-export-3a73a54", "pob-dev-3-29-50d2236", "poedb-enmitys-embrace-2026-08-03", "golden-glory-lab-data-boundary-2026-08-03"],
-      "evidenceLocation": "PoB dev unique ring.lua, stat-description record 2919, ModParser.lua/CalcDefence.lua/CalcOffence.lua, 3.29 export commit 3a73a54bd3a9c92c4d3264c5d697a51b6c9063bc, and current PoEDB page recorded in AUD-005.",
+      "evidenceLocation": "PoB dev unique ring.lua, development stat-description record 3043 at commit 50d22365b919c7435b5d12d892875e9f61d11133, matching 3.29 export stat-description record 3040 at commit 3a73a54bd3a9c92c4d3264c5d697a51b6c9063bc, and ModParser.lua/CalcDefence.lua/CalcOffence.lua, and current PoEDB page recorded in AUD-005.",
       "limitations": "Neither source is an official target-version item record. Availability sources conflict and raw observed items do not prove a natural range, current offer, or ownership. The exact modifier sentence is retained only in AUD-005 evidence, not this runtime-ineligible artifact.",
       "loadBearing": true,
       "downstreamConsumers": ["Enmity reference panel", "observed-roll reviewer", "manual-only input adapter"],
@@ -46,7 +46,7 @@
         "requiredLevel": 80,
         "sourceDataVersion": "PoB development snapshot with 3.29 export",
         "versionState": "supporting-source-not-target-version-authority",
-        "sourceLocators": {"uniqueRecord": "src/Data/Uniques/ring.lua", "dynamicStatDescription": "generated stat-description record 2919", "parser": "src/Modules/ModParser.lua", "defenceModel": "src/Modules/CalcDefence.lua", "offenceModel": "src/Modules/CalcOffence.lua", "pinnedPobExportCommit": "3a73a54bd3a9c92c4d3264c5d697a51b6c9063bc"},
+        "sourceLocators": {"uniqueRecord": "src/Data/Uniques/ring.lua", "developmentSnapshot": {"commitSha": "50d22365b919c7435b5d12d892875e9f61d11133", "dynamicStatDescription": "generated stat-description record 3043"}, "pinnedExport": {"commitSha": "3a73a54bd3a9c92c4d3264c5d697a51b6c9063bc", "dynamicStatDescription": "generated stat-description record 3040"}, "parser": "src/Modules/ModParser.lua", "defenceModel": "src/Modules/CalcDefence.lua", "offenceModel": "src/Modules/CalcOffence.lua"},
         "reviewedNaturalRanges": {
           "vermillionRingBaseImplicitMaximumLifePercent": {"minimum": 5, "maximum": 7},
           "strength": {"minimum": 30, "maximum": 50},
@@ -92,11 +92,10 @@
       "data": {
         "upstreamContract": {"auditId": "AUD-002", "contractVersion": "1.0.0"},
         "upstreamDependencies": [
-          {"claimId": "AUD-002-C02", "minimumStatus": "supported", "appliesWhen": "permanent-Mercenary sheet adapter is offered", "unmetBehavior": "do-not-offer-sheet-adapter"},
-          {"claimId": "AUD-002-C03", "minimumStatus": "supported", "appliesWhen": "a field-derived value is requested", "unmetBehavior": "withhold-derived-value-preserve-manual-final-values"},
-          {"claimId": "AUD-002-C04", "minimumStatus": "supported", "appliesWhen": "a sheet value would be combined with equipment/components", "unmetBehavior": "do-not-combine-components-require-final-manual-values"},
-          {"claimId": "AUD-002-C05", "minimumStatus": "supported", "appliesWhen": "a comparable derived value is requested", "unmetBehavior": "withhold-derived-result-require-manual-shared-context"},
-          {"claimId": "AUD-002-C06", "minimumStatus": "supported", "appliesWhen": "manual P_enmity output is requested", "unmetBehavior": "do-not-calculate-manual-output"}
+          {"claimId": "AUD-002-C02", "contractVersion": "1.0.0", "gateMode": "requires-positive-capability", "minimumStatus": "supported", "appliesWhen": "permanent-Mercenary sheet adapter is offered", "unmetBehavior": "do-not-offer-sheet-adapter"},
+          {"claimId": "AUD-002-C03", "contractVersion": "1.0.0", "gateMode": "requires-positive-capability", "minimumStatus": "supported", "appliesWhen": "a field-derived value is requested", "unmetBehavior": "withhold-derived-value-preserve-manual-final-values"},
+          {"claimId": "AUD-002-C04", "contractVersion": "1.0.0", "gateMode": "requires-positive-capability", "minimumStatus": "supported", "appliesWhen": "a sheet value would be combined with equipment/components", "unmetBehavior": "do-not-combine-components-require-final-manual-values"},
+          {"claimId": "AUD-002-C05", "contractVersion": "1.0.0", "gateMode": "requires-positive-capability", "minimumStatus": "supported", "appliesWhen": "a comparable derived value is requested", "unmetBehavior": "withhold-derived-result-require-manual-shared-context"}
         ],
         "manualOutputGate": {"requiredEnmityEquippedState": "equipped", "requiresIntegralInputs": true, "requiresMeasurementContext": true, "requiresEquipmentInclusionStateRecorded": true, "unknownIsNotZero": true},
         "derivedPath": "unavailable",

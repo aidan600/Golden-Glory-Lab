@@ -4,6 +4,9 @@ This is the initial unresolved-work backlog. Entries are not conclusions. Their
 categories indicate planning priority, and dependencies identify work that
 should inform or block the question.
 
+The first-release evidence-integrity gate checks that the recorded contract is internally
+consistent; it does not resolve, reprioritize, or close any question below.
+
 | ID | Category | Status | Question | Dependencies |
 | --- | --- | --- | --- | --- |
 | OQ-001 | blocking | resolved | What PoB item-set structure permits reliable player/Mercenary mapping without relying on set order? | AUD-001; PROOF-001 adopted neutral importer; explicit user mapping remains outside imported facts |

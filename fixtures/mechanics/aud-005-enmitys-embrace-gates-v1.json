@@ -121,7 +121,7 @@
       "loadBearing": true,
       "downstreamConsumers": ["Derived-path gate", "missing-information reporter"],
       "replacementRule": "Replace after AUD-002 C03-C05 reach their minimum status in a superseding contract.",
-      "data": {"inputCases": [{"entryMode": "sheet-plus-equipment", "equipmentInclusionState": "included", "measurementContext": "recorded"}, {"entryMode": "sheet-plus-equipment", "equipmentInclusionState": "excluded", "measurementContext": "recorded"}, {"entryMode": "sheet-plus-equipment", "equipmentInclusionState": "unknown", "measurementContext": "unknown"}], "expectedState": "derived-unavailable", "expectedNumericZero": false, "blockingClaims": ["AUD-002-C03", "AUD-002-C04", "AUD-002-C05", "AUD-005-C05"]}
+      "data": {"inputCases": [{"entryMode": "sheet-plus-equipment", "equipmentInclusionState": "included", "measurementContext": "recorded"}, {"entryMode": "sheet-plus-equipment", "equipmentInclusionState": "excluded", "measurementContext": "recorded"}, {"entryMode": "sheet-plus-equipment", "equipmentInclusionState": "unknown", "measurementContext": "unknown"}], "expectedState": "derived-unavailable", "expectedNumericZero": false, "blockingDependencies": [{"claimId": "AUD-002-C03", "contractVersion": "1.0.0", "gateMode": "requires-positive-capability", "minimumStatus": "supported", "appliesWhen": "a field-derived value is requested", "unmetBehavior": "withhold-derived-value-preserve-manual-final-values"}, {"claimId": "AUD-002-C04", "contractVersion": "1.0.0", "gateMode": "requires-positive-capability", "minimumStatus": "supported", "appliesWhen": "a sheet value would be combined with equipment/components", "unmetBehavior": "do-not-combine-components-require-final-manual-values"}, {"claimId": "AUD-002-C05", "contractVersion": "1.0.0", "gateMode": "requires-positive-capability", "minimumStatus": "supported", "appliesWhen": "a comparable derived value is requested", "unmetBehavior": "withhold-derived-result-require-manual-shared-context"}, {"claimId": "AUD-005-C05", "contractVersion": "1.0.0", "gateMode": "requires-positive-capability", "minimumStatus": "supported", "appliesWhen": "a component-derived Enmity value is requested", "unmetBehavior": "withhold-derived-value-preserve-manual-final-values"}]}
     },
     {
       "id": "enmity-equipped-attestation-gate",
@@ -157,7 +157,7 @@
       "loadBearing": true,
       "downstreamConsumers": ["Import/review regression test"],
       "replacementRule": "Replace only through a reviewed product-policy change.",
-      "data": {"input": {"rawItemText": "81% reduced Fire Resistance; 285 Fire Damage when you use a Skill", "origin": "synthetic-observed-instance"}, "expected": {"preservedVerbatim": true, "reviewState": "outside-reviewed-natural-range", "clamped": false, "generalMechanicsEvidence": false, "availabilityEvidence": false, "ownershipProof": false}}
+      "data": {"input": {"rawItemText": "123% reduced Fire Resistance; 777 Fire Damage when you use a Skill", "origin": "synthetic-contract-fixture"}, "expected": {"preservedVerbatim": true, "reviewState": "outside-reviewed-natural-range", "clamped": false, "generalMechanicsEvidence": false, "availabilityEvidence": false, "ownershipProof": false}}
     }
   ],
   "notes": "All numeric expected values are product arithmetic over manual final integral inputs that pass the explicit equipment, context, and dependency gates; they are not a claim that the game exposes or rounds every input that way."

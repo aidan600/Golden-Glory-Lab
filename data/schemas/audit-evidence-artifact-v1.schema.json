@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://goldenglorylab.local/schemas/audit-evidence-artifact-v1.schema.json",
-  "title": "Golden Glory Lab audit evidence artifact",
-  "description": "Shared envelope for small, reviewed first-release audit artifacts. It preserves claim-level provenance and retention constraints without turning an audit fixture into production mechanics data.",
+  "title": "Golden Glory Lab first-release audit evidence artifact",
+  "description": "Draft 2020-12 evidence-pack contract. Each approved artifact has a closed artifact-specific record-data shape; mechanics outputs remain audit fixtures rather than production mechanics data.",
   "type": "object",
   "required": [
     "schemaVersion",
@@ -24,7 +24,18 @@
     },
     "artifactId": {
       "type": "string",
-      "pattern": "^[a-z][a-z0-9-]*$"
+      "enum": [
+        "aud-002-mercenary-input-contract-v1",
+        "aud-003-light-radius-passive-sources-v1",
+        "aud-003-light-radius-observed-stat-terms-v1",
+        "aud-003-link-effect-passive-sources-v1",
+        "aud-003-link-effect-observed-stat-terms-v1",
+        "aud-003-golden-glory-mechanic-v1",
+        "aud-004-flame-link-reference-v1",
+        "aud-004-flame-link-gates-v1",
+        "aud-005-enmitys-embrace-reference-v1",
+        "aud-005-enmitys-embrace-gates-v1"
+      ]
     },
     "artifactType": {
       "type": "string",
@@ -51,13 +62,22 @@
       "const": "Path of Exile 1 3.29.1"
     },
     "verificationStatus": {
-      "$ref": "#/$defs/status"
+      "type": "string",
+      "enum": [
+        "confirmed",
+        "supported",
+        "provisional",
+        "unknown",
+        "superseded"
+      ]
     },
     "sourceIds": {
       "type": "array",
       "minItems": 1,
+      "uniqueItems": true,
       "items": {
-        "$ref": "#/$defs/sourceId"
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9-]*$"
       }
     },
     "scope": {
@@ -96,6 +116,123 @@
     "claimId": {
       "type": "string",
       "pattern": "^AUD-00[2-5]-C[0-9]{2}$"
+    },
+    "dependency": {
+      "type": "object",
+      "required": [
+        "claimId",
+        "contractVersion",
+        "gateMode",
+        "minimumStatus",
+        "appliesWhen",
+        "unmetBehavior"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "claimId": {
+          "type": "string",
+          "pattern": "^AUD-00[2-5]-C[0-9]{2}$"
+        },
+        "contractVersion": {
+          "const": "1.0.0"
+        },
+        "gateMode": {
+          "const": "requires-positive-capability"
+        },
+        "minimumStatus": {
+          "type": "string",
+          "enum": [
+            "confirmed",
+            "supported",
+            "provisional",
+            "unknown",
+            "superseded"
+          ]
+        },
+        "appliesWhen": {
+          "type": "string"
+        },
+        "unmetBehavior": {
+          "type": "string"
+        }
+      }
+    },
+    "record": {
+      "type": "object",
+      "required": [
+        "id",
+        "verificationStatus",
+        "claimIds",
+        "sourceIds",
+        "evidenceLocation",
+        "limitations",
+        "loadBearing",
+        "downstreamConsumers",
+        "replacementRule",
+        "data"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*$"
+        },
+        "verificationStatus": {
+          "type": "string",
+          "enum": [
+            "confirmed",
+            "supported",
+            "provisional",
+            "unknown",
+            "superseded"
+          ]
+        },
+        "claimIds": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^AUD-00[2-5]-C[0-9]{2}$"
+          }
+        },
+        "sourceIds": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$"
+          }
+        },
+        "evidenceLocation": {
+          "type": "string",
+          "minLength": 1
+        },
+        "limitations": {
+          "type": "string",
+          "minLength": 1
+        },
+        "loadBearing": {
+          "type": "boolean"
+        },
+        "downstreamConsumers": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "replacementRule": {
+          "type": "string",
+          "minLength": 1
+        },
+        "data": {
+          "type": "object",
+          "minProperties": 1
+        }
+      }
     },
     "retention": {
       "type": "object",
@@ -149,72 +286,2444 @@
           "minLength": 1
         }
       }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "required": [
+          "artifactId"
+        ],
+        "properties": {
+          "artifactId": {
+            "const": "aud-002-mercenary-input-contract-v1"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifactType": {
+            "const": "manual-input-contract"
+          },
+          "auditId": {
+            "const": "AUD-002"
+          },
+          "records": {
+            "type": "array",
+            "minItems": 4,
+            "maxItems": 4,
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/$defs/record"
+                },
+                {
+                  "properties": {
+                    "id": {
+                      "enum": [
+                        "mercenary-final-uncapped-fire-resistance",
+                        "mercenary-maximum-fire-resistance",
+                        "mercenary-equipment-inclusion-state",
+                        "mercenary-measurement-context"
+                      ]
+                    },
+                    "data": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "required": [
+                            "userVisibleLabel",
+                            "type",
+                            "unit",
+                            "sourcePath",
+                            "acceptsArbitraryObservedValues",
+                            "missingState",
+                            "unknownState",
+                            "unsupportedState"
+                          ],
+                          "additionalProperties": false,
+                          "properties": {
+                            "userVisibleLabel": {
+                              "type": "string"
+                            },
+                            "type": {
+                              "const": "number"
+                            },
+                            "unit": {
+                              "const": "percentage points"
+                            },
+                            "sourcePath": {
+                              "type": "string"
+                            },
+                            "acceptsArbitraryObservedValues": {
+                              "type": "boolean"
+                            },
+                            "missingState": {
+                              "const": "missing"
+                            },
+                            "unknownState": {
+                              "const": "unknown"
+                            },
+                            "unsupportedState": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "userVisibleLabel",
+                            "type",
+                            "unit",
+                            "sourcePath",
+                            "acceptsArbitraryObservedValues",
+                            "missingState",
+                            "unknownState",
+                            "unsupportedState",
+                            "defaultValue"
+                          ],
+                          "additionalProperties": false,
+                          "properties": {
+                            "userVisibleLabel": {
+                              "type": "string"
+                            },
+                            "type": {
+                              "const": "number"
+                            },
+                            "unit": {
+                              "const": "percentage points"
+                            },
+                            "sourcePath": {
+                              "type": "string"
+                            },
+                            "acceptsArbitraryObservedValues": {
+                              "type": "boolean"
+                            },
+                            "missingState": {
+                              "const": "missing"
+                            },
+                            "unknownState": {
+                              "const": "unknown"
+                            },
+                            "unsupportedState": {
+                              "type": "string"
+                            },
+                            "defaultValue": {
+                              "type": "null"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "userVisibleLabel",
+                            "type",
+                            "allowedValues",
+                            "sourcePath",
+                            "missingState",
+                            "unknownState",
+                            "unsupportedState"
+                          ],
+                          "additionalProperties": false,
+                          "properties": {
+                            "userVisibleLabel": {
+                              "type": "string"
+                            },
+                            "type": {
+                              "const": "enum"
+                            },
+                            "allowedValues": {
+                              "type": "array",
+                              "minItems": 1,
+                              "items": {
+                                "type": "string",
+                                "enum": [
+                                  "included",
+                                  "excluded",
+                                  "unknown"
+                                ]
+                              }
+                            },
+                            "sourcePath": {
+                              "type": "string"
+                            },
+                            "missingState": {
+                              "const": "missing"
+                            },
+                            "unknownState": {
+                              "const": "unknown"
+                            },
+                            "unsupportedState": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "userVisibleLabel",
+                            "type",
+                            "requiredTopics",
+                            "sourcePath",
+                            "missingState",
+                            "unknownState",
+                            "unsupportedState"
+                          ],
+                          "additionalProperties": false,
+                          "properties": {
+                            "userVisibleLabel": {
+                              "type": "string"
+                            },
+                            "type": {
+                              "const": "structured-notes"
+                            },
+                            "requiredTopics": {
+                              "type": "array",
+                              "minItems": 1,
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "sourcePath": {
+                              "type": "string"
+                            },
+                            "missingState": {
+                              "const": "missing"
+                            },
+                            "unknownState": {
+                              "const": "unknown"
+                            },
+                            "unsupportedState": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
     },
-    "record": {
-      "type": "object",
-      "required": [
-        "id",
-        "verificationStatus",
-        "claimIds",
-        "sourceIds",
-        "evidenceLocation",
-        "limitations",
-        "loadBearing",
-        "downstreamConsumers",
-        "replacementRule",
-        "data"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "id": {
-          "type": "string",
-          "pattern": "^[a-z][a-z0-9-]*$"
-        },
-        "verificationStatus": {
-          "$ref": "#/$defs/status"
-        },
-        "claimIds": {
-          "type": "array",
-          "minItems": 1,
-          "items": {
-            "$ref": "#/$defs/claimId"
+    {
+      "if": {
+        "required": [
+          "artifactId"
+        ],
+        "properties": {
+          "artifactId": {
+            "const": "aud-003-light-radius-passive-sources-v1"
           }
-        },
-        "sourceIds": {
-          "type": "array",
-          "minItems": 1,
-          "items": {
-            "$ref": "#/$defs/sourceId"
+        }
+      },
+      "then": {
+        "properties": {
+          "artifactType": {
+            "const": "source-catalog"
+          },
+          "auditId": {
+            "const": "AUD-003"
+          },
+          "records": {
+            "type": "array",
+            "minItems": 7,
+            "maxItems": 7,
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/$defs/record"
+                },
+                {
+                  "properties": {
+                    "id": {
+                      "enum": [
+                        "poe1-passive-node-27123",
+                        "poe1-passive-node-30675",
+                        "poe1-passive-node-35877",
+                        "poe1-passive-node-61133",
+                        "poe1-passive-node-63954",
+                        "poe1-passive-node-54694",
+                        "poe1-mastery-effect-51424"
+                      ]
+                    },
+                    "data": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "required": [
+                            "nodeId",
+                            "skillId",
+                            "name",
+                            "sourceType",
+                            "statFamily",
+                            "valuePercent",
+                            "sign",
+                            "availability"
+                          ],
+                          "additionalProperties": false,
+                          "properties": {
+                            "nodeId": {
+                              "type": "integer"
+                            },
+                            "skillId": {
+                              "type": "integer"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "ascendancyName": {
+                              "type": "string"
+                            },
+                            "sourceType": {
+                              "const": "passive-node"
+                            },
+                            "statFamily": {
+                              "const": "light-radius"
+                            },
+                            "valuePercent": {
+                              "type": "number"
+                            },
+                            "sign": {
+                              "type": "string"
+                            },
+                            "availability": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "masteryEffectId",
+                            "masteryName",
+                            "selectionNodeIds",
+                            "sourceType",
+                            "statFamily",
+                            "valuePercent",
+                            "sign",
+                            "basisOverride",
+                            "availability"
+                          ],
+                          "additionalProperties": false,
+                          "properties": {
+                            "masteryEffectId": {
+                              "type": "integer"
+                            },
+                            "masteryName": {
+                              "type": "string"
+                            },
+                            "selectionNodeIds": {
+                              "type": "array",
+                              "minItems": 1,
+                              "items": {
+                                "type": "integer"
+                              }
+                            },
+                            "sourceType": {
+                              "const": "mastery-effect"
+                            },
+                            "statFamily": {
+                              "const": "light-radius"
+                            },
+                            "valuePercent": {
+                              "type": "number"
+                            },
+                            "sign": {
+                              "type": "string"
+                            },
+                            "basisOverride": {
+                              "type": "string"
+                            },
+                            "availability": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
           }
-        },
-        "evidenceLocation": {
-          "type": "string",
-          "minLength": 1
-        },
-        "limitations": {
-          "type": "string",
-          "minLength": 1
-        },
-        "loadBearing": {
-          "type": "boolean"
-        },
-        "downstreamConsumers": {
-          "type": "array",
-          "minItems": 1,
-          "items": {
-            "type": "string",
-            "minLength": 1
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "artifactId"
+        ],
+        "properties": {
+          "artifactId": {
+            "const": "aud-003-light-radius-observed-stat-terms-v1"
           }
-        },
-        "replacementRule": {
-          "type": "string",
-          "minLength": 1
-        },
-        "data": {
-          "type": "object",
-          "minProperties": 1
+        }
+      },
+      "then": {
+        "properties": {
+          "artifactType": {
+            "const": "source-catalog"
+          },
+          "auditId": {
+            "const": "AUD-003"
+          },
+          "records": {
+            "type": "array",
+            "minItems": 10,
+            "maxItems": 10,
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/$defs/record"
+                },
+                {
+                  "properties": {
+                    "id": {
+                      "enum": [
+                        "poe1-trade-light-radius-explicit-1263695895",
+                        "poe1-trade-light-radius-implicit-1263695895",
+                        "poe1-trade-light-radius-fractured-1263695895",
+                        "poe1-trade-light-radius-enchant-1263695895",
+                        "poe1-trade-light-radius-scourge-1263695895",
+                        "poe1-trade-light-radius-during-effect-2745936267",
+                        "poe1-trade-light-radius-basis-explicit-3836017971",
+                        "poe1-trade-light-radius-basis-fractured-3836017971",
+                        "poe1-trade-light-radius-basis-crafted-3836017971",
+                        "poe1-helmet-corruption-light-radius-range"
+                      ]
+                    },
+                    "data": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "required": [
+                            "tradeId",
+                            "domain",
+                            "statFamily",
+                            "valueType",
+                            "availability",
+                            "offerAsImprovement",
+                            "acceptedForObservedInstance"
+                          ],
+                          "additionalProperties": false,
+                          "properties": {
+                            "tradeId": {
+                              "type": "string"
+                            },
+                            "domain": {
+                              "type": "string"
+                            },
+                            "statFamily": {
+                              "type": "string",
+                              "enum": [
+                                "light-radius",
+                                "light-radius-basis"
+                              ]
+                            },
+                            "valueType": {
+                              "type": "string"
+                            },
+                            "naturalRange": {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "required": [
+                                    "minimum",
+                                    "maximum"
+                                  ],
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "minimum": {
+                                      "type": "number"
+                                    },
+                                    "maximum": {
+                                      "type": "number"
+                                    }
+                                  }
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "condition": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "object"
+                                }
+                              ]
+                            },
+                            "basis": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "object"
+                                }
+                              ]
+                            },
+                            "availability": {
+                              "type": "string"
+                            },
+                            "offerAsImprovement": {
+                              "type": "boolean"
+                            },
+                            "acceptedForObservedInstance": {
+                              "type": "boolean"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "sourceType",
+                            "statFamily",
+                            "official3290RangePercent",
+                            "pobSupportingRangePercent",
+                            "currentNaturalRangePercent",
+                            "availability",
+                            "offerAsImprovement",
+                            "acceptedForObservedInstance"
+                          ],
+                          "additionalProperties": false,
+                          "properties": {
+                            "sourceType": {
+                              "type": "string"
+                            },
+                            "statFamily": {
+                              "const": "light-radius"
+                            },
+                            "official3290RangePercent": {
+                              "anyOf": [
+                                {
+                                  "type": "array",
+                                  "minItems": 2,
+                                  "maxItems": 2,
+                                  "items": {
+                                    "type": "number"
+                                  }
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "pobSupportingRangePercent": {
+                              "anyOf": [
+                                {
+                                  "type": "array",
+                                  "minItems": 2,
+                                  "maxItems": 2,
+                                  "items": {
+                                    "type": "number"
+                                  }
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "currentNaturalRangePercent": {
+                              "anyOf": [
+                                {
+                                  "type": "array",
+                                  "minItems": 2,
+                                  "maxItems": 2,
+                                  "items": {
+                                    "type": "number"
+                                  }
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "availability": {
+                              "type": "string"
+                            },
+                            "offerAsImprovement": {
+                              "type": "boolean"
+                            },
+                            "acceptedForObservedInstance": {
+                              "type": "boolean"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "artifactId"
+        ],
+        "properties": {
+          "artifactId": {
+            "const": "aud-003-link-effect-passive-sources-v1"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifactType": {
+            "const": "source-catalog"
+          },
+          "auditId": {
+            "const": "AUD-003"
+          },
+          "records": {
+            "type": "array",
+            "minItems": 6,
+            "maxItems": 6,
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/$defs/record"
+                },
+                {
+                  "properties": {
+                    "id": {
+                      "enum": [
+                        "poe1-passive-node-3089",
+                        "poe1-passive-node-57404",
+                        "poe1-passive-node-60145",
+                        "poe1-passive-node-60781",
+                        "poe1-passive-node-46471",
+                        "poe1-passive-node-15900"
+                      ]
+                    },
+                    "data": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "required": [
+                            "nodeId",
+                            "skillId",
+                            "name",
+                            "sourceType",
+                            "statFamily",
+                            "valuePercent",
+                            "sign",
+                            "availability"
+                          ],
+                          "additionalProperties": false,
+                          "properties": {
+                            "nodeId": {
+                              "type": "integer"
+                            },
+                            "skillId": {
+                              "type": "integer"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "sourceType": {
+                              "const": "passive-node"
+                            },
+                            "statFamily": {
+                              "const": "direct-link-buff-effect"
+                            },
+                            "valuePercent": {
+                              "type": "number"
+                            },
+                            "sign": {
+                              "type": "string"
+                            },
+                            "condition": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "object"
+                                }
+                              ]
+                            },
+                            "availability": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "nodeId",
+                            "skillId",
+                            "name",
+                            "sourceType",
+                            "attachmentDuration",
+                            "directLinkBuffEffectPercent",
+                            "availability"
+                          ],
+                          "additionalProperties": false,
+                          "properties": {
+                            "nodeId": {
+                              "type": "integer"
+                            },
+                            "skillId": {
+                              "type": "integer"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "sourceType": {
+                              "type": "string",
+                              "enum": [
+                                "passive-node",
+                                "related-condition-node"
+                              ]
+                            },
+                            "attachmentDuration": {
+                              "type": "string"
+                            },
+                            "directLinkBuffEffectPercent": {
+                              "anyOf": [
+                                {
+                                  "type": "number"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "availability": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "artifactId"
+        ],
+        "properties": {
+          "artifactId": {
+            "const": "aud-003-link-effect-observed-stat-terms-v1"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifactType": {
+            "const": "source-catalog"
+          },
+          "auditId": {
+            "const": "AUD-003"
+          },
+          "records": {
+            "type": "array",
+            "minItems": 6,
+            "maxItems": 6,
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/$defs/record"
+                },
+                {
+                  "properties": {
+                    "id": {
+                      "enum": [
+                        "poe1-trade-crucible-link-effect-15845",
+                        "poe1-trade-crucible-link-effect-47594",
+                        "poe1-trade-crucible-link-effect-41316",
+                        "poe1-trade-crucible-link-effect-48159",
+                        "poe1-trade-crucible-link-effect-41817",
+                        "poe1-trade-crucible-link-effect-45"
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "tradeId",
+                        "domain",
+                        "statFamily",
+                        "valuePercent",
+                        "sign",
+                        "availability",
+                        "offerAsImprovement",
+                        "acceptedForObservedInstance"
+                      ],
+                      "additionalProperties": false,
+                      "properties": {
+                        "tradeId": {
+                          "type": "string"
+                        },
+                        "domain": {
+                          "type": "string"
+                        },
+                        "statFamily": {
+                          "const": "direct-link-buff-effect"
+                        },
+                        "valuePercent": {
+                          "type": "number"
+                        },
+                        "sign": {
+                          "type": "string"
+                        },
+                        "availability": {
+                          "type": "string"
+                        },
+                        "offerAsImprovement": {
+                          "type": "boolean"
+                        },
+                        "acceptedForObservedInstance": {
+                          "type": "boolean"
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "artifactId"
+        ],
+        "properties": {
+          "artifactId": {
+            "const": "aud-003-golden-glory-mechanic-v1"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifactType": {
+            "const": "mechanic-reference"
+          },
+          "auditId": {
+            "const": "AUD-003"
+          },
+          "records": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 1,
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/$defs/record"
+                },
+                {
+                  "properties": {
+                    "id": {
+                      "enum": [
+                        "poe1-passive-node-31517"
+                      ]
+                    },
+                    "data": {
+                      "type": "object",
+                      "required": [
+                        "nodeId",
+                        "skillId",
+                        "name",
+                        "ascendancyName",
+                        "literalEffect",
+                        "requiresAllocation",
+                        "targetKind",
+                        "inputStatFamily",
+                        "outputStatFamily",
+                        "arithmetic",
+                        "stacking",
+                        "rounding",
+                        "cap"
+                      ],
+                      "additionalProperties": false,
+                      "properties": {
+                        "nodeId": {
+                          "type": "integer"
+                        },
+                        "skillId": {
+                          "type": "integer"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "ascendancyName": {
+                          "type": "string"
+                        },
+                        "literalEffect": {
+                          "type": "string"
+                        },
+                        "requiresAllocation": {
+                          "type": "boolean"
+                        },
+                        "targetKind": {
+                          "type": "string"
+                        },
+                        "inputStatFamily": {
+                          "type": "string"
+                        },
+                        "outputStatFamily": {
+                          "type": "string"
+                        },
+                        "arithmetic": {
+                          "anyOf": [
+                            {
+                              "type": "object"
+                            },
+                            {
+                              "type": "string"
+                            }
+                          ]
+                        },
+                        "stacking": {
+                          "type": "string"
+                        },
+                        "rounding": {
+                          "type": "string"
+                        },
+                        "cap": {
+                          "anyOf": [
+                            {
+                              "type": "number"
+                            },
+                            {
+                              "type": "null"
+                            },
+                            {
+                              "type": "string"
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "artifactId"
+        ],
+        "properties": {
+          "artifactId": {
+            "const": "aud-004-flame-link-reference-v1"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifactType": {
+            "const": "mechanic-reference"
+          },
+          "auditId": {
+            "const": "AUD-004"
+          },
+          "records": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/$defs/record"
+                },
+                {
+                  "properties": {
+                    "id": {
+                      "enum": [
+                        "poe1-flame-link-standard-reference",
+                        "poe1-flame-link-target-and-scaling-gate"
+                      ]
+                    },
+                    "data": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "required": [
+                            "stableReferenceId",
+                            "gemMetadataId",
+                            "grantedEffectId",
+                            "sourceDataVersion",
+                            "versionState",
+                            "sourceCommitSha",
+                            "sourceCommitUrl",
+                            "ordinaryLevelRange",
+                            "exceptionalSourceRows",
+                            "components",
+                            "standardQuality",
+                            "reproduction",
+                            "presentation"
+                          ],
+                          "additionalProperties": false,
+                          "properties": {
+                            "stableReferenceId": {
+                              "type": "string"
+                            },
+                            "gemMetadataId": {
+                              "type": "string"
+                            },
+                            "grantedEffectId": {
+                              "type": "string"
+                            },
+                            "sourceDataVersion": {
+                              "type": "string"
+                            },
+                            "versionState": {
+                              "type": "string"
+                            },
+                            "sourceCommitSha": {
+                              "type": "string"
+                            },
+                            "sourceCommitUrl": {
+                              "type": "string"
+                            },
+                            "ordinaryLevelRange": {
+                              "type": "object",
+                              "required": [
+                                "minimum",
+                                "maximum"
+                              ],
+                              "additionalProperties": false,
+                              "properties": {
+                                "minimum": {
+                                  "type": "integer"
+                                },
+                                "maximum": {
+                                  "type": "integer"
+                                }
+                              }
+                            },
+                            "exceptionalSourceRows": {
+                              "type": "object",
+                              "required": [
+                                "minimum",
+                                "maximum",
+                                "firstReleaseState"
+                              ],
+                              "additionalProperties": false,
+                              "properties": {
+                                "minimum": {
+                                  "type": "integer"
+                                },
+                                "maximum": {
+                                  "type": "integer"
+                                },
+                                "firstReleaseState": {
+                                  "const": "needs-review"
+                                }
+                              }
+                            },
+                            "components": {
+                              "type": "object"
+                            },
+                            "standardQuality": {
+                              "type": "object"
+                            },
+                            "reproduction": {
+                              "type": "object"
+                            },
+                            "presentation": {
+                              "type": "object"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "targetClass",
+                            "linkReportingStates",
+                            "finalScaledResult",
+                            "upstreamContract",
+                            "upstreamDependencies",
+                            "unconditionalBlockingDependencies",
+                            "conditionalBlockingDependencies",
+                            "unknownIsNotZero",
+                            "exceptionalLevels"
+                          ],
+                          "additionalProperties": false,
+                          "properties": {
+                            "targetClass": {
+                              "type": "string"
+                            },
+                            "linkReportingStates": {
+                              "type": "object",
+                              "required": [
+                                "active",
+                                "inactive",
+                                "unknown"
+                              ],
+                              "additionalProperties": false,
+                              "properties": {
+                                "active": {
+                                  "type": "string"
+                                },
+                                "inactive": {
+                                  "type": "string"
+                                },
+                                "unknown": {
+                                  "type": "string"
+                                }
+                              }
+                            },
+                            "finalScaledResult": {
+                              "const": "withheld"
+                            },
+                            "upstreamContract": {
+                              "type": "object",
+                              "required": [
+                                "auditId",
+                                "contractVersion"
+                              ],
+                              "additionalProperties": false,
+                              "properties": {
+                                "auditId": {
+                                  "const": "AUD-003"
+                                },
+                                "contractVersion": {
+                                  "const": "1.0.0"
+                                }
+                              }
+                            },
+                            "upstreamDependencies": {
+                              "type": "array",
+                              "minItems": 1,
+                              "items": {
+                                "type": "object",
+                                "required": [
+                                  "claimId",
+                                  "contractVersion",
+                                  "gateMode",
+                                  "minimumStatus",
+                                  "appliesWhen",
+                                  "unmetBehavior"
+                                ],
+                                "additionalProperties": false,
+                                "properties": {
+                                  "claimId": {
+                                    "type": "string",
+                                    "pattern": "^AUD-00[2-5]-C[0-9]{2}$"
+                                  },
+                                  "contractVersion": {
+                                    "const": "1.0.0"
+                                  },
+                                  "gateMode": {
+                                    "const": "requires-positive-capability"
+                                  },
+                                  "minimumStatus": {
+                                    "type": "string",
+                                    "enum": [
+                                      "confirmed",
+                                      "supported",
+                                      "provisional",
+                                      "unknown",
+                                      "superseded"
+                                    ]
+                                  },
+                                  "appliesWhen": {
+                                    "type": "string"
+                                  },
+                                  "unmetBehavior": {
+                                    "type": "string"
+                                  }
+                                }
+                              }
+                            },
+                            "unconditionalBlockingDependencies": {
+                              "type": "array",
+                              "minItems": 1,
+                              "items": {
+                                "type": "object",
+                                "required": [
+                                  "claimId",
+                                  "contractVersion",
+                                  "gateMode",
+                                  "minimumStatus",
+                                  "appliesWhen",
+                                  "unmetBehavior"
+                                ],
+                                "additionalProperties": false,
+                                "properties": {
+                                  "claimId": {
+                                    "type": "string",
+                                    "pattern": "^AUD-00[2-5]-C[0-9]{2}$"
+                                  },
+                                  "contractVersion": {
+                                    "const": "1.0.0"
+                                  },
+                                  "gateMode": {
+                                    "const": "requires-positive-capability"
+                                  },
+                                  "minimumStatus": {
+                                    "type": "string",
+                                    "enum": [
+                                      "confirmed",
+                                      "supported",
+                                      "provisional",
+                                      "unknown",
+                                      "superseded"
+                                    ]
+                                  },
+                                  "appliesWhen": {
+                                    "type": "string"
+                                  },
+                                  "unmetBehavior": {
+                                    "type": "string"
+                                  }
+                                }
+                              }
+                            },
+                            "conditionalBlockingDependencies": {
+                              "type": "array",
+                              "minItems": 1,
+                              "items": {
+                                "type": "object",
+                                "required": [
+                                  "claimId",
+                                  "contractVersion",
+                                  "gateMode",
+                                  "minimumStatus",
+                                  "appliesWhen",
+                                  "unmetBehavior"
+                                ],
+                                "additionalProperties": false,
+                                "properties": {
+                                  "claimId": {
+                                    "type": "string",
+                                    "pattern": "^AUD-00[2-5]-C[0-9]{2}$"
+                                  },
+                                  "contractVersion": {
+                                    "const": "1.0.0"
+                                  },
+                                  "gateMode": {
+                                    "const": "requires-positive-capability"
+                                  },
+                                  "minimumStatus": {
+                                    "type": "string",
+                                    "enum": [
+                                      "confirmed",
+                                      "supported",
+                                      "provisional",
+                                      "unknown",
+                                      "superseded"
+                                    ]
+                                  },
+                                  "appliesWhen": {
+                                    "type": "string"
+                                  },
+                                  "unmetBehavior": {
+                                    "type": "string"
+                                  }
+                                }
+                              }
+                            },
+                            "unknownIsNotZero": {
+                              "const": true
+                            },
+                            "exceptionalLevels": {
+                              "const": "needs-review"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "artifactId"
+        ],
+        "properties": {
+          "artifactId": {
+            "const": "aud-004-flame-link-gates-v1"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifactType": {
+            "const": "calculation-gate-fixture"
+          },
+          "auditId": {
+            "const": "AUD-004"
+          },
+          "records": {
+            "type": "array",
+            "minItems": 15,
+            "maxItems": 15,
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/$defs/record"
+                },
+                {
+                  "properties": {
+                    "id": {
+                      "enum": [
+                        "flame-link-level-one-recognition",
+                        "flame-link-level-twenty-recognition",
+                        "flame-link-exceptional-level-review",
+                        "flame-link-outside-source-level-range",
+                        "flame-link-quality-duration-separation",
+                        "flame-link-quality-variant-review",
+                        "flame-link-inactive-reporting-state",
+                        "flame-link-unknown-reporting-state",
+                        "flame-link-target-review-gate",
+                        "flame-link-missing-source-life-gate",
+                        "flame-link-fractional-life-rounding-gate",
+                        "flame-link-independent-source-states",
+                        "flame-link-powerful-bond-condition-gate",
+                        "flame-link-source-version-mismatch",
+                        "flame-link-scaling-dependency-gate"
+                      ]
+                    },
+                    "data": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "required": [
+                            "input",
+                            "expectedState",
+                            "expectedScaledGrant"
+                          ],
+                          "additionalProperties": false,
+                          "properties": {
+                            "input": {
+                              "type": "object"
+                            },
+                            "expectedState": {
+                              "type": "string",
+                              "enum": [
+                                "recognized-ordinary",
+                                "needs-review",
+                                "unsupported",
+                                "inactive",
+                                "unavailable",
+                                "target-review-required",
+                                "rounding-evidence-required",
+                                "supporting-source-version-mismatch",
+                                "scaled-result-withheld",
+                                "derived-unavailable",
+                                "invalid-target",
+                                "unreachable-by-Enmity",
+                                "manual-input-eligible-pending-other-inputs",
+                                "not-applicable"
+                              ]
+                            },
+                            "expectedScaledGrant": {
+                              "type": "string",
+                              "enum": [
+                                "withheld-pending-scaling-evidence",
+                                "unavailable",
+                                "withheld"
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "inputCases",
+                            "expectedState",
+                            "expectedScaledGrant"
+                          ],
+                          "additionalProperties": false,
+                          "properties": {
+                            "inputCases": {
+                              "type": "array",
+                              "minItems": 1,
+                              "items": {
+                                "type": "object"
+                              }
+                            },
+                            "expectedState": {
+                              "type": "string",
+                              "enum": [
+                                "recognized-ordinary",
+                                "needs-review",
+                                "unsupported",
+                                "inactive",
+                                "unavailable",
+                                "target-review-required",
+                                "rounding-evidence-required",
+                                "supporting-source-version-mismatch",
+                                "scaled-result-withheld",
+                                "derived-unavailable",
+                                "invalid-target",
+                                "unreachable-by-Enmity",
+                                "manual-input-eligible-pending-other-inputs",
+                                "not-applicable"
+                              ]
+                            },
+                            "expectedScaledGrant": {
+                              "type": "string",
+                              "enum": [
+                                "withheld-pending-scaling-evidence",
+                                "unavailable",
+                                "withheld"
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "input",
+                            "expectedAdditionalBaseDurationMilliseconds",
+                            "expectedGrantedDamageConclusion"
+                          ],
+                          "additionalProperties": false,
+                          "properties": {
+                            "input": {
+                              "type": "object"
+                            },
+                            "expectedAdditionalBaseDurationMilliseconds": {
+                              "type": "integer"
+                            },
+                            "expectedGrantedDamageConclusion": {
+                              "const": "not-established"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "input",
+                            "expectedState",
+                            "expectedGrantedDamageConclusion"
+                          ],
+                          "additionalProperties": false,
+                          "properties": {
+                            "input": {
+                              "type": "object"
+                            },
+                            "expectedState": {
+                              "type": "string",
+                              "enum": [
+                                "recognized-ordinary",
+                                "needs-review",
+                                "unsupported",
+                                "inactive",
+                                "unavailable",
+                                "target-review-required",
+                                "rounding-evidence-required",
+                                "supporting-source-version-mismatch",
+                                "scaled-result-withheld",
+                                "derived-unavailable",
+                                "invalid-target",
+                                "unreachable-by-Enmity",
+                                "manual-input-eligible-pending-other-inputs",
+                                "not-applicable"
+                              ]
+                            },
+                            "expectedGrantedDamageConclusion": {
+                              "const": "not-established"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "input",
+                            "expectedState",
+                            "expectedCurrentResult",
+                            "expectedNumericZero"
+                          ],
+                          "additionalProperties": false,
+                          "properties": {
+                            "input": {
+                              "type": "object"
+                            },
+                            "expectedState": {
+                              "type": "string",
+                              "enum": [
+                                "recognized-ordinary",
+                                "needs-review",
+                                "unsupported",
+                                "inactive",
+                                "unavailable",
+                                "target-review-required",
+                                "rounding-evidence-required",
+                                "supporting-source-version-mismatch",
+                                "scaled-result-withheld",
+                                "derived-unavailable",
+                                "invalid-target",
+                                "unreachable-by-Enmity",
+                                "manual-input-eligible-pending-other-inputs",
+                                "not-applicable"
+                              ]
+                            },
+                            "expectedCurrentResult": {
+                              "type": "string"
+                            },
+                            "expectedNumericZero": {
+                              "type": "boolean"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "input",
+                            "expectedState",
+                            "expectedNumericZero"
+                          ],
+                          "additionalProperties": false,
+                          "properties": {
+                            "input": {
+                              "type": "object"
+                            },
+                            "expectedState": {
+                              "type": "string",
+                              "enum": [
+                                "recognized-ordinary",
+                                "needs-review",
+                                "unsupported",
+                                "inactive",
+                                "unavailable",
+                                "target-review-required",
+                                "rounding-evidence-required",
+                                "supporting-source-version-mismatch",
+                                "scaled-result-withheld",
+                                "derived-unavailable",
+                                "invalid-target",
+                                "unreachable-by-Enmity",
+                                "manual-input-eligible-pending-other-inputs",
+                                "not-applicable"
+                              ]
+                            },
+                            "expectedNumericZero": {
+                              "type": "boolean"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "inputCases",
+                            "expected"
+                          ],
+                          "additionalProperties": false,
+                          "properties": {
+                            "inputCases": {
+                              "type": "array",
+                              "minItems": 1,
+                              "items": {
+                                "type": "object"
+                              }
+                            },
+                            "expected": {
+                              "type": "object"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "input",
+                            "expectedState",
+                            "unconditionalBlockingDependencies"
+                          ],
+                          "additionalProperties": false,
+                          "properties": {
+                            "input": {
+                              "type": "object"
+                            },
+                            "expectedState": {
+                              "type": "string",
+                              "enum": [
+                                "recognized-ordinary",
+                                "needs-review",
+                                "unsupported",
+                                "inactive",
+                                "unavailable",
+                                "target-review-required",
+                                "rounding-evidence-required",
+                                "supporting-source-version-mismatch",
+                                "scaled-result-withheld",
+                                "derived-unavailable",
+                                "invalid-target",
+                                "unreachable-by-Enmity",
+                                "manual-input-eligible-pending-other-inputs",
+                                "not-applicable"
+                              ]
+                            },
+                            "unconditionalBlockingDependencies": {
+                              "type": "array",
+                              "minItems": 1,
+                              "items": {
+                                "type": "object",
+                                "required": [
+                                  "claimId",
+                                  "contractVersion",
+                                  "gateMode",
+                                  "minimumStatus",
+                                  "appliesWhen",
+                                  "unmetBehavior"
+                                ],
+                                "additionalProperties": false,
+                                "properties": {
+                                  "claimId": {
+                                    "type": "string",
+                                    "pattern": "^AUD-00[2-5]-C[0-9]{2}$"
+                                  },
+                                  "contractVersion": {
+                                    "const": "1.0.0"
+                                  },
+                                  "gateMode": {
+                                    "const": "requires-positive-capability"
+                                  },
+                                  "minimumStatus": {
+                                    "type": "string",
+                                    "enum": [
+                                      "confirmed",
+                                      "supported",
+                                      "provisional",
+                                      "unknown",
+                                      "superseded"
+                                    ]
+                                  },
+                                  "appliesWhen": {
+                                    "type": "string"
+                                  },
+                                  "unmetBehavior": {
+                                    "type": "string"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "inputCases"
+                          ],
+                          "additionalProperties": false,
+                          "properties": {
+                            "inputCases": {
+                              "type": "array",
+                              "minItems": 1,
+                              "items": {
+                                "type": "object"
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "artifactId"
+        ],
+        "properties": {
+          "artifactId": {
+            "const": "aud-005-enmitys-embrace-reference-v1"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifactType": {
+            "const": "mechanic-reference"
+          },
+          "auditId": {
+            "const": "AUD-005"
+          },
+          "records": {
+            "type": "array",
+            "minItems": 3,
+            "maxItems": 3,
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/$defs/record"
+                },
+                {
+                  "properties": {
+                    "id": {
+                      "enum": [
+                        "poe1-enmitys-embrace-reference",
+                        "poe1-enmitys-embrace-manual-isolated-formula",
+                        "poe1-enmitys-embrace-input-and-aggregation-gates"
+                      ]
+                    },
+                    "data": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "required": [
+                            "stableReferenceId",
+                            "itemName",
+                            "baseType",
+                            "requiredLevel",
+                            "sourceDataVersion",
+                            "versionState",
+                            "sourceLocators",
+                            "reviewedNaturalRanges",
+                            "dynamicEffect",
+                            "availability",
+                            "observedValuePolicy"
+                          ],
+                          "additionalProperties": false,
+                          "properties": {
+                            "stableReferenceId": {
+                              "type": "string"
+                            },
+                            "itemName": {
+                              "type": "string"
+                            },
+                            "baseType": {
+                              "type": "string"
+                            },
+                            "requiredLevel": {
+                              "type": "integer"
+                            },
+                            "sourceDataVersion": {
+                              "type": "string"
+                            },
+                            "versionState": {
+                              "type": "string"
+                            },
+                            "sourceLocators": {
+                              "type": "object",
+                              "required": [
+                                "uniqueRecord",
+                                "developmentSnapshot",
+                                "pinnedExport",
+                                "parser",
+                                "defenceModel",
+                                "offenceModel"
+                              ],
+                              "additionalProperties": false,
+                              "properties": {
+                                "uniqueRecord": {
+                                  "type": "string"
+                                },
+                                "developmentSnapshot": {
+                                  "type": "object",
+                                  "required": [
+                                    "commitSha",
+                                    "dynamicStatDescription"
+                                  ],
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "commitSha": {
+                                      "type": "string"
+                                    },
+                                    "dynamicStatDescription": {
+                                      "const": "generated stat-description record 3043"
+                                    }
+                                  }
+                                },
+                                "pinnedExport": {
+                                  "type": "object",
+                                  "required": [
+                                    "commitSha",
+                                    "dynamicStatDescription"
+                                  ],
+                                  "additionalProperties": false,
+                                  "properties": {
+                                    "commitSha": {
+                                      "type": "string"
+                                    },
+                                    "dynamicStatDescription": {
+                                      "const": "generated stat-description record 3040"
+                                    }
+                                  }
+                                },
+                                "parser": {
+                                  "type": "string"
+                                },
+                                "defenceModel": {
+                                  "type": "string"
+                                },
+                                "offenceModel": {
+                                  "type": "string"
+                                }
+                              }
+                            },
+                            "reviewedNaturalRanges": {
+                              "type": "object"
+                            },
+                            "dynamicEffect": {
+                              "type": "object"
+                            },
+                            "availability": {
+                              "type": "object"
+                            },
+                            "observedValuePolicy": {
+                              "type": "object"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "inputs",
+                            "formula",
+                            "manualOnly",
+                            "manualOutputRequirements",
+                            "unknownIsNotZero",
+                            "prohibitedOutputs",
+                            "targetReporting"
+                          ],
+                          "additionalProperties": false,
+                          "properties": {
+                            "inputs": {
+                              "type": "object",
+                              "required": [
+                                "U",
+                                "M"
+                              ],
+                              "additionalProperties": false,
+                              "properties": {
+                                "U": {
+                                  "type": "string"
+                                },
+                                "M": {
+                                  "type": "string"
+                                }
+                              }
+                            },
+                            "formula": {
+                              "type": "object",
+                              "required": [
+                                "overcap",
+                                "enmityOwnFirePenetration"
+                              ],
+                              "additionalProperties": false,
+                              "properties": {
+                                "overcap": {
+                                  "const": "max(0,U-M)"
+                                },
+                                "enmityOwnFirePenetration": {
+                                  "const": "min(200,overcap)"
+                                }
+                              }
+                            },
+                            "manualOnly": {
+                              "const": true
+                            },
+                            "manualOutputRequirements": {
+                              "type": "object"
+                            },
+                            "unknownIsNotZero": {
+                              "const": true
+                            },
+                            "prohibitedOutputs": {
+                              "type": "array",
+                              "minItems": 1,
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            "targetReporting": {
+                              "type": "object"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "upstreamContract",
+                            "upstreamDependencies",
+                            "manualOutputGate",
+                            "derivedPath",
+                            "aggregation",
+                            "prohibitedOutputs"
+                          ],
+                          "additionalProperties": false,
+                          "properties": {
+                            "upstreamContract": {
+                              "type": "object",
+                              "required": [
+                                "auditId",
+                                "contractVersion"
+                              ],
+                              "additionalProperties": false,
+                              "properties": {
+                                "auditId": {
+                                  "const": "AUD-002"
+                                },
+                                "contractVersion": {
+                                  "const": "1.0.0"
+                                }
+                              }
+                            },
+                            "upstreamDependencies": {
+                              "type": "array",
+                              "minItems": 1,
+                              "items": {
+                                "type": "object",
+                                "required": [
+                                  "claimId",
+                                  "contractVersion",
+                                  "gateMode",
+                                  "minimumStatus",
+                                  "appliesWhen",
+                                  "unmetBehavior"
+                                ],
+                                "additionalProperties": false,
+                                "properties": {
+                                  "claimId": {
+                                    "type": "string",
+                                    "pattern": "^AUD-00[2-5]-C[0-9]{2}$"
+                                  },
+                                  "contractVersion": {
+                                    "const": "1.0.0"
+                                  },
+                                  "gateMode": {
+                                    "const": "requires-positive-capability"
+                                  },
+                                  "minimumStatus": {
+                                    "type": "string",
+                                    "enum": [
+                                      "confirmed",
+                                      "supported",
+                                      "provisional",
+                                      "unknown",
+                                      "superseded"
+                                    ]
+                                  },
+                                  "appliesWhen": {
+                                    "type": "string"
+                                  },
+                                  "unmetBehavior": {
+                                    "type": "string"
+                                  }
+                                }
+                              }
+                            },
+                            "manualOutputGate": {
+                              "type": "object"
+                            },
+                            "derivedPath": {
+                              "const": "unavailable"
+                            },
+                            "aggregation": {
+                              "const": "unavailable"
+                            },
+                            "prohibitedOutputs": {
+                              "type": "array",
+                              "minItems": 1,
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "required": [
+          "artifactId"
+        ],
+        "properties": {
+          "artifactId": {
+            "const": "aud-005-enmitys-embrace-gates-v1"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifactType": {
+            "const": "calculation-gate-fixture"
+          },
+          "auditId": {
+            "const": "AUD-005"
+          },
+          "records": {
+            "type": "array",
+            "minItems": 11,
+            "maxItems": 11,
+            "items": {
+              "allOf": [
+                {
+                  "$ref": "#/$defs/record"
+                },
+                {
+                  "properties": {
+                    "id": {
+                      "enum": [
+                        "enmity-manual-no-overcap",
+                        "enmity-manual-one-point-overcap",
+                        "enmity-manual-item-cap",
+                        "enmity-manual-input-beyond-item-cap",
+                        "enmity-manual-nonpositive-overcap",
+                        "enmity-manual-missing-final-inputs",
+                        "enmity-target-reporting",
+                        "enmity-sheet-derived-inclusion-gate",
+                        "enmity-equipped-attestation-gate",
+                        "enmity-fractional-manual-gate",
+                        "enmity-observed-outside-reviewed-range"
+                      ]
+                    },
+                    "data": {
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "required": [
+                            "input",
+                            "expected"
+                          ],
+                          "additionalProperties": false,
+                          "properties": {
+                            "input": {
+                              "type": "object",
+                              "required": [
+                                "U",
+                                "M",
+                                "enmityEquippedState",
+                                "measurementContext",
+                                "equipmentInclusionState",
+                                "equipmentInclusionStateRecorded"
+                              ],
+                              "additionalProperties": false,
+                              "properties": {
+                                "U": {
+                                  "type": "number"
+                                },
+                                "M": {
+                                  "type": "number"
+                                },
+                                "entryMode": {
+                                  "const": "manual-final-comparable"
+                                },
+                                "enmityEquippedState": {
+                                  "const": "equipped"
+                                },
+                                "measurementContext": {
+                                  "type": "string"
+                                },
+                                "equipmentInclusionState": {
+                                  "type": "string",
+                                  "enum": [
+                                    "included",
+                                    "excluded",
+                                    "unknown"
+                                  ]
+                                },
+                                "equipmentInclusionStateRecorded": {
+                                  "type": "boolean"
+                                }
+                              }
+                            },
+                            "expected": {
+                              "type": "object",
+                              "required": [
+                                "overcap",
+                                "enmityOwnFirePenetration"
+                              ],
+                              "additionalProperties": false,
+                              "properties": {
+                                "overcap": {
+                                  "type": "number"
+                                },
+                                "enmityOwnFirePenetration": {
+                                  "type": "number"
+                                },
+                                "inputBeyondCap": {
+                                  "type": "number"
+                                }
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "inputCases",
+                            "expected"
+                          ],
+                          "additionalProperties": false,
+                          "properties": {
+                            "inputCases": {
+                              "type": "array",
+                              "minItems": 1,
+                              "items": {
+                                "type": "object",
+                                "required": [
+                                  "U",
+                                  "M",
+                                  "enmityEquippedState",
+                                  "measurementContext",
+                                  "equipmentInclusionState",
+                                  "equipmentInclusionStateRecorded"
+                                ],
+                                "additionalProperties": false,
+                                "properties": {
+                                  "U": {
+                                    "type": "number"
+                                  },
+                                  "M": {
+                                    "type": "number"
+                                  },
+                                  "entryMode": {
+                                    "const": "manual-final-comparable"
+                                  },
+                                  "enmityEquippedState": {
+                                    "const": "equipped"
+                                  },
+                                  "measurementContext": {
+                                    "type": "string"
+                                  },
+                                  "equipmentInclusionState": {
+                                    "type": "string",
+                                    "enum": [
+                                      "included",
+                                      "excluded",
+                                      "unknown"
+                                    ]
+                                  },
+                                  "equipmentInclusionStateRecorded": {
+                                    "type": "boolean"
+                                  }
+                                }
+                              }
+                            },
+                            "expected": {
+                              "type": "object",
+                              "required": [
+                                "overcap",
+                                "enmityOwnFirePenetration"
+                              ],
+                              "additionalProperties": false,
+                              "properties": {
+                                "overcap": {
+                                  "type": "number"
+                                },
+                                "enmityOwnFirePenetration": {
+                                  "type": "number"
+                                },
+                                "inputBeyondCap": {
+                                  "type": "number"
+                                }
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "inputCases",
+                            "expectedState",
+                            "expectedNumericZero"
+                          ],
+                          "additionalProperties": false,
+                          "properties": {
+                            "inputCases": {
+                              "type": "array",
+                              "minItems": 1,
+                              "items": {
+                                "type": "object"
+                              }
+                            },
+                            "expectedState": {
+                              "type": "string",
+                              "enum": [
+                                "recognized-ordinary",
+                                "needs-review",
+                                "unsupported",
+                                "inactive",
+                                "unavailable",
+                                "target-review-required",
+                                "rounding-evidence-required",
+                                "supporting-source-version-mismatch",
+                                "scaled-result-withheld",
+                                "derived-unavailable",
+                                "invalid-target",
+                                "unreachable-by-Enmity",
+                                "manual-input-eligible-pending-other-inputs",
+                                "not-applicable"
+                              ]
+                            },
+                            "expectedNumericZero": {
+                              "type": "boolean"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "inputCases"
+                          ],
+                          "additionalProperties": false,
+                          "properties": {
+                            "inputCases": {
+                              "type": "array",
+                              "minItems": 1,
+                              "items": {
+                                "type": "object"
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "inputCases",
+                            "expectedState",
+                            "expectedNumericZero",
+                            "blockingDependencies"
+                          ],
+                          "additionalProperties": false,
+                          "properties": {
+                            "inputCases": {
+                              "type": "array",
+                              "minItems": 1,
+                              "items": {
+                                "type": "object"
+                              }
+                            },
+                            "expectedState": {
+                              "type": "string",
+                              "enum": [
+                                "recognized-ordinary",
+                                "needs-review",
+                                "unsupported",
+                                "inactive",
+                                "unavailable",
+                                "target-review-required",
+                                "rounding-evidence-required",
+                                "supporting-source-version-mismatch",
+                                "scaled-result-withheld",
+                                "derived-unavailable",
+                                "invalid-target",
+                                "unreachable-by-Enmity",
+                                "manual-input-eligible-pending-other-inputs",
+                                "not-applicable"
+                              ]
+                            },
+                            "expectedNumericZero": {
+                              "type": "boolean"
+                            },
+                            "blockingDependencies": {
+                              "type": "array",
+                              "minItems": 1,
+                              "items": {
+                                "type": "object",
+                                "required": [
+                                  "claimId",
+                                  "contractVersion",
+                                  "gateMode",
+                                  "minimumStatus",
+                                  "appliesWhen",
+                                  "unmetBehavior"
+                                ],
+                                "additionalProperties": false,
+                                "properties": {
+                                  "claimId": {
+                                    "type": "string",
+                                    "pattern": "^AUD-00[2-5]-C[0-9]{2}$"
+                                  },
+                                  "contractVersion": {
+                                    "const": "1.0.0"
+                                  },
+                                  "gateMode": {
+                                    "const": "requires-positive-capability"
+                                  },
+                                  "minimumStatus": {
+                                    "type": "string",
+                                    "enum": [
+                                      "confirmed",
+                                      "supported",
+                                      "provisional",
+                                      "unknown",
+                                      "superseded"
+                                    ]
+                                  },
+                                  "appliesWhen": {
+                                    "type": "string"
+                                  },
+                                  "unmetBehavior": {
+                                    "type": "string"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "input",
+                            "expectedState",
+                            "expectedEnmityOwnFirePenetration"
+                          ],
+                          "additionalProperties": false,
+                          "properties": {
+                            "input": {
+                              "type": "object",
+                              "required": [
+                                "U",
+                                "M",
+                                "enmityEquippedState",
+                                "measurementContext",
+                                "equipmentInclusionState",
+                                "equipmentInclusionStateRecorded"
+                              ],
+                              "additionalProperties": false,
+                              "properties": {
+                                "U": {
+                                  "type": "number"
+                                },
+                                "M": {
+                                  "type": "number"
+                                },
+                                "entryMode": {
+                                  "const": "manual-final-comparable"
+                                },
+                                "enmityEquippedState": {
+                                  "const": "equipped"
+                                },
+                                "measurementContext": {
+                                  "type": "string"
+                                },
+                                "equipmentInclusionState": {
+                                  "type": "string",
+                                  "enum": [
+                                    "included",
+                                    "excluded",
+                                    "unknown"
+                                  ]
+                                },
+                                "equipmentInclusionStateRecorded": {
+                                  "type": "boolean"
+                                }
+                              }
+                            },
+                            "expectedState": {
+                              "type": "string",
+                              "enum": [
+                                "recognized-ordinary",
+                                "needs-review",
+                                "unsupported",
+                                "inactive",
+                                "unavailable",
+                                "target-review-required",
+                                "rounding-evidence-required",
+                                "supporting-source-version-mismatch",
+                                "scaled-result-withheld",
+                                "derived-unavailable",
+                                "invalid-target",
+                                "unreachable-by-Enmity",
+                                "manual-input-eligible-pending-other-inputs",
+                                "not-applicable"
+                              ]
+                            },
+                            "expectedEnmityOwnFirePenetration": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "input",
+                            "expected"
+                          ],
+                          "additionalProperties": false,
+                          "properties": {
+                            "input": {
+                              "type": "object",
+                              "required": [
+                                "rawItemText",
+                                "origin"
+                              ],
+                              "additionalProperties": false,
+                              "properties": {
+                                "rawItemText": {
+                                  "type": "string"
+                                },
+                                "origin": {
+                                  "const": "synthetic-contract-fixture"
+                                }
+                              }
+                            },
+                            "expected": {
+                              "type": "object"
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "required": [
+                            "inputCases",
+                            "expectedNumericZero"
+                          ],
+                          "additionalProperties": false,
+                          "properties": {
+                            "inputCases": {
+                              "type": "array",
+                              "minItems": 1,
+                              "items": {
+                                "type": "object"
+                              }
+                            },
+                            "expectedNumericZero": {
+                              "type": "boolean"
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
         }
       }
     }
-  }
+  ]
 }

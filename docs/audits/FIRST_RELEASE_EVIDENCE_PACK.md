@@ -12,6 +12,16 @@ AUDIT task, not an implementation approval.
 
 The evidence pack is structurally complete, but it does not yet authorize the affected BUILD calculation.
 
+## Evidence-integrity repair
+
+The pack is protected by `node scripts/validate/check_first_release_evidence_pack.mjs`:
+it invokes a pinned isolated Draft 2020-12 validator for all ten artifacts and then
+checks the claim-inventory polarity, source manifests, source/claim containment,
+capability-only dependency objects, Enmity locators, synthetic formula cases, and
+withheld Flame Link fixture states. These regression guards make the existing evidence
+contract reviewable; they do not upgrade any mechanics conclusion or satisfy a Phase 1
+exit gate.
+
 ## Phase-exit status
 
 Phase 1 exit is **not achieved**. A supported audit headline does not promote

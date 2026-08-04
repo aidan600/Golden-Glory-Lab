@@ -12,7 +12,8 @@
     "ggg-merc-link-faq-3-26",
     "ggg-poe1-skilltree-export-3-29-1",
     "product-direction-first-release-2026-08-03",
-    "ggg-poe-terms-2026-08-03"
+    "ggg-poe-terms-2026-08-03",
+    "ggg-poe-3-29-1-patch-notes"
   ],
   "scope": "Synthetic gate cases for Flame Link reference behavior. They prove no live-game mechanic and deliberately omit an expected final scaled grant where evidence is unknown.",
   "retention": {
@@ -169,7 +170,7 @@
       "loadBearing": true,
       "downstreamConsumers": ["Input adapter", "claim-status regression test"],
       "replacementRule": "Replace through a superseding AUD-003/AUD-004 formula contract.",
-      "data": {"inputCases": [{"goldenGlory": "not-allocated", "directLinkEffect": "none"}, {"goldenGlory": "allocated-source-known-arithmetic-unknown", "directLinkEffect": "none"}, {"goldenGlory": "not-allocated", "directLinkEffect": "source-known-stacking-unknown"}, {"goldenGlory": "allocated-source-known-arithmetic-unknown", "directLinkEffect": "source-known-stacking-unknown"}], "expected": {"sourcePathsRemainSeparate": true, "expectedScaledGrant": "withheld", "unconditionalBlockingClaims": ["AUD-003-C12", "AUD-004-C09", "AUD-004-C10"]}}
+      "data": {"inputCases": [{"goldenGlory": "not-allocated", "directLinkEffect": "none"}, {"goldenGlory": "allocated-source-known-arithmetic-unknown", "directLinkEffect": "none"}, {"goldenGlory": "not-allocated", "directLinkEffect": "source-known-stacking-unknown"}, {"goldenGlory": "allocated-source-known-arithmetic-unknown", "directLinkEffect": "source-known-stacking-unknown"}], "expected": {"sourcePathsRemainSeparate": true, "expectedScaledGrant": "withheld", "unconditionalBlockingDependencies": [{"claimId": "AUD-003-C12", "contractVersion": "1.0.0", "gateMode": "requires-positive-capability", "minimumStatus": "supported", "appliesWhen": "a definitive scaled result is requested", "unmetBehavior": "withhold the definitive scaled output and preserve independent inputs"}, {"claimId": "AUD-004-C09", "contractVersion": "1.0.0", "gateMode": "requires-positive-capability", "minimumStatus": "supported", "appliesWhen": "Golden Glory or direct Link Buff Effect arithmetic is in scope", "unmetBehavior": "withhold the definitive scaled output and preserve independent inputs"}, {"claimId": "AUD-004-C10", "contractVersion": "1.0.0", "gateMode": "requires-positive-capability", "minimumStatus": "supported", "appliesWhen": "a definitive scaled result is requested", "unmetBehavior": "withhold the definitive scaled output and preserve independent inputs"}]}}
     },
     {
       "id": "flame-link-powerful-bond-condition-gate",
@@ -205,7 +206,7 @@
       "loadBearing": true,
       "downstreamConsumers": ["Calculation gate", "claim-status regression test"],
       "replacementRule": "Replace when all stated upstream claims and rounding evidence reach their minimum status in a superseding contract.",
-      "data": {"input": {"level": 20, "sourceMaximumLife": 1000, "linkState": "active", "targetKind": "active-permanent-mercenary", "goldenGloryState": "allocated-source-known-arithmetic-unknown", "directLinkEffectState": "source-known-stacking-unknown", "powerfulBondInScope": false}, "expectedState": "scaled-result-withheld", "unconditionalBlockingClaims": ["AUD-003-C12", "AUD-004-C09", "AUD-004-C10"]}
+      "data": {"input": {"level": 20, "sourceMaximumLife": 1000, "linkState": "active", "targetKind": "active-permanent-mercenary", "goldenGloryState": "allocated-source-known-arithmetic-unknown", "directLinkEffectState": "source-known-stacking-unknown", "powerfulBondInScope": false}, "expectedState": "scaled-result-withheld", "unconditionalBlockingDependencies": [{"claimId": "AUD-003-C12", "contractVersion": "1.0.0", "gateMode": "requires-positive-capability", "minimumStatus": "supported", "appliesWhen": "a definitive scaled result is requested", "unmetBehavior": "withhold the definitive scaled output and preserve independent inputs"}, {"claimId": "AUD-004-C09", "contractVersion": "1.0.0", "gateMode": "requires-positive-capability", "minimumStatus": "supported", "appliesWhen": "Golden Glory or direct Link Buff Effect arithmetic is in scope", "unmetBehavior": "withhold the definitive scaled output and preserve independent inputs"}, {"claimId": "AUD-004-C10", "contractVersion": "1.0.0", "gateMode": "requires-positive-capability", "minimumStatus": "supported", "appliesWhen": "a definitive scaled result is requested", "unmetBehavior": "withhold the definitive scaled output and preserve independent inputs"}]}
     }
   ],
   "notes": "This fixture is deliberately a gate contract rather than a game-calculation fixture. It makes unsupported output impossible to confuse with zero and scopes Powerful Bond uncertainty to that conditional source."

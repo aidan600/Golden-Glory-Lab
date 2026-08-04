@@ -26,6 +26,11 @@ explicit user mapping; source order is never ownership evidence.
 
 ## First-release evidence-pack
 
+The evidence-integrity gate validates the declared artifact inventory, source manifests,
+positive-capability dependencies, and withheld fixture states without promoting an
+unresolved claim.
+
+
 See [first-release evidence-pack status](FIRST_RELEASE_EVIDENCE_PACK.md) for
 the task/phase distinction and the exact claim gates. The pack is structurally
 complete, while the affected BUILD calculation remains unauthorized.

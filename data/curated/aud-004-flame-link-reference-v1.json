@@ -79,16 +79,16 @@
         "finalScaledResult": "withheld",
         "upstreamContract": {"auditId": "AUD-003", "contractVersion": "1.0.0"},
         "upstreamDependencies": [
-          {"claimId": "AUD-003-C02", "minimumStatus": "confirmed", "appliesWhen": "Golden Glory is allocated or in scope", "unmetBehavior": "withhold only the Golden Glory contribution"},
-          {"claimId": "AUD-003-C03", "minimumStatus": "confirmed", "appliesWhen": "a recognized Default-tree Light Radius record is selected", "unmetBehavior": "do not recognize or sum that source"},
-          {"claimId": "AUD-003-C04", "minimumStatus": "confirmed", "appliesWhen": "a direct Link Buff Effect source is selected", "unmetBehavior": "do not recognize or sum that source"},
-          {"claimId": "AUD-003-C05", "minimumStatus": "confirmed", "appliesWhen": "Mastery effect 51424 is selected", "unmetBehavior": "withhold only its basis-dependent numeric consequence"},
-          {"claimId": "AUD-003-C08", "minimumStatus": "supported", "appliesWhen": "Powerful Bond is selected or in scope", "unmetBehavior": "withhold only Powerful Bond's conditional contribution"},
-          {"claimId": "AUD-003-C09", "minimumStatus": "confirmed", "appliesWhen": "Inspiring Bond is selected or in scope", "unmetBehavior": "retain reminder definition; runtime activation remains unknown under AUD-003-C12"},
-          {"claimId": "AUD-003-C12", "minimumStatus": "supported", "appliesWhen": "a definitive scaled result is requested", "unmetBehavior": "withhold the definitive scaled output and preserve independent inputs"}
+          {"claimId": "AUD-003-C02", "contractVersion": "1.0.0", "gateMode": "requires-positive-capability", "minimumStatus": "confirmed", "appliesWhen": "Golden Glory is allocated or in scope", "unmetBehavior": "withhold only the Golden Glory contribution"},
+          {"claimId": "AUD-003-C03", "contractVersion": "1.0.0", "gateMode": "requires-positive-capability", "minimumStatus": "confirmed", "appliesWhen": "a recognized Default-tree Light Radius record is selected", "unmetBehavior": "do not recognize or sum that source"},
+          {"claimId": "AUD-003-C04", "contractVersion": "1.0.0", "gateMode": "requires-positive-capability", "minimumStatus": "confirmed", "appliesWhen": "a direct Link Buff Effect source is selected", "unmetBehavior": "do not recognize or sum that source"},
+          {"claimId": "AUD-003-C05", "contractVersion": "1.0.0", "gateMode": "requires-positive-capability", "minimumStatus": "confirmed", "appliesWhen": "Mastery effect 51424 is selected", "unmetBehavior": "withhold only its basis-dependent numeric consequence"},
+          {"claimId": "AUD-003-C08", "contractVersion": "1.0.0", "gateMode": "requires-positive-capability", "minimumStatus": "supported", "appliesWhen": "Powerful Bond is selected or in scope", "unmetBehavior": "withhold only Powerful Bond's conditional contribution"},
+          {"claimId": "AUD-003-C09", "contractVersion": "1.0.0", "gateMode": "requires-positive-capability", "minimumStatus": "confirmed", "appliesWhen": "Inspiring Bond is selected or in scope", "unmetBehavior": "retain reminder definition; runtime activation remains unknown under AUD-003-C12"},
+          {"claimId": "AUD-003-C12", "contractVersion": "1.0.0", "gateMode": "requires-positive-capability", "minimumStatus": "supported", "appliesWhen": "a definitive scaled result is requested", "unmetBehavior": "withhold the definitive scaled output and preserve independent inputs"}
         ],
-        "unconditionalBlockingClaims": ["AUD-003-C12", "AUD-004-C09", "AUD-004-C10"],
-        "conditionalBlockingClaims": [{"claimId": "AUD-003-C08", "appliesWhen": "Powerful Bond selected or in scope", "unmetBehavior": "withhold-only-powerful-bond-contribution"}],
+        "unconditionalBlockingDependencies": [{"claimId": "AUD-003-C12", "contractVersion": "1.0.0", "gateMode": "requires-positive-capability", "minimumStatus": "supported", "appliesWhen": "a definitive scaled result is requested", "unmetBehavior": "withhold the definitive scaled output and preserve independent inputs"}, {"claimId": "AUD-004-C09", "contractVersion": "1.0.0", "gateMode": "requires-positive-capability", "minimumStatus": "supported", "appliesWhen": "Golden Glory or direct Link Buff Effect arithmetic is in scope", "unmetBehavior": "withhold the definitive scaled output and preserve independent inputs"}, {"claimId": "AUD-004-C10", "contractVersion": "1.0.0", "gateMode": "requires-positive-capability", "minimumStatus": "supported", "appliesWhen": "a definitive scaled result is requested", "unmetBehavior": "withhold the definitive scaled output and preserve independent inputs"}],
+        "conditionalBlockingDependencies": [{"claimId": "AUD-003-C08", "contractVersion": "1.0.0", "gateMode": "requires-positive-capability", "minimumStatus": "supported", "appliesWhen": "Powerful Bond selected or in scope", "unmetBehavior": "withhold-only-powerful-bond-contribution"}],
         "unknownIsNotZero": true,
         "exceptionalLevels": "needs-review"
       }

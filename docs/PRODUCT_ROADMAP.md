@@ -29,7 +29,7 @@ without becoming a second product definition.
 
 The first-release evidence pack is structurally complete as an AUDIT task, but
 Phase 1 exit is not achieved: load-bearing dependencies remain unknown or
-version-mismatched for the scoped mechanics results.
+version-mismatched for the scoped mechanics results. The evidence-integrity repair adds regression guards for the recorded contracts, but it does not change any exit status or authorize a BUILD calculation.
 
 The evidence pack is structurally complete, but it does not yet authorize the affected BUILD calculation.
 
