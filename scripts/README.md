@@ -40,6 +40,24 @@ path, and verifies every proof package's exact version and module location. On
 Python below 3.13 it also hides `typing_extensions` temporarily and proves the
 same isolated dependency check fails without that conditional pin.
 
+Run the complete Windows desktop packaging proof with:
+
+    py scripts/validate/run_desktop_packaging_proof.py
+
+The Windows-only runner creates a fresh temporary build environment, builds and
+installs the current wheel, installs every exact pin in
+`requirements/desktop-packaging-proof.txt`, and freezes the console probe with
+PyInstaller's explicit fixture/golden data inputs. It parses the build analysis
+to reject a `src/` importer, creates and copies a ZIP/one-directory
+distributable, sanitizes Python environment variables, runs the executable at
+least three times outside the repository, and independently checks the full
+golden, precise runtime-security-free projection, packaged runtime admission,
+resource hashes, source-network boundary, and deterministic summaries. Build
+provisioning may use the network; the packaged probe has no networking
+behavior. Windows Sandbox/VM and enforced-egress absence are reported rather
+than inferred. All temporary binaries and environments are removed.
+
+
 Regenerate deterministic golden output with:
 
     py scripts/generate_pob_import_goldens.py

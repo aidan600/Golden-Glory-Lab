@@ -579,6 +579,178 @@
       ],
       "verificationStatus": "confirmed",
       "limitations": "Proof/test dependency only; installed only when python_version < \"3.13\". It is not installed on Python 3.13 or newer, and production package metadata remains dependency-free."
+    },
+    {
+      "id": "pyinstaller-6-21-0-metadata",
+      "title": "PyInstaller 6.21.0 package metadata",
+      "sourceClass": "workflow-documentation",
+      "url": "https://pypi.org/pypi/pyinstaller/6.21.0/json",
+      "publisherOrRepository": "Python Packaging Authority / PyInstaller",
+      "gameOrSoftwareVersion": "PyInstaller 6.21.0",
+      "accessedDate": "2026-08-03",
+      "supportedClaimsOrRecords": [
+        "Pins the selected Windows packaging tool and its declared Python 3.8 through 3.15 support.",
+        "Records its direct dependency constraints, Windows wheels, and GPL-2.0-or-later license with the bootloader distribution exception."
+      ],
+      "verificationStatus": "confirmed",
+      "limitations": "Package metadata establishes the released dependency and license declarations, not suitability for Golden Glory Lab; this proof supplies the isolated execution evidence."
+    },
+    {
+      "id": "pyinstaller-6-21-0-usage",
+      "title": "PyInstaller 6.21.0 usage and run-time information",
+      "sourceClass": "workflow-documentation",
+      "url": "https://pyinstaller.org/en/v6.21.0/usage.html",
+      "publisherOrRepository": "PyInstaller Development Team",
+      "gameOrSoftwareVersion": "PyInstaller 6.21.0 documentation",
+      "accessedDate": "2026-08-03",
+      "supportedClaimsOrRecords": [
+        "Documents one-directory and one-file distributable modes and the explicit --add-data resource mechanism.",
+        "Documents that a bundle includes the Python application and dependencies and can run without a separately installed Python interpreter."
+      ],
+      "verificationStatus": "confirmed",
+      "limitations": "General packager documentation does not prove that this repository's importer, resources, runtime guard, or deterministic contract work when frozen."
+    },
+    {
+      "id": "pyinstaller-6-21-0-license",
+      "title": "PyInstaller 6.21.0 licensing terms",
+      "sourceClass": "workflow-documentation",
+      "url": "https://github.com/pyinstaller/pyinstaller/blob/v6.21.0/COPYING.txt",
+      "publisherOrRepository": "PyInstaller Development Team",
+      "gameOrSoftwareVersion": "PyInstaller 6.21.0 tag",
+      "accessedDate": "2026-08-03",
+      "supportedClaimsOrRecords": [
+        "Records GPL-2.0-or-later terms, the exception for linked or embedded bootloader and related files, and Apache-2.0 terms for run-time hooks."
+      ],
+      "verificationStatus": "confirmed",
+      "limitations": "The exception does not cover unrelated bundled code or data; every shipped dependency and retained fixture still needs its own rights review."
+    },
+    {
+      "id": "nuitka-4-1-3-standalone",
+      "title": "Nuitka 4.1.3 standalone packaging documentation",
+      "sourceClass": "workflow-documentation",
+      "url": "https://nuitka.net/user-documentation/user-manual.html",
+      "publisherOrRepository": "Nuitka",
+      "gameOrSoftwareVersion": "Nuitka 4.1.3 current documentation",
+      "accessedDate": "2026-08-03",
+      "supportedClaimsOrRecords": [
+        "Documents standalone and one-file modes that can run independently of an installed Python.",
+        "Documents the Windows native compiler/toolchain requirement and Python 3.13 compiler constraints relevant to the bounded candidate comparison."
+      ],
+      "verificationStatus": "confirmed",
+      "limitations": "Nuitka was assessed but not implemented. Documentation cannot establish this repository's packaged behavior without a separate proof run."
+    },
+    {
+      "id": "nuitka-4-1-3-runtime-license",
+      "title": "Nuitka 4.1.3 runtime license exception",
+      "sourceClass": "workflow-documentation",
+      "url": "https://github.com/Nuitka/Nuitka/blob/4.1.3/LICENSE-RUNTIME.txt",
+      "publisherOrRepository": "Nuitka/Nuitka",
+      "gameOrSoftwareVersion": "Nuitka 4.1.3 tag",
+      "accessedDate": "2026-08-03",
+      "supportedClaimsOrRecords": [
+        "Records the runtime distribution exception paired with Nuitka's AGPL-3.0 development-tool license."
+      ],
+      "verificationStatus": "confirmed",
+      "limitations": "Nuitka was not selected or executed. This record is a technical licensing input, not legal advice."
+    },
+    {
+      "id": "tauri-2-sidecar-docs",
+      "title": "Tauri 2 external-binary sidecar documentation",
+      "sourceClass": "workflow-documentation",
+      "url": "https://tauri.app/develop/sidecar/",
+      "publisherOrRepository": "The Tauri Programme",
+      "gameOrSoftwareVersion": "Tauri 2 documentation accessed 2026-08-03",
+      "accessedDate": "2026-08-03",
+      "supportedClaimsOrRecords": [
+        "Documents bundling external executables, including Python applications packaged separately with PyInstaller, as Tauri sidecars."
+      ],
+      "verificationStatus": "confirmed",
+      "limitations": "A Tauri shell would not directly embed the adopted Python module; it would retain a separately packaged Python executable and add a process/bridge boundary. It was assessed but not implemented."
+    },
+    {
+      "id": "tauri-dev-license",
+      "title": "Tauri architecture and license record",
+      "sourceClass": "workflow-documentation",
+      "url": "https://github.com/tauri-apps/tauri/blob/dev/ARCHITECTURE.md",
+      "publisherOrRepository": "tauri-apps/tauri",
+      "gameOrSoftwareVersion": "Tauri development documentation accessed 2026-08-03",
+      "accessedDate": "2026-08-03",
+      "supportedClaimsOrRecords": [
+        "Records Tauri's MIT or Apache-2.0 licensing and native desktop build/distribution model."
+      ],
+      "verificationStatus": "confirmed",
+      "limitations": "The moving development branch is suitable only for the bounded candidate posture recorded here; no Tauri dependency or product architecture was adopted."
+    },
+    {
+      "id": "altgraph-0-17-5",
+      "title": "altgraph 0.17.5 package metadata",
+      "sourceClass": "workflow-documentation",
+      "url": "https://pypi.org/pypi/altgraph/0.17.5/json",
+      "publisherOrRepository": "Python Packaging Authority / altgraph",
+      "gameOrSoftwareVersion": "altgraph 0.17.5",
+      "accessedDate": "2026-08-03",
+      "supportedClaimsOrRecords": [
+        "Pins PyInstaller's build-time graph dependency and records its MIT license."
+      ],
+      "verificationStatus": "confirmed",
+      "limitations": "Proof/build dependency only; it does not appear as an application runtime dependency."
+    },
+    {
+      "id": "packaging-26-2",
+      "title": "packaging 26.2 package metadata",
+      "sourceClass": "workflow-documentation",
+      "url": "https://pypi.org/pypi/packaging/26.2/json",
+      "publisherOrRepository": "Python Packaging Authority / pypa/packaging",
+      "gameOrSoftwareVersion": "packaging 26.2",
+      "accessedDate": "2026-08-03",
+      "supportedClaimsOrRecords": [
+        "Pins PyInstaller's build-time packaging utility dependency and records the Apache-2.0 OR BSD-2-Clause license expression."
+      ],
+      "verificationStatus": "confirmed",
+      "limitations": "Proof/build dependency only; it does not appear as an application runtime dependency."
+    },
+    {
+      "id": "pefile-2024-8-26",
+      "title": "pefile 2024.8.26 package metadata",
+      "sourceClass": "workflow-documentation",
+      "url": "https://pypi.org/pypi/pefile/2024.8.26/json",
+      "publisherOrRepository": "Python Packaging Authority / erocarrera/pefile",
+      "gameOrSoftwareVersion": "pefile 2024.8.26",
+      "accessedDate": "2026-08-03",
+      "supportedClaimsOrRecords": [
+        "Pins PyInstaller's Windows PE inspection dependency and records its MIT license."
+      ],
+      "verificationStatus": "confirmed",
+      "limitations": "Proof/build dependency only; it does not appear as an application runtime dependency."
+    },
+    {
+      "id": "pyinstaller-hooks-contrib-2026-6",
+      "title": "pyinstaller-hooks-contrib 2026.6 package metadata",
+      "sourceClass": "workflow-documentation",
+      "url": "https://pypi.org/pypi/pyinstaller-hooks-contrib/2026.6/json",
+      "publisherOrRepository": "Python Packaging Authority / PyInstaller",
+      "gameOrSoftwareVersion": "pyinstaller-hooks-contrib 2026.6",
+      "accessedDate": "2026-08-03",
+      "supportedClaimsOrRecords": [
+        "Pins the PyInstaller community-hook dependency.",
+        "Records GPL-2.0-or-later terms for standard hooks and Apache-2.0 terms for runtime hooks."
+      ],
+      "verificationStatus": "confirmed",
+      "limitations": "Proof/build dependency only in this bundle; the analysis used a core PyInstaller runtime hook and did not retain a contrib runtime hook."
+    },
+    {
+      "id": "pywin32-ctypes-0-2-3",
+      "title": "pywin32-ctypes 0.2.3 package metadata",
+      "sourceClass": "workflow-documentation",
+      "url": "https://pypi.org/pypi/pywin32-ctypes/0.2.3/json",
+      "publisherOrRepository": "Python Packaging Authority / Enthought",
+      "gameOrSoftwareVersion": "pywin32-ctypes 0.2.3",
+      "accessedDate": "2026-08-03",
+      "supportedClaimsOrRecords": [
+        "Pins PyInstaller's Windows resource-handling dependency and records its BSD-3-Clause license."
+      ],
+      "verificationStatus": "confirmed",
+      "limitations": "Proof/build dependency only; it does not appear as an application runtime dependency."
     }
   ]
 }

@@ -16,7 +16,7 @@ consistent; it does not resolve, reprioritize, or close any question below.
 | OQ-005 | blocking | open | What Golden Glory/direct-Link arithmetic and condition activation, plus Flame Link scaling and rounding, support a definitive scaled result? | AUD-003 `C08`, `C12`; AUD-004 `C09-C10` |
 | OQ-006 | blocking | open | What are Enmity's penalty order/rounding, comparable-input derivation, and aggregation rules beyond its supported isolated manual formula? | AUD-005 `C05-C07`; AUD-002 `C03-C05` |
 | OQ-007 | non-blocking | open | What copied-item parser scope preserves original material while producing a reviewable result? | AUD-001; fixture design |
-| OQ-008 | proof required | open | Can a Windows-first offline package exercise the adopted importer through its existing public seam and a permanent synthetic fixture? | PROOF-001; `golden_glory_lab.pob_import`; no second importer or framework assumption |
+| OQ-008 | proof required | resolved | Can a Windows-first offline package exercise the adopted importer through its existing public seam and a permanent synthetic fixture? | PROOF-002 passed with named clean-machine and egress-isolation limitations; PyInstaller 6.21.0 packaged the adopted public seam without a second importer |
 | OQ-009 | deferred | open | How should attack and spell critical strikes be reconstructed across conditional, ability-dependent cases? | AUD-006; initial mechanics paths |
 | OQ-010 | non-blocking | open | What goal-aware improvement-patch rules can make recommendations without rewarding already-satisfied objectives? | Confirmed initial calculations and data coverage |
 
