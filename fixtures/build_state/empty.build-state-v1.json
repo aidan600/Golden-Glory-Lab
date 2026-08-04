@@ -1,0 +1,13 @@
+{
+  "documentType": "golden-glory-lab-build-state",
+  "schemaVersion": "1.0.0",
+  "applicationDataContractVersion": "1.0.0",
+  "importerContractVersion": "1.0.0",
+  "importedResult": null,
+  "importedResultSha256": null,
+  "playerItemSetOccurrenceId": null,
+  "mercenarySourceMode": "not-yet-selected",
+  "mercenaryItemSetOccurrenceId": null,
+  "manualMercenaryEquipment": [],
+  "userNotes": ""
+}

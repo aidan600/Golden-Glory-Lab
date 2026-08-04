@@ -751,6 +751,21 @@
       ],
       "verificationStatus": "confirmed",
       "limitations": "Proof/build dependency only; it does not appear as an application runtime dependency."
+    },
+    {
+      "id": "ruff-0-15-22",
+      "title": "Ruff 0.15.22 package metadata and configuration documentation",
+      "sourceClass": "workflow-documentation",
+      "url": "https://pypi.org/pypi/ruff/0.15.22/json",
+      "publisherOrRepository": "Python Packaging Authority / Astral Software",
+      "gameOrSoftwareVersion": "Ruff 0.15.22",
+      "accessedDate": "2026-08-04",
+      "supportedClaimsOrRecords": [
+        "Pins the BUILD-001 quality-gate version and records its MIT license metadata.",
+        "Supports repository-local Ruff configuration in pyproject.toml with an explicit stable rule selection."
+      ],
+      "verificationStatus": "confirmed",
+      "limitations": "Development and proof dependency only; it is not a production application dependency, formatter, or game-data source."
     }
   ]
 }
