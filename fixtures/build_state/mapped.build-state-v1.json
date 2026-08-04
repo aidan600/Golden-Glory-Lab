@@ -1,0 +1,688 @@
+{
+  "documentType": "golden-glory-lab-build-state",
+  "schemaVersion": "1.0.0",
+  "applicationDataContractVersion": "1.0.0",
+  "importerContractVersion": "1.0.0",
+  "importedResult": {
+    "contractVersion": "1.0.0",
+    "status": "success",
+    "failure": null,
+    "envelope": {
+      "inputKind": "raw-xml",
+      "originalInput": "<PathOfBuilding><Items activeItemSet=\"1\"><Item id=\"1\">Rarity: Rare\nStable Name\nSynthetic Sword\nUnique ID: stable-api-id\nOld modifier</Item><Item id=\"2\">Rarity: Rare\nNo Stable ID\nSynthetic Ring\nOld text</Item><ItemSet id=\"1\" title=\"Before\"><Slot name=\"Weapon 1\" itemId=\"1\"/><Slot name=\"Ring 1\" itemId=\"2\"/></ItemSet><ItemSet id=\"2\" title=\"Secondary Before\"><Slot name=\"Ring 1\" itemId=\"2\"/></ItemSet></Items></PathOfBuilding>\n",
+      "decodedXml": null,
+      "normalizedShareCode": null,
+      "hashes": [
+        {
+          "name": "original-input-sha256",
+          "algorithm": "SHA-256",
+          "byteDomain": "exact original input incrementally encoded as strict UTF-8",
+          "digestHex": "f4e62ae00d148c1e63b06e4979054877e759eb9bce7fac494f2eb73a230cbefb"
+        },
+        {
+          "name": "xml-utf8-sha256",
+          "algorithm": "SHA-256",
+          "byteDomain": "exact accepted XML bytes after strict UTF-8 validation",
+          "digestHex": "f4e62ae00d148c1e63b06e4979054877e759eb9bce7fac494f2eb73a230cbefb"
+        }
+      ],
+      "sizes": {
+        "originalInputCharacters": 424,
+        "originalInputUtf8Bytes": 424,
+        "originalInputUtf8State": "valid",
+        "normalizedShareCodeCharacters": null,
+        "decodedCompressedBytes": null,
+        "xmlUtf8Bytes": 424
+      },
+      "codecSteps": [
+        "incrementally count and hash strict UTF-8 chunks",
+        "retain at most maxRawXmlBytes before XML parsing"
+      ],
+      "normalizations": [],
+      "limits": {
+        "maxShareCodeCharacters": 4000000,
+        "maxDecodedCompressedBytes": 3000000,
+        "maxDecompressedXmlBytes": 8000000,
+        "maxRawXmlBytes": 8000000,
+        "maxXmlDepth": 64,
+        "maxXmlElements": 50000,
+        "maxAttributesPerElement": 64,
+        "maxTextBytesPerElement": 1000000,
+        "maxNumericLexemeDigits": 128,
+        "maxReportEntries": 256,
+        "inputEncodingChunkCharacters": 4096,
+        "decompressionChunkBytes": 16384
+      },
+      "implementationVersion": "pob-importer-python/0.1.1",
+      "runtimeSecurity": {
+        "detectedExpatVersion": "expat_2.8.1",
+        "parsedExpatVersion": [
+          2,
+          8,
+          1
+        ],
+        "minimumExpatVersion": "2.7.2",
+        "status": "supported"
+      },
+      "evidenceProfile": [
+        {
+          "sourceId": "pob-release-2-66-2",
+          "revision": "b23da8f841e4b0bc167b0b4401ea002d7d45f807"
+        },
+        {
+          "sourceId": "pob-dev-format-ef4c584",
+          "revision": "ef4c5848fad33190f730cebaedff4b5831d0c88d"
+        },
+        {
+          "sourceId": "pob-simplegraphic-codec-3b1a346",
+          "revision": "3b1a3468223d0ebd4042d6ce76fc6144718ef79b"
+        },
+        {
+          "sourceId": "pob-pre-itemsets-1-4-36",
+          "revision": "69d4e4d4e4cfb82ccca0ebf609d6673e347a98dc"
+        },
+        {
+          "sourceId": "pob-itemsets-1-4-37",
+          "revision": "9f981583f7c721917124d604cddf0e8102e62714"
+        },
+        {
+          "sourceId": "python-3-13-xml-security",
+          "revision": "3.13.14-accessed-2026-08-03"
+        }
+      ],
+      "suppliedProducingPobVersion": null
+    },
+    "sourceMetadata": {
+      "producingPobVersion": null,
+      "producingPobVersionSource": "unknown",
+      "gameTargetVersion": {
+        "state": "missing",
+        "value": null,
+        "sourcePointers": []
+      },
+      "otherVersionLikeValues": []
+    },
+    "document": {
+      "rootName": "PathOfBuilding",
+      "rootAttributes": [],
+      "topLevelNodeInventory": [
+        {
+          "sourceOccurrenceIndex": 0,
+          "name": "Items",
+          "attributes": [
+            {
+              "name": "activeItemSet",
+              "value": "1"
+            }
+          ],
+          "classification": "recognized",
+          "sourcePointer": "/PathOfBuilding[1]/Items[1]"
+        }
+      ],
+      "sourceTree": {
+        "kind": "element",
+        "name": "PathOfBuilding",
+        "attributes": [],
+        "children": [
+          {
+            "kind": "element",
+            "name": "Items",
+            "attributes": [
+              {
+                "name": "activeItemSet",
+                "value": "1"
+              }
+            ],
+            "children": [
+              {
+                "kind": "element",
+                "name": "Item",
+                "attributes": [
+                  {
+                    "name": "id",
+                    "value": "1"
+                  }
+                ],
+                "children": [
+                  {
+                    "kind": "text",
+                    "value": "Rarity: Rare\nStable Name\nSynthetic Sword\nUnique ID: stable-api-id\nOld modifier"
+                  }
+                ]
+              },
+              {
+                "kind": "element",
+                "name": "Item",
+                "attributes": [
+                  {
+                    "name": "id",
+                    "value": "2"
+                  }
+                ],
+                "children": [
+                  {
+                    "kind": "text",
+                    "value": "Rarity: Rare\nNo Stable ID\nSynthetic Ring\nOld text"
+                  }
+                ]
+              },
+              {
+                "kind": "element",
+                "name": "ItemSet",
+                "attributes": [
+                  {
+                    "name": "id",
+                    "value": "1"
+                  },
+                  {
+                    "name": "title",
+                    "value": "Before"
+                  }
+                ],
+                "children": [
+                  {
+                    "kind": "element",
+                    "name": "Slot",
+                    "attributes": [
+                      {
+                        "name": "name",
+                        "value": "Weapon 1"
+                      },
+                      {
+                        "name": "itemId",
+                        "value": "1"
+                      }
+                    ],
+                    "children": []
+                  },
+                  {
+                    "kind": "element",
+                    "name": "Slot",
+                    "attributes": [
+                      {
+                        "name": "name",
+                        "value": "Ring 1"
+                      },
+                      {
+                        "name": "itemId",
+                        "value": "2"
+                      }
+                    ],
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "kind": "element",
+                "name": "ItemSet",
+                "attributes": [
+                  {
+                    "name": "id",
+                    "value": "2"
+                  },
+                  {
+                    "name": "title",
+                    "value": "Secondary Before"
+                  }
+                ],
+                "children": [
+                  {
+                    "kind": "element",
+                    "name": "Slot",
+                    "attributes": [
+                      {
+                        "name": "name",
+                        "value": "Ring 1"
+                      },
+                      {
+                        "name": "itemId",
+                        "value": "2"
+                      }
+                    ],
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "documentEvents": [
+        {
+          "kind": "root-element",
+          "name": "PathOfBuilding"
+        }
+      ],
+      "itemsSections": [
+        {
+          "occurrenceId": "items-section-0001",
+          "sourceOccurrenceIndex": 0,
+          "sourcePath": "/PathOfBuilding[1]/Items[1]",
+          "attributes": [
+            {
+              "name": "activeItemSet",
+              "value": "1"
+            }
+          ],
+          "activeItemSetReference": {
+            "raw": {
+              "state": "present",
+              "value": "1"
+            },
+            "parsedId": 1,
+            "resolution": {
+              "state": "resolved",
+              "candidateOccurrences": [
+                "item-set-0001"
+              ]
+            }
+          },
+          "legacyUseSecondWeaponSet": {
+            "raw": {
+              "state": "missing",
+              "value": null
+            },
+            "parsed": null
+          },
+          "itemOccurrences": [
+            "item-0001",
+            "item-0002"
+          ],
+          "itemSetOccurrences": [
+            "item-set-0001",
+            "item-set-0002"
+          ],
+          "legacyTopLevelAssignments": [],
+          "transitionalTopLevelRepresentation": false
+        }
+      ],
+      "items": [
+        {
+          "occurrenceId": "item-0001",
+          "sourceOccurrenceIndex": 0,
+          "sourcePath": "/PathOfBuilding[1]/Items[1]/Item[1]",
+          "rawId": {
+            "state": "present",
+            "value": "1"
+          },
+          "parsedId": 1,
+          "attributes": [
+            {
+              "name": "id",
+              "value": "1"
+            }
+          ],
+          "xmlCharacterValue": "Rarity: Rare\nStable Name\nSynthetic Sword\nUnique ID: stable-api-id\nOld modifier",
+          "orderedChildMaterial": [
+            {
+              "kind": "text",
+              "value": "Rarity: Rare\nStable Name\nSynthetic Sword\nUnique ID: stable-api-id\nOld modifier"
+            }
+          ],
+          "modRanges": [],
+          "unknownChildren": [],
+          "recognizedMetadata": {
+            "variantLexemes": []
+          },
+          "comparisonEvidence": {
+            "exactXmlCharacterValueSha256": "2df56c139bed8ed8bad08b693d496e672316101535eed24af1e7f92122cbe0c8",
+            "uniqueIdLine": {
+              "state": "present",
+              "value": "stable-api-id"
+            }
+          },
+          "usage": {
+            "state": "referenced",
+            "equipmentCandidateReferenceCount": 1,
+            "passiveCandidateReferenceCount": 0
+          },
+          "warnings": []
+        },
+        {
+          "occurrenceId": "item-0002",
+          "sourceOccurrenceIndex": 1,
+          "sourcePath": "/PathOfBuilding[1]/Items[1]/Item[2]",
+          "rawId": {
+            "state": "present",
+            "value": "2"
+          },
+          "parsedId": 2,
+          "attributes": [
+            {
+              "name": "id",
+              "value": "2"
+            }
+          ],
+          "xmlCharacterValue": "Rarity: Rare\nNo Stable ID\nSynthetic Ring\nOld text",
+          "orderedChildMaterial": [
+            {
+              "kind": "text",
+              "value": "Rarity: Rare\nNo Stable ID\nSynthetic Ring\nOld text"
+            }
+          ],
+          "modRanges": [],
+          "unknownChildren": [],
+          "recognizedMetadata": {
+            "variantLexemes": []
+          },
+          "comparisonEvidence": {
+            "exactXmlCharacterValueSha256": "0427c4223db31da8c015a084e6feb99423dc57940a019bb910e285e9aeb685a3",
+            "uniqueIdLine": {
+              "state": "missing",
+              "value": null
+            }
+          },
+          "usage": {
+            "state": "referenced",
+            "equipmentCandidateReferenceCount": 2,
+            "passiveCandidateReferenceCount": 0
+          },
+          "warnings": []
+        }
+      ],
+      "itemSets": [
+        {
+          "occurrenceId": "item-set-0001",
+          "sourceOccurrenceIndex": 0,
+          "sourcePath": "/PathOfBuilding[1]/Items[1]/ItemSet[1]",
+          "rawId": {
+            "state": "present",
+            "value": "1"
+          },
+          "parsedId": 1,
+          "title": {
+            "state": "present",
+            "value": "Before"
+          },
+          "useSecondWeaponSet": {
+            "raw": {
+              "state": "missing",
+              "value": null
+            },
+            "parsed": null
+          },
+          "attributes": [
+            {
+              "name": "id",
+              "value": "1"
+            },
+            {
+              "name": "title",
+              "value": "Before"
+            }
+          ],
+          "assignments": [
+            {
+              "occurrenceId": "assignment-item-set-0001-0001",
+              "sourceOccurrenceIndex": 0,
+              "sourcePath": "/PathOfBuilding[1]/Items[1]/ItemSet[1]/Slot[1]",
+              "originalSlotName": {
+                "state": "present",
+                "value": "Weapon 1"
+              },
+              "rawItemReference": {
+                "state": "present",
+                "value": "1"
+              },
+              "parsedItemId": 1,
+              "active": {
+                "raw": {
+                  "state": "missing",
+                  "value": null
+                },
+                "parsed": null
+              },
+              "itemPbUrl": {
+                "state": "missing",
+                "value": null
+              },
+              "attributes": [
+                {
+                  "name": "name",
+                  "value": "Weapon 1"
+                },
+                {
+                  "name": "itemId",
+                  "value": "1"
+                }
+              ],
+              "resolution": {
+                "state": "resolved",
+                "candidateOccurrences": [
+                  "item-0001"
+                ]
+              },
+              "derivedAbyssalParent": null,
+              "warnings": []
+            },
+            {
+              "occurrenceId": "assignment-item-set-0001-0002",
+              "sourceOccurrenceIndex": 1,
+              "sourcePath": "/PathOfBuilding[1]/Items[1]/ItemSet[1]/Slot[2]",
+              "originalSlotName": {
+                "state": "present",
+                "value": "Ring 1"
+              },
+              "rawItemReference": {
+                "state": "present",
+                "value": "2"
+              },
+              "parsedItemId": 2,
+              "active": {
+                "raw": {
+                  "state": "missing",
+                  "value": null
+                },
+                "parsed": null
+              },
+              "itemPbUrl": {
+                "state": "missing",
+                "value": null
+              },
+              "attributes": [
+                {
+                  "name": "name",
+                  "value": "Ring 1"
+                },
+                {
+                  "name": "itemId",
+                  "value": "2"
+                }
+              ],
+              "resolution": {
+                "state": "resolved",
+                "candidateOccurrences": [
+                  "item-0002"
+                ]
+              },
+              "derivedAbyssalParent": null,
+              "warnings": []
+            }
+          ],
+          "socketIdUrls": [],
+          "unknownChildren": [],
+          "provenance": {
+            "kind": "nested-item-set",
+            "synthesized": false,
+            "sourcePointer": "/PathOfBuilding[1]/Items[1]/ItemSet[1]",
+            "synthesizedLegacyIdHint": null
+          },
+          "warnings": []
+        },
+        {
+          "occurrenceId": "item-set-0002",
+          "sourceOccurrenceIndex": 1,
+          "sourcePath": "/PathOfBuilding[1]/Items[1]/ItemSet[2]",
+          "rawId": {
+            "state": "present",
+            "value": "2"
+          },
+          "parsedId": 2,
+          "title": {
+            "state": "present",
+            "value": "Secondary Before"
+          },
+          "useSecondWeaponSet": {
+            "raw": {
+              "state": "missing",
+              "value": null
+            },
+            "parsed": null
+          },
+          "attributes": [
+            {
+              "name": "id",
+              "value": "2"
+            },
+            {
+              "name": "title",
+              "value": "Secondary Before"
+            }
+          ],
+          "assignments": [
+            {
+              "occurrenceId": "assignment-item-set-0002-0001",
+              "sourceOccurrenceIndex": 0,
+              "sourcePath": "/PathOfBuilding[1]/Items[1]/ItemSet[2]/Slot[1]",
+              "originalSlotName": {
+                "state": "present",
+                "value": "Ring 1"
+              },
+              "rawItemReference": {
+                "state": "present",
+                "value": "2"
+              },
+              "parsedItemId": 2,
+              "active": {
+                "raw": {
+                  "state": "missing",
+                  "value": null
+                },
+                "parsed": null
+              },
+              "itemPbUrl": {
+                "state": "missing",
+                "value": null
+              },
+              "attributes": [
+                {
+                  "name": "name",
+                  "value": "Ring 1"
+                },
+                {
+                  "name": "itemId",
+                  "value": "2"
+                }
+              ],
+              "resolution": {
+                "state": "resolved",
+                "candidateOccurrences": [
+                  "item-0002"
+                ]
+              },
+              "derivedAbyssalParent": null,
+              "warnings": []
+            }
+          ],
+          "socketIdUrls": [],
+          "unknownChildren": [],
+          "provenance": {
+            "kind": "nested-item-set",
+            "synthesized": false,
+            "sourcePointer": "/PathOfBuilding[1]/Items[1]/ItemSet[2]",
+            "synthesizedLegacyIdHint": null
+          },
+          "warnings": []
+        }
+      ],
+      "passiveJewelReferences": [],
+      "itemSetCrossReferences": [],
+      "documentWarnings": []
+    },
+    "report": [
+      {
+        "reportId": "report-0001",
+        "code": "POB_ROOT_RECOGNIZED",
+        "category": "recognized",
+        "stage": "xml",
+        "location": "/PathOfBuilding[1]",
+        "occurrenceId": null,
+        "sourcePointer": "/PathOfBuilding[1]",
+        "retainedMaterial": null,
+        "explanation": "Recognized the pinned PoB root element.",
+        "candidateTargets": []
+      },
+      {
+        "reportId": "report-0002",
+        "code": "ITEM_OCCURRENCE_RECOGNIZED",
+        "category": "recognized",
+        "stage": "semantic",
+        "location": "/PathOfBuilding[1]/Items[1]/Item[1]",
+        "occurrenceId": "item-0001",
+        "sourcePointer": "/PathOfBuilding[1]/Items[1]/Item[1]",
+        "retainedMaterial": null,
+        "explanation": "Retained an item-pool occurrence and its complete XML character value.",
+        "candidateTargets": []
+      },
+      {
+        "reportId": "report-0003",
+        "code": "ITEM_OCCURRENCE_RECOGNIZED",
+        "category": "recognized",
+        "stage": "semantic",
+        "location": "/PathOfBuilding[1]/Items[1]/Item[2]",
+        "occurrenceId": "item-0002",
+        "sourcePointer": "/PathOfBuilding[1]/Items[1]/Item[2]",
+        "retainedMaterial": null,
+        "explanation": "Retained an item-pool occurrence and its complete XML character value.",
+        "candidateTargets": []
+      },
+      {
+        "reportId": "report-0004",
+        "code": "ITEM_SET_OCCURRENCE_RECOGNIZED",
+        "category": "recognized",
+        "stage": "semantic",
+        "location": "/PathOfBuilding[1]/Items[1]/ItemSet[1]",
+        "occurrenceId": "item-set-0001",
+        "sourcePointer": "/PathOfBuilding[1]/Items[1]/ItemSet[1]",
+        "retainedMaterial": null,
+        "explanation": "Retained one nested item-set occurrence without inferring ownership.",
+        "candidateTargets": []
+      },
+      {
+        "reportId": "report-0005",
+        "code": "ITEM_SET_OCCURRENCE_RECOGNIZED",
+        "category": "recognized",
+        "stage": "semantic",
+        "location": "/PathOfBuilding[1]/Items[1]/ItemSet[2]",
+        "occurrenceId": "item-set-0002",
+        "sourcePointer": "/PathOfBuilding[1]/Items[1]/ItemSet[2]",
+        "retainedMaterial": null,
+        "explanation": "Retained one nested item-set occurrence without inferring ownership.",
+        "candidateTargets": []
+      },
+      {
+        "reportId": "report-0006",
+        "code": "OWNERSHIP_MAPPING_REQUIRED",
+        "category": "manually required",
+        "stage": "mapping",
+        "location": "/application/item-set-mapping",
+        "occurrenceId": null,
+        "sourcePointer": "/application/item-set-mapping",
+        "retainedMaterial": {
+          "mappingState": "not-imported"
+        },
+        "explanation": "Player and optional Mercenary item-set mappings require explicit user confirmation outside imported facts.",
+        "candidateTargets": [
+          "item-set-0001",
+          "item-set-0002"
+        ]
+      }
+    ]
+  },
+  "importedResultSha256": "996c671af73060f9e911038f199f1c565ac35578132281e396f0a2d2700775e4",
+  "playerItemSetOccurrenceId": "item-set-0001",
+  "mercenarySourceMode": "mapped-item-set",
+  "mercenaryItemSetOccurrenceId": "item-set-0002",
+  "manualMercenaryEquipment": [],
+  "userNotes": ""
+}
