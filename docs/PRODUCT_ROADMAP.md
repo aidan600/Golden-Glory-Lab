@@ -13,8 +13,10 @@ without becoming a second product definition.
   established.
 - [PROOF-001 - reusable PoB importer](proofs/PROOF-001-pob-importer.md) is
   adopted with named limitations as the production-intent import seam.
+- [PROOF-002 - Windows desktop packaging](proofs/PROOF-002-desktop-packaging.md)
+  adopts PyInstaller 6.21.0 with named clean-machine and egress limitations.
 
-## Ordered next phases
+## Ordered phases
 
 | Order | Phase and intended outcome | Exit condition |
 | --- | --- | --- |
@@ -40,6 +42,18 @@ required. Best-of-two ChatGPT review remains a flexible human practice outside
 repository policy. A broader workflow document should be added only if an
 actual coordination problem later justifies it; this is an intentional scope
 decision, not forgotten roadmap work.
+
+## Current Phase 2 status
+
+[PROOF-002](proofs/PROOF-002-desktop-packaging.md) answers the packaging
+question with PASS WITH LIMITATIONS and ADOPT WITH NAMED LIMITATIONS. The
+adopted public importer runs from a copied PyInstaller one-directory bundle
+without a source checkout or ambient Python path. A Python-free clean-machine
+run and directly enforced outbound-network denial remain named limitations.
+
+The first usable desktop BUILD has not started. It may consume this packaged
+seam after human review, but its mechanics must still respect every exact
+evidence gate recorded above, and its UI toolkit remains a BUILD decision.
 
 ## Roadmap guardrails
 
