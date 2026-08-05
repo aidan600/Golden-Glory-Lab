@@ -53,23 +53,39 @@ run and directly enforced outbound-network denial remain named limitations.
 
 ## Current Phase 3 status
 
-Phase 3 is in progress. [BUILD-001](builds/BUILD-001-desktop-intake-mapping.md)
-delivers the offline desktop intake, source-order item-set review, explicit
-Player/Mercenary mapping, opaque manual Mercenary equipment, and deterministic
-local save/open workflow.
+Phase 3 is in progress. See [CURRENT_STATE.md](CURRENT_STATE.md) for the
+operational summary and
+[DEC-003](decisions/DEC-003-manual-first-input-boundaries.md) for the
+manual-first input boundary.
 
-[BUILD-002](builds/BUILD-002-copied-item-enmity.md) adds bounded copied-item
-recognition with exact source preservation, a common provenance-aware item
-review over PoB/copied/manual sources, exact claim/contract/status/polarity/
-policy gates, build-state v2 migration, and only the authorized manual isolated
-`Enmity’s own Fire Penetration contribution` with Enmity-only targets. OQ-007
-is resolved only to that bounded recognition contract.
+[BUILD-001](builds/BUILD-001-desktop-intake-mapping.md) is merged. It delivers
+offline desktop intake, source-order item-set review, explicit Player/Mercenary
+mapping, opaque manual Mercenary equipment, and deterministic local save/open.
 
-Phase 3 is not complete. OQ-002 through OQ-006 remain open. Derived permanent-
-Mercenary values, component addition, Enmity's resistance-penalty
-reconstruction, aggregate penetration, Light Radius, Golden Glory, Flame Link,
-damage, DPS, recommendations, and a combined score remain blocked and
-nonnumeric.
+[BUILD-002](builds/BUILD-002-copied-item-enmity.md) is merged. It adds bounded
+copied-item recognition, common PoB/copied/manual review, exact evidence gates,
+build-state v2 migration, and the authorized manual isolated Enmity
+contribution with Enmity-only target, gap, surplus, cap, and input-beyond-cap
+reporting. That manual isolated Enmity path satisfies the first-release
+Mercenary Enmity fallback. OQ-007 is resolved only to the bounded recognition
+contract.
+
+Automatic Mercenary-sheet derivation is deferred and nonblocking for the first
+release. OQ-002 and OQ-003 remain deferred evidence work for that future
+automation only. OQ-006 retains only derived or aggregate Enmity questions;
+the isolated manual result is implemented.
+
+OQ-004 and OQ-005 are the active mechanics work for the player-side Light
+Radius → Golden Glory, direct Link Skill Buff Effect, and Flame Link damage
+granted chain. The intended next BUILD is a manual-first player calculation
+chain with progressive recognition and labelled manual contribution entries.
+
+Phase 3 remains incomplete until that player-side chain and the ordinary
+first-release workflow are usable. Blocked derived Mercenary values, aggregate
+penetration, unproven player-chain formulas, DPS labelling, recommendations,
+and a combined score remain unavailable and nonnumeric. Phase 1’s unresolved
+mechanics claims are not reopened by this status update, and the
+evidence-pack structural phase does not need to be reopened.
 
 ## Roadmap guardrails
 

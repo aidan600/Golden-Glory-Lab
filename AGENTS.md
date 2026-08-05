@@ -27,11 +27,19 @@ Before substantial work, read:
 
 1. `docs/INDEX.md`
 2. `docs/SPEC_STATUS.md`
-3. `docs/PRODUCT_DIRECTION.md`
-4. The task-specific documents linked from `docs/INDEX.md`
+3. `docs/CURRENT_STATE.md`
+4. `docs/PRODUCT_DIRECTION.md`
+5. The task-specific documents linked from `docs/INDEX.md`
+
+`docs/CURRENT_STATE.md` is the first-stop answer to what is implemented, active,
+and deferred now. Settled manual-first input boundaries live in
+`docs/decisions/DEC-003-manual-first-input-boundaries.md`.
 
 Files under `docs/reference/` are supporting or historical research and are not
-canonical.
+canonical. External project-source packs, exported chat plans, prompt
+attachments, detached roadmap files, and local unmerged branches are
+noncanonical snapshots; they may supply leads but do not override current
+repository documents or merged records.
 
 ## Task modes
 
@@ -81,6 +89,13 @@ Ask for a decision only when:
 - a destructive or publication action is requested;
 - the work would materially expand the agreed scope;
 - an unresolved architecture choice cannot be bounded by a PROOF task.
+
+Ask the owner only questions whose answers materially affect current product
+behavior. Missing mechanics evidence blocks automatic derivation, not manual
+fallback entry or unrelated product workflows. Do not reopen deferred automatic
+Mercenary-sheet derivation merely because a historical plan listed it as a
+phase; see `docs/CURRENT_STATE.md` and
+`docs/decisions/DEC-003-manual-first-input-boundaries.md`.
 
 Do not stop merely because a task crosses several files or requires iterative
 validation.

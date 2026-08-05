@@ -27,7 +27,9 @@ It does not add or replace the importer, infer ownership, parse copied items
 into recognized stats, derive permanent-Mercenary sheet values, implement
 Golden Glory, Flame Link, Enmity, penetration, damage, or DPS formulas, add a
 combined score, scrape the web, or add an application networking feature.
-OQ-002 through OQ-007 remain unresolved and AUD-006 was not created.
+Later disposition of OQ-002 through OQ-007 is recorded in
+[CURRENT_STATE.md](../CURRENT_STATE.md) and [OPEN_QUESTIONS.md](../OPEN_QUESTIONS.md);
+AUD-006 was not created.
 
 ## Architecture and DEC-001
 

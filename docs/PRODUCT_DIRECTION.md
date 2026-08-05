@@ -3,7 +3,8 @@
 This is Golden Glory Lab's single current product-definition document. It
 states product intent and scope; it does not confirm unresolved mechanics
 formulas, source coverage, stacking, calculation order, rounding, display
-precision, or conditional behavior.
+precision, or conditional behavior. For what is implemented versus deferred
+now, see [CURRENT_STATE.md](CURRENT_STATE.md).
 
 ## Product intent
 
@@ -23,7 +24,8 @@ granted is not labelled as DPS without a later audited combat model.
 
 ## Intended product flows
 
-The initial player-side product flow has two separate contributing paths:
+The initial player-side product flow has two separate contributing paths and is
+the active unfinished first-release capability:
 
     Luminary equipment, passives, ascendancy, and conditions
         -> increased and reduced Light Radius
@@ -35,13 +37,20 @@ The initial player-side product flow has two separate contributing paths:
     Golden Glory contribution and direct Link Skill Buff Effect
         -> Flame Link damage granted to the Mercenary
 
-The initial Mercenary path is:
+The first-release Mercenary Enmity path is manual-first:
+
+    Explicit, labelled manual Uncapped Fire Resistance and Maximum Fire
+    Resistance in one attested Enmity-equipped context
+        -> Enmity's Embrace isolated contribution
+        -> Overcapped Fire Resistance
+        -> Fire Penetration, capped at 200% for this item contribution
+
+Automatic derivation from the permanent Mercenary information sheet remains an
+intended later enhancement, not a first-release prerequisite:
 
     Permanent Mercenary passive-sheet stats and equipment
-        -> Uncapped Fire Resistance
-        -> Enmity's Embrace
-        -> Overcapped Fire Resistance
-        -> Fire Penetration, capped at 200%
+        -> derived Uncapped Fire Resistance and related inputs
+        -> Enmity's Embrace path above
 
 These arrows describe intended product scope and information flow. They do not
 confirm exact formulas, valid source coverage, stacking rules, calculation
@@ -50,8 +59,17 @@ basis for the intended 200% presentation cap. Those questions remain governed
 by the distinct Light Radius, Flame Link, and Enmity's Embrace audits.
 
 Golden Glory contribution and direct Link Skill Buff Effect remain separately
-visible inputs. Critical-strike reconstruction is a separate later audit and
-panel, not a prerequisite for this path.
+visible inputs. Progressive recognition of supported sources plus labelled
+manual component entries is acceptable. Incomplete source recognition does not
+block a supported formula when reviewed manual components can safely fill the
+gap. Critical-strike reconstruction is a separate later audit and panel.
+Mercenary offensive and passive-sheet statistics beyond the manual Enmity
+inputs belong to later critical analysis, not the current Flame Link
+granted-damage path.
+
+Screenshots are not an ordinary input path. They may support a future evidence
+or automation workflow, but they do not gate the existing manual Enmity path.
+See [DEC-003](decisions/DEC-003-manual-first-input-boundaries.md).
 
 ## First-release user workflow
 
@@ -61,15 +79,23 @@ panel, not a prerequisite for this path.
 4. Explicitly map one item set to the player.
 5. Optionally map one different item set to the Mercenary.
 6. If no Mercenary item set is selected, enter Mercenary equipment manually.
-7. Enter relevant permanent Mercenary passive-sheet values manually.
+7. For the first-release Enmity path, enter final comparable Uncapped Fire
+   Resistance and Maximum Fire Resistance manually with explicit equipped and
+   context attestation. Passive-sheet values are not required for that
+   isolated result.
 8. Review imported items.
 9. Paste copied item text or enter unsupported items manually as needed.
-10. Review Light Radius and Link Skill Buff Effect contributions.
-11. Review Flame Link damage granted.
-12. Review Uncapped Fire Resistance, Enmity overcap, and Fire Penetration.
+10. Review Light Radius and Link Skill Buff Effect contributions, including
+    labelled manual component entries where recognition is incomplete.
+11. Review Flame Link damage granted when its formula gates pass.
+12. Review the isolated Enmity contribution, overcap, and Fire Penetration
+    against Enmity-only targets.
 13. Configure useful targets.
 14. Review gaps, caps, surplus, and unfinished or unreviewed sources.
 15. Save and reopen the combined local build state.
+
+Ordinary users are not asked to submit screenshots or laboratory-style evidence
+packages as part of this workflow.
 
 ## PoB import boundary
 
@@ -127,7 +153,8 @@ already satisfied.
 
 The first usable application reports current values, configured targets, gaps,
 caps, surplus, and unreviewed or missing information. It need not generate
-sophisticated change recommendations.
+sophisticated change recommendations. Manual-first component entry is an
+acceptable bridge while source recognition remains incomplete.
 
 ### Later completeness and improvement phase
 
@@ -139,16 +166,20 @@ availability, and user requirements.
 
 The first release includes a standalone offline desktop application; one active
 permanent Mercenary; raw XML and PoB share-code import; explicit player
-item-set mapping and optional Mercenary mapping; manual Mercenary passive-sheet
-entry; catalog, copied-item, PoB, and manual item input; Light Radius;
-separate Golden Glory and direct Link Skill Buff Effect contributions; Flame
-Link granted-damage calculation; Uncapped Fire Resistance input and equipment
-handling; Enmity overcap and Fire Penetration calculation; basic target, gap,
-cap, and surplus reporting; review state for relevant inputs; local versioned
-save/open; and transparent recognition and warning reports.
+item-set mapping and optional Mercenary mapping; manual Enmity final-value
+entry with explicit context; catalog, copied-item, PoB, and manual item input;
+Light Radius; separate Golden Glory and direct Link Skill Buff Effect
+contributions, including progressive recognition plus manual component entry
+where needed; Flame Link granted-damage calculation when gates pass; Uncapped
+Fire Resistance and Maximum Fire Resistance as attested manual inputs;
+Enmity overcap and Fire Penetration calculation for the isolated item
+contribution; basic target, gap, cap, and surplus reporting; review state for
+relevant inputs; local versioned save/open; and transparent recognition and
+warning reports.
 
-Deferred work includes general Mercenary DPS, full spell-Mercenary modeling,
-every Link skill, market pricing, live trade integration, account
-authentication, runtime scraping, temporary Mercenaries, Volatile crafting
-simulation, global theoretical best-build search, a combined build score, and
+Deferred work includes automatic Mercenary-sheet derivation, general Mercenary
+DPS, full spell-Mercenary modeling, every Link skill, market pricing, live
+trade integration, account authentication, runtime scraping, temporary
+Mercenaries, Volatile crafting simulation, global theoretical best-build
+search, a combined build score, ordinary-user screenshot intake, and
 critical-strike reconstruction until its separate audit supports it.

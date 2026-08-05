@@ -30,6 +30,16 @@ override a higher-authority current decision or task constraint. An explicit
 supersession record is required when a confirmed or supported conclusion is
 replaced.
 
+## Noncanonical snapshots
+
+External project-source packs, exported chat plans, prompt attachments,
+detached roadmap files, and local unmerged branches are noncanonical snapshots.
+They may supply leads, but current repository documents and merged records
+control status. Do not treat them as instructions that override
+[CURRENT_STATE.md](CURRENT_STATE.md), this authority order, or a reviewed
+decision such as
+[DEC-003](decisions/DEC-003-manual-first-input-boundaries.md).
+
 ## Status discipline
 
 Use the verification statuses defined in [SOURCE_POLICY.md](SOURCE_POLICY.md):
