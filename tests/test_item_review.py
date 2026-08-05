@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -14,6 +15,7 @@ from golden_glory_lab.build_state import (  # noqa: E402
     empty_document,
     imported_result_digest,
     serialize,
+    validate_document,
 )
 from golden_glory_lab.desktop.service import ApplicationService  # noqa: E402
 from golden_glory_lab.evidence_gate import load_enmity_reference  # noqa: E402
@@ -25,6 +27,7 @@ from golden_glory_lab.item_review import (  # noqa: E402
     recognize_copied_item,
 )
 from golden_glory_lab.pob_import import importPobRawXml  # noqa: E402
+from golden_glory_lab.pob_import.limits import DEFAULT_IMPORT_LIMITS  # noqa: E402
 
 FIXTURE = ROOT / "fixtures" / "item_review" / "copied-items-v1.json"
 POB_FIXTURE = ROOT / "fixtures" / "pob" / "proof" / "comprehensive.xml"
@@ -274,6 +277,76 @@ class CommonItemReviewTests(unittest.TestCase):
         self.assertEqual(len(service.item_reviews(recognition_state="recognized")), 1)
         with self.assertRaises(BuildStateError):
             service.add_copied_entry(raw, user_label="x" * 81)
+
+
+class RetainedPobReviewBoundaryTests(unittest.TestCase):
+    def _item_xml(self, text: str) -> str:
+        return (
+            '<PathOfBuilding><Build targetVersion="3_0"/>'
+            f'<Items activeItemSet="1"><Item id="1">{text}</Item>'
+            '<ItemSet id="1" title="Boundary" useSecondWeaponSet="false">'
+            '<Slot name="Weapon 1" itemId="1"/></ItemSet></Items></PathOfBuilding>'
+        )
+
+    def _assert_reviewable(self, text: str, *, expected_code: str | None = None) -> None:
+        result = importPobRawXml(self._item_xml(text))
+        self.assertEqual(result["status"], "success")
+        document = empty_document()
+        document["importedResult"] = result
+        document["importedResultSha256"] = imported_result_digest(result)
+        validate_document(document)
+        reviews = derive_item_reviews(document)
+        self.assertEqual(len(reviews), 1)
+        review = reviews[0]
+        self.assertEqual(review.exactRawText, text)
+        self.assertEqual(
+            review.rawTextSha256,
+            hashlib.sha256(text.encode("utf-8")).hexdigest(),
+        )
+        service = ApplicationService()
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "boundary.json"
+            path.write_bytes(serialize(document))
+            service.open(path)
+            opened = service.item_reviews()
+            self.assertEqual(len(opened), 1)
+            self.assertEqual(opened[0].exactRawText, text)
+            self.assertEqual(opened[0].rawTextSha256, review.rawTextSha256)
+            self.assertIsNotNone(service.enmity_result())
+        if expected_code is not None:
+            self.assertEqual(review.recognitionReports[0].code, expected_code)
+
+    def test_empty_and_large_pob_item_text_remain_reviewable(self) -> None:
+        self._assert_reviewable("", expected_code="POB_ITEM_TEXT_EMPTY")
+        exact = "a" * COPIED_ITEM_LIMITS["maxRawTextCharacters"]
+        self._assert_reviewable(exact)
+        over_analysis = "b" * (COPIED_ITEM_LIMITS["maxRawTextCharacters"] + 1)
+        self._assert_reviewable(
+            over_analysis,
+            expected_code="POB_ITEM_TEXT_EXCEEDS_COPIED_RECOGNITION_ANALYSIS_LIMIT",
+        )
+        importer_max = "c" * DEFAULT_IMPORT_LIMITS.maxTextBytesPerElement
+        self._assert_reviewable(
+            importer_max,
+            expected_code="POB_ITEM_TEXT_EXCEEDS_COPIED_RECOGNITION_ANALYSIS_LIMIT",
+        )
+        over_importer = "d" * (DEFAULT_IMPORT_LIMITS.maxTextBytesPerElement + 1)
+        failed = importPobRawXml(self._item_xml(over_importer))
+        self.assertEqual(failed["status"], "failure")
+        self.assertEqual(failed["failure"]["code"], "XML_TEXT_LIMIT")
+
+    def test_copied_entry_admission_limits_remain_unchanged(self) -> None:
+        with self.assertRaises(CopiedItemRecognitionError) as raised:
+            recognize_copied_item("")
+        self.assertEqual(raised.exception.code, "COPIED_TEXT_EMPTY")
+        with self.assertRaises(CopiedItemRecognitionError) as raised:
+            recognize_copied_item("x" * (COPIED_ITEM_LIMITS["maxRawTextCharacters"] + 1))
+        self.assertEqual(raised.exception.code, "COPIED_TEXT_LIMIT")
+        retained = recognize_copied_item(
+            "x" * (COPIED_ITEM_LIMITS["maxRawTextCharacters"] + 1),
+            admission="retained-source",
+        )
+        self.assertEqual(retained.state, "manually-required")
 
 
 if __name__ == "__main__":

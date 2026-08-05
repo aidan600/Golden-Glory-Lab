@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from decimal import Decimal
 from typing import Any, Mapping
 
 from golden_glory_lab.evidence_gate.model import GateDecision
@@ -328,11 +327,12 @@ def evaluate_enmity(
             ),
         )
 
-    zero = Decimal(0)
-    overcap_decimal = max(zero, parsed_u.value - parsed_m.value)
-    contribution_decimal = min(Decimal(ENMITY_CAP), overcap_decimal)
-    overcap = int(overcap_decimal)
-    contribution = int(contribution_decimal)
+    # Integral arithmetic must be exact for every admitted digit length and must
+    # not depend on the process-global Decimal context precision.
+    u = int(parsed_u.value)
+    m = int(parsed_m.value)
+    overcap = max(0, u - m)
+    contribution = min(ENMITY_CAP, overcap)
     beyond_cap = max(0, overcap - ENMITY_CAP)
     target = _parsed_optional(manual_input.get("target"))
     return EnmityResult(

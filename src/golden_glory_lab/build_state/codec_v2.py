@@ -175,6 +175,51 @@ def _require_utf8(value: str, context: str) -> None:
         )
 
 
+def _safe_deepcopy(value: Any, *, code: str, message: str) -> Any:
+    try:
+        return copy.deepcopy(value)
+    except RecursionError:
+        _fail(code, message)
+
+
+def _validate_review_consumer_utf8(document: Mapping[str, Any]) -> None:
+    """Reject BUILD-002 review-consumed strings that are not strict UTF-8.
+
+    These checks live in the v2 consumer boundary so the neutral importer
+    contract remains unchanged. A valid v1 file may still be rejected during
+    migration when a newly consumed string cannot be represented safely.
+    Copied-entry UTF-8 is enforced by ``_validate_copied_entries``; this helper
+    covers manual and imported material consumed by common review.
+    """
+
+    for index, entry in enumerate(document.get("manualMercenaryEquipment", [])):
+        context = f"manualMercenaryEquipment[{index}]"
+        for field in ("entryId", "slotLabel", "rawText", "note"):
+            _require_utf8(entry[field], f"{context}.{field}")
+
+    imported = document.get("importedResult")
+    if imported is None:
+        return
+    imported_document = imported["document"]
+    for index, item in enumerate(imported_document["items"]):
+        context = f"importedResult.document.items[{index}]"
+        for field in ("occurrenceId", "sourcePath", "xmlCharacterValue"):
+            _require_utf8(item[field], f"{context}.{field}")
+        for warning_index, warning in enumerate(item.get("warnings", [])):
+            _require_utf8(warning, f"{context}.warnings[{warning_index}]")
+    for set_index, item_set in enumerate(imported_document["itemSets"]):
+        set_context = f"importedResult.document.itemSets[{set_index}]"
+        _require_utf8(item_set["occurrenceId"], f"{set_context}.occurrenceId")
+        _require_utf8(item_set["sourcePath"], f"{set_context}.sourcePath")
+        for assignment_index, assignment in enumerate(item_set["assignments"]):
+            context = f"{set_context}.assignments[{assignment_index}]"
+            _require_utf8(assignment["occurrenceId"], f"{context}.occurrenceId")
+            _require_utf8(assignment["sourcePath"], f"{context}.sourcePath")
+            slot = assignment["originalSlotName"]
+            if slot.get("state") == "present" and isinstance(slot.get("value"), str):
+                _require_utf8(slot["value"], f"{context}.originalSlotName.value")
+
+
 def empty_measurement_context() -> dict[str, str]:
     return {field: "" for field in MEASUREMENT_CONTEXT_FIELDS}
 
@@ -230,14 +275,12 @@ def _validate_copied_entries(entries_value: Any) -> set[str]:
         label = _require_string(entry["userLabel"], f"{context}.userLabel")
         note = _require_string(entry["note"], f"{context}.note")
         assert None not in (entry_id, raw_text, role, slot, label, note)
-        if (
-            not entry_id
-            or len(entry_id) > COPIED_ITEM_LIMITS["maxEntryIdCharacters"]
-        ):
+        if not entry_id or len(entry_id) > COPIED_ITEM_LIMITS["maxEntryIdCharacters"]:
             _fail("COPIED_ENTRY_ID", f"{context}.entryId is empty or too long")
         if entry_id in seen:
             _fail("COPIED_ENTRY_ID", f"Duplicate copied-item entry ID {entry_id}")
         seen.add(entry_id)
+        _require_utf8(entry_id, f"{context}.entryId")
         if not raw_text or len(raw_text) > COPIED_ITEM_LIMITS["maxRawTextCharacters"]:
             _fail("COPIED_TEXT_LIMIT", f"{context}.rawText is empty or too long")
         _require_utf8(raw_text, f"{context}.rawText")
@@ -312,6 +355,12 @@ def _validate_enmity_input(value: Any) -> ReviewSourceLocator | None:
     if locator_value is None:
         return None
     locator_object = _require_object(locator_value, "enmityManualInput.observedItemReference")
+    for field in ("provenanceKind", "sourceId"):
+        if field in locator_object and isinstance(locator_object[field], str):
+            _require_utf8(
+                locator_object[field],
+                f"enmityManualInput.observedItemReference.{field}",
+            )
     try:
         return ReviewSourceLocator.from_dict(locator_object)
     except ValueError as error:
@@ -343,6 +392,7 @@ def validate_document(document_value: Any) -> None:
 
     copied_ids = _validate_copied_entries(document["copiedItemEntries"])
     locator = _validate_enmity_input(document["enmityManualInput"])
+    _validate_review_consumer_utf8(document)
     if locator is None:
         return
     if locator.provenanceKind == "copied-text":
@@ -459,7 +509,11 @@ def _decode_json(data: bytes) -> dict[str, Any]:
 
 def migrate_v1_document(document_value: Any) -> dict[str, Any]:
     legacy_codec.validate_document(document_value)
-    document = copy.deepcopy(document_value)
+    document = _safe_deepcopy(
+        document_value,
+        code="MIGRATION_NESTING",
+        message="Build-state migration exceeds safe copy nesting limits",
+    )
     document["schemaVersion"] = BUILD_STATE_SCHEMA_VERSION
     document["applicationDataContractVersion"] = APPLICATION_DATA_CONTRACT_VERSION
     # Insertions are re-ordered by the v2 serializer; the source document is
@@ -476,13 +530,21 @@ def decode(data: bytes) -> DecodedBuildState:
     schema_version = parsed.get("schemaVersion")
     if schema_version == BUILD_STATE_SCHEMA_VERSION:
         validate_document(parsed)
-        document = copy.deepcopy(parsed)
+        document = _safe_deepcopy(
+            parsed,
+            code="OPEN_STATE_NESTING",
+            message="Build-state document exceeds safe copy nesting limits",
+        )
         return DecodedBuildState(document, schema_version, False, serialize(document))
     if schema_version == LEGACY_BUILD_STATE_SCHEMA_VERSION:
         legacy_codec.validate_document(parsed)
         migrated = migrate_v1_document(parsed)
         return DecodedBuildState(
-            copy.deepcopy(migrated),
+            _safe_deepcopy(
+                migrated,
+                code="OPEN_STATE_NESTING",
+                message="Migrated build-state document exceeds safe copy nesting limits",
+            ),
             schema_version,
             True,
             serialize(migrated),

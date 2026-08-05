@@ -74,6 +74,17 @@ digest, typed source locator, zero or more explicit role bindings, binding
 basis, slot/assignment labels, recognition state and reports, supported
 identity, and the source-owned user note.
 
+Copied-entry admission remains nonempty and at most 100,000 characters. PoB
+retained item text is reviewed through a separate retained-source path that
+accepts every strict-UTF-8 value already admitted by the neutral importer,
+including empty text and text larger than the copied-entry limit. Empty PoB
+text yields an explicit unrecognized/manually-required review report without
+raising. Text above the copied-recognition analysis limit keeps the exact text
+and digest, preserves provenance bindings, and returns one bounded
+source-limit report instead of a line-by-line parse. This is a review state, not
+an import rejection. Common review is therefore total over every accepted
+canonical source.
+
 A PoB source item stays one logical item even when multiple assignments bind
 it. Roles come only from explicit Player/Mercenary occurrence mappings,
 explicit copied metadata, or the manual-Mercenary entry path. Unmapped items
@@ -87,6 +98,10 @@ raw material, ordered report detail, and retained neutral-import detail. The
 optional observed Enmity item uses a typed canonical source locator, not a
 widget row ID. Confirmed deletion or successful import replacement atomically
 clears a reference and changes its source; cancellation preserves both.
+Rejected Enmity form edits leave canonical state unchanged and restore U, M,
+target, equipped/inclusion/acknowledgement controls, measurement-context
+fields, observed-item selection, result/target panels, exact gate detail,
+status, title, dirty state, and migration state from canonical service state.
 
 ## Runtime evidence manifest and exact gates
 
@@ -96,27 +111,34 @@ The packaged resources are:
 - `golden_glory_lab.runtime_data/enmity-manual-gate-v1.json`;
 - `data/schemas/runtime-evidence-gate-v1.schema.json`.
 
+Canonical evidence bytes are the Git blob bytes under an explicit
+`.gitattributes` LF checkout policy for the five pinned sources and packaged
+runtime JSON resources. The build-time validator proves each pinned path is
+tracked, its canonical tracked bytes use LF, the manifest hash equals SHA-256 of
+those canonical bytes, and a conforming working tree matches those bytes. It
+does not silently normalize arbitrary bytes after reading them.
+
 The runtime manifest is version `1.0.0`, loaded only through package-resource
 APIs. It does not read Markdown, the repository root, the current working
 directory, or a development path. Its pinned manifest SHA-256 is
-`030529551ce44b8a533b57dba98da7318e8eb638b7ee9aef417e53643b5a8ac2`;
+`ba1886d67324c75a40997cbd761a81424247ba6995f45898b2b627117190528d`;
 the packaged Enmity reference SHA-256 is
-`ef604dce20bdf067b83609731c0516a9423c2a722a13e7121470881e64bd141d`.
+`949b75154049bb4d1fb0ea55c6f640a43d95f09da26fd4deabf5b51e2303ce19`.
 
 The build-time validator hashes tracked file bytes and compares exact audit,
 contract, claim, status, polarity, policy, target-version, output, source, and
 consumer contracts. The manifest pins these source bytes:
 
 - `docs/audits/AUD-002.md`:
-  `2d3a0677b8322031cb36152028177d86258646316b55abc75b57bf18254aa889`;
+  `711568e6036ae4a8168ba69516bd20c43cf0d00d5debf2bbc3e7342df39a6779`;
 - `docs/audits/AUD-005.md`:
-  `5c0141689c156a48f85c90f13fa408ea53da6cbc21c1e7a1f49e29c3f42b10b`;
+  `5d1206af0199d34502f75e3a0e3d4ceb9a6fe67b51217cbee890d896128edfb2`;
 - `data/curated/aud-002-mercenary-input-contract-v1.json`:
-  `0e1c674c7fc07dfa116ae0fa88a1d080a04733413e3c7ba6e9f929751c0c2723`;
+  `513c04020776a06447ca42a2d2f0a1eafd59ff111169510315a536ddf1cd78b1`;
 - `data/curated/aud-005-enmitys-embrace-reference-v1.json`:
-  `e45c6d9209687d07784310647de4e7cb1d6b76fe2b01e23e0d40f775f8a24976`;
+  `de4a2ba40b1512705536172e0777048777df6b68bb8d3571690d1a667d901c2d`;
 - `fixtures/mechanics/aud-005-enmitys-embrace-gates-v1.json`:
-  `78a24f55452b09cfc6eb5b920293e5731eb10817864503d75dccdf58ec8dadd2`.
+  `72d6316c8a1ec8e006a3bedae11b26aa0568390f68fa02ff4ee40ea61ab46b89`.
 
 The isolated contribution requires AUD-005 contract `1.0.0`, positive-
 capability claims `AUD-005-C03` and `AUD-005-C04` at a `supported` minimum,
@@ -157,18 +179,25 @@ missing U or M; incomplete context or unrecorded inclusion; fractional U or M;
 then formula evaluation. Only explicit `confirmed-3.29.1` authorizes the
 contract target `Path of Exile 1 3.29.1`.
 
-For eligible integral inputs the sole canonical domain implementation is:
+For eligible integral inputs the sole canonical domain implementation converts
+admitted integral Decimal values to Python integers before arithmetic:
 
 ```text
-O = max(0, U - M)
+u = int(U)
+m = int(M)
+O = max(0, u - m)
 P_enmity = min(200, O)
 inputBeyondCap = max(0, O - 200)
 ```
 
-It returns overcap, `Enmity’s own Fire Penetration contribution`, the
-item-specific cap 200, and input beyond that cap. Available zero is a computed
-number; unavailable, missing, manually required, rounding-evidence-required,
-version-mismatched, and not-applicable states have null values.
+Integral subtraction does not run under the process-global Decimal context, so
+30-digit and 128-digit inputs remain exact regardless of Decimal precision.
+Fractional U or M still preserve lexemes, return `rounding-evidence-required`,
+and produce no numeric contribution. It returns overcap, `Enmity’s own Fire
+Penetration contribution`, the item-specific cap 200, and input beyond that
+cap. Available zero is a computed number; unavailable, missing, manually
+required, rounding-evidence-required, version-mismatched, and not-applicable
+states have null values.
 
 For integral target `T`, a value below zero is `invalid-target`, a value above
 200 is `unreachable-by-Enmity`, and a value in 0 through 200 reports
@@ -195,6 +224,17 @@ preserves the complete prior session. Only explicit successful atomic save
 writes v2 and clears migration pending. Future versions and dangling observed-
 item locators are rejected transactionally.
 
+The v2 consumer boundary enforces strict UTF-8 for every BUILD-002 review-
+consumed string, including copied/manual identifiers and raw text, imported
+occurrence IDs, source paths, item text, warnings, assignment paths, and present
+original-slot values. Lone-surrogate mutations become stable `BuildStateError`
+before session replacement. Deep-copy recursion in migration, decode, open, and
+pre-commit presentation validation becomes stable nesting `BuildStateError`
+codes rather than escaped `RecursionError`. Before session replacement, open
+preflights common review derivation, source-locator resolution, and Enmity
+evaluation with the current runtime resource state; unavailable runtime
+evidence fails closed only for dependent outputs.
+
 The saved-state limit is 682,649,696 bytes. It preserves BUILD-001's derived
 597,251,456-byte envelope, then adds all maximum copied canonical strings and
 all maximum Enmity-authored strings at the existing conservative 12 JSON bytes
@@ -217,31 +257,32 @@ all prohibited outputs unavailable.
 
 The complete final gate passed with:
 
-- 142 Python unit tests;
+- 149 Python unit tests;
 - isolated Ruff `0.15.22` with no findings and a complete `compileall` pass;
-- 29 repository JSON documents plus Markdown links and agent-guide references;
+- 27 repository JSON documents plus Markdown links and agent-guide references;
 - 10 evidence artifacts, 22 semantic mutations, and 12 schema mutations;
 - six self-checked BUILD-002 schemas, four v1-to-v2 migrations, two v2
   fixtures, and three schema-negative mutations;
 - byte-identical dry-run regeneration of all six build-state fixtures;
 - runtime manifest status `PASS` with four claims, two outputs, and five
-  pinned source artifacts;
+  pinned source artifacts on both fresh `core.autocrlf=false` and
+  `core.autocrlf=true` checkouts;
 - passing isolated PoB-import and desktop-packaging proofs.
 
 The final isolated package runner built
 `golden_glory_lab-0.2.0-py3-none-any.whl` with SHA-256
-`e55d3f915a5f2ecf0e500cc9f3d854ff60f66d6b7faecd150612984dba39d7bb`.
-The retained walkthrough bundle contained 992 files and 27,957,739 bytes;
+`5b9de1c544523875437343640f4cdf9918bc73cd131148db2a59fe7d9c8155db`.
+The retained walkthrough bundle contained 992 files and 27,961,556 bytes;
 its executable SHA-256 was
-`1281277ebdd3200479f1b014ffe39a0b700fb5f2a1c56955ce55822fc6193aeb`
+`bdc2b4c68af02a2f2f1ee70a26b155c482306a49f15e3d3d02a0a3682a37facf`
 and complete tree SHA-256 was
-`de23b75ded08f4033beb066cbda320939dce99df0c97ddc22faf4d0b487d23d8`.
+`4b040f4cc6ca7f2df762ba3516b72987c10c58c79923110960030ce37e0d027f`.
 It used Windows GUI subsystem 2, included the four required fixtures/runtime
 resources, and had no production `Requires-Dist` entries or source network-
 client imports.
 
 Three packaged self-tests passed with byte-identical output SHA-256
-`21edc6325c47bf47e7ed2425c26bb1872a9fc16f8285107132ccf2e988e0b502`.
+`ff2df31a5c7f4b3a4715479f2e07d93136f8eae3caed21792eb71656ae7add71`.
 Each exercised ten common-review items (eight PoB, one copied, one manual),
 explicit role mapping, exact copied-text preservation, Enmity identity without
 owner/equipped inference, U=300/M=75 overcap 225, contribution 200, input

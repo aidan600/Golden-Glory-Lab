@@ -105,7 +105,13 @@ class ApplicationService:
 
     def _commit(self, candidate: dict[str, Any]) -> None:
         validate_document(candidate)
-        self._state = copy.deepcopy(candidate)
+        try:
+            self._state = copy.deepcopy(candidate)
+        except RecursionError as error:
+            raise BuildStateError(
+                "COMMIT_STATE_NESTING",
+                "Canonical build-state commit exceeds safe copy nesting limits",
+            ) from error
 
     def new_document(self) -> None:
         state = empty_document()
@@ -419,8 +425,15 @@ class ApplicationService:
 
         path = Path(path_value)
         decoded, _raw_bytes = load_file_result(path)
-        candidate = copy.deepcopy(decoded.document)
+        try:
+            candidate = copy.deepcopy(decoded.document)
+        except RecursionError as error:
+            raise BuildStateError(
+                "OPEN_STATE_NESTING",
+                "Opened build-state exceeds safe copy nesting limits",
+            ) from error
         validate_document(candidate)
+        self._preflight_open_consumers(candidate)
         canonical = serialize(candidate)
         # Everything above may fail; no session member changes until this point.
         self._state = candidate
@@ -429,6 +442,43 @@ class ApplicationService:
         self._migration_pending = decoded.migrated
         self.last_failed_import = None
         self.pending_import_result = None
+
+    def _preflight_open_consumers(self, candidate: Mapping[str, Any]) -> None:
+        """Prove BUILD-002 presentation consumers can derive from the candidate.
+
+        Runtime evidence resources may be unavailable; that fails closed only for
+        dependent Enmity outputs and must not reject an otherwise valid build.
+        """
+
+        from golden_glory_lab.item_review import (
+            CopiedItemRecognitionError,
+            review_source_locators,
+        )
+
+        try:
+            derive_item_reviews(
+                candidate,
+                enmity_reference=self._enmity_reference,
+            )
+            review_source_locators(candidate)
+            evaluate_enmity(
+                candidate["enmityManualInput"],
+                self.gate_decisions()[ENMITY_OUTPUT_ID],
+                self.gate_decisions()[ENMITY_TARGET_OUTPUT_ID],
+            )
+        except CopiedItemRecognitionError as error:
+            raise BuildStateError(error.code, error.message) from error
+        except UnicodeEncodeError as error:
+            raise BuildStateError(
+                "STRICT_UTF8_REQUIRED",
+                f"Opened build-state review material is not strict UTF-8 "
+                f"encodable at character {error.start}",
+            ) from error
+        except RecursionError as error:
+            raise BuildStateError(
+                "OPEN_REVIEW_NESTING",
+                "Opened build-state exceeds safe review-derivation nesting limits",
+            ) from error
 
     def item_sets(self) -> list[dict[str, Any]]:
         imported = self._state["importedResult"]

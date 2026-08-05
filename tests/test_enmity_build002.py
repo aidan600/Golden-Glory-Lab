@@ -498,5 +498,88 @@ class EnmityDomainTests(unittest.TestCase):
         self.assertIsNone(target_gated.target.gap)
 
 
+class ExactIntegralArithmeticTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.main_gate, self.target_gate = passing_gates()
+
+    def _evaluate(self, u: str, m: str = "0", **overrides: object):
+        return evaluate_enmity(
+            complete_input(
+                finalUncappedFireResistance=u,
+                maximumFireResistance=m,
+                **overrides,
+            ),
+            self.main_gate,
+            self.target_gate,
+        )
+
+    def _assert_exact_cases(self) -> None:
+        thirty = "9" * 30
+        result = self._evaluate(thirty, "0")
+        self.assertTrue(result.available)
+        self.assertEqual(result.overcap, int(thirty))
+        self.assertEqual(result.value, 200)
+        self.assertEqual(result.inputBeyondCap, int(thirty) - 200)
+        self.assertEqual(result.inputLexemes["U"], thirty)
+
+        huge = "9" * DECIMAL_DIGIT_LIMIT
+        result = self._evaluate(huge, "0")
+        self.assertTrue(result.available)
+        self.assertEqual(result.overcap, int(huge))
+        self.assertEqual(result.value, 200)
+        self.assertEqual(result.inputBeyondCap, int(huge) - 200)
+        self.assertEqual(result.inputLexemes["U"], huge)
+
+        left = "1" + "0" * 127
+        right = "9" * 127
+        self.assertEqual(len(left), DECIMAL_DIGIT_LIMIT)
+        result = self._evaluate(left, right)
+        self.assertTrue(result.available)
+        self.assertEqual(result.overcap, 1)
+        self.assertEqual(result.value, 1)
+        self.assertEqual(result.inputBeyondCap, 0)
+        self.assertEqual(result.inputLexemes["U"], left)
+        self.assertEqual(result.inputLexemes["M"], right)
+
+        negative = "-" + "9" * 30
+        result = self._evaluate(negative, "0")
+        self.assertTrue(result.available)
+        self.assertEqual(result.overcap, 0)
+        self.assertEqual(result.value, 0)
+        self.assertEqual(result.inputBeyondCap, 0)
+        self.assertEqual(result.inputLexemes["U"], negative)
+
+        exact = self._evaluate("275", "75")
+        self.assertEqual(exact.overcap, 200)
+        self.assertEqual(exact.value, 200)
+        self.assertEqual(exact.inputBeyondCap, 0)
+
+        capped = self._evaluate("300", "75")
+        self.assertEqual(capped.overcap, 225)
+        self.assertEqual(capped.value, 200)
+        self.assertEqual(capped.inputBeyondCap, 25)
+
+        zero = self._evaluate("75", "75")
+        self.assertTrue(zero.available)
+        self.assertEqual(zero.value, 0)
+        self.assertEqual(zero.overcap, 0)
+
+    def test_large_integral_arithmetic_is_exact(self) -> None:
+        self._assert_exact_cases()
+
+    def test_large_integral_arithmetic_ignores_decimal_context_precision(self) -> None:
+        import decimal
+
+        context = decimal.getcontext()
+        original = context.copy()
+        try:
+            for precision in (1, 9, 28, 100):
+                with self.subTest(precision=precision):
+                    context.prec = precision
+                    self._assert_exact_cases()
+        finally:
+            decimal.setcontext(original)
+
+
 if __name__ == "__main__":
     unittest.main()

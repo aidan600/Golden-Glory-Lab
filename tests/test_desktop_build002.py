@@ -19,6 +19,10 @@ from golden_glory_lab.desktop.app import (  # noqa: E402
 )
 from golden_glory_lab.desktop.service import ApplicationService  # noqa: E402
 from golden_glory_lab.desktop.dialogs import CopiedItemDialog  # noqa: E402
+from golden_glory_lab.build_state import (  # noqa: E402
+    MAX_CONTEXT_FIELD_CHARACTERS,
+    BuildStateError,
+)
 from golden_glory_lab.item_review import ReviewSourceLocator  # noqa: E402
 
 COPIED_FIXTURE = (
@@ -372,6 +376,134 @@ class EnmityControllerPresentationTests(unittest.TestCase):
         self.assertIn("Total penetration", labels)
         self.assertIn("Damage and DPS", labels)
         self.assertIn("Golden Glory arithmetic", labels)
+
+    def _restoring_form(self, service: ApplicationService) -> GoldenGloryApp:
+        app = self._headless_form(service)
+        app.enmity_result_detail = FakeText()
+        app.enmity_gate_detail = FakeText()
+        app.status_var = FakeValue()
+        app.failed_var = FakeValue()
+        app.enmity_observed_combo = FakeValue()
+        app.enmity_observed_combo.configure = lambda **_values: None
+        app.title = lambda value=None: getattr(app, "_title", "") if value is None else setattr(app, "_title", value)
+        app._title = "Golden Glory Lab - test"
+
+        def set_readonly(widget: FakeText, value: str) -> None:
+            widget.configure(state="normal")
+            widget.delete("1.0", "end")
+            widget.insert("1.0", value)
+            widget.configure(state="disabled")
+
+        app._set_readonly_text = set_readonly
+        app._refresh_status = GoldenGloryApp._refresh_status.__get__(app, GoldenGloryApp)
+        app._refresh_mapping = lambda: None
+        app._refresh_notes = lambda: None
+        app._refresh_title = GoldenGloryApp._refresh_title.__get__(app, GoldenGloryApp)
+        app._refresh_enmity = GoldenGloryApp._refresh_enmity.__get__(app, GoldenGloryApp)
+        app._restore_rejected_edit = GoldenGloryApp._restore_rejected_edit.__get__(
+            app, GoldenGloryApp
+        )
+
+        def guard(action: object) -> bool:
+            try:
+                action()
+            except BuildStateError as error:
+                app._last_error = error
+                app._restore_rejected_edit()
+                return False
+            app._refresh_enmity()
+            app._refresh_status()
+            app._refresh_title()
+            return True
+
+        app._guard = guard
+        app._last_error = None
+        app._refresh_enmity()
+        app._refresh_status()
+        app._refresh_title()
+        return app
+
+    def test_rejected_enmity_edits_restore_canonical_widgets(self) -> None:
+        service = ApplicationService()
+        identifier = service.add_copied_entry(COPIED_FIXTURE, role="unassigned")
+        locator = ReviewSourceLocator("copied-text", identifier)
+        service.set_enmity_input(
+            final_uncapped_fire_resistance="300",
+            maximum_fire_resistance="75",
+            equipped_state="equipped",
+            equipment_inclusion_state="included",
+            measurement_context={
+                field: fake.get()
+                for field, fake in complete_context_vars().items()
+            },
+            target_game_version_acknowledgement="confirmed-3.29.1",
+            observed_item_reference=locator,
+            target="200",
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "clean.json"
+            service.save(path)
+            self.assertFalse(service.dirty)
+            app = self._restoring_form(service)
+            before_result = app.enmity_result_detail.value
+            before_gates = app.enmity_gate_detail.value
+            before_title = app._title
+
+            app.enmity_u_var.set(" 300")
+            app._apply_enmity_input()
+            self.assertEqual(app._last_error.code, "DECIMAL_TEXT_GRAMMAR")
+            self.assertEqual(app.enmity_u_var.get(), "300")
+            self.assertEqual(app.enmity_result_detail.value, before_result)
+            self.assertEqual(app.enmity_gate_detail.value, before_gates)
+            self.assertEqual(app._title, before_title)
+            self.assertFalse(service.dirty)
+
+            service.set_enmity_input(final_uncapped_fire_resistance="310")
+            self.assertTrue(service.dirty)
+            app = self._restoring_form(service)
+            app.enmity_m_var.set("75 ")
+            app._apply_enmity_input()
+            self.assertEqual(app.enmity_m_var.get(), "75")
+            self.assertEqual(app.enmity_u_var.get(), "310")
+            self.assertIn(" *", app._title)
+
+            context = {
+                field: variable.get()
+                for field, variable in app.enmity_context_vars.items()
+            }
+            context["zoneOrUiContext"] = "x" * MAX_CONTEXT_FIELD_CHARACTERS
+            service.set_enmity_input(measurement_context=context)
+            app = self._restoring_form(service)
+            self.assertEqual(
+                app.enmity_context_vars["zoneOrUiContext"].get(),
+                "x" * MAX_CONTEXT_FIELD_CHARACTERS,
+            )
+
+            app.enmity_context_vars["zoneOrUiContext"].set(
+                "x" * (MAX_CONTEXT_FIELD_CHARACTERS + 1)
+            )
+            before_result = app.enmity_result_detail.value
+            app._apply_enmity_input()
+            self.assertEqual(
+                app.enmity_context_vars["zoneOrUiContext"].get(),
+                "x" * MAX_CONTEXT_FIELD_CHARACTERS,
+            )
+            self.assertEqual(app.enmity_result_detail.value, before_result)
+
+            app.enmity_observed_var.set("missing-locator")
+            app._observed_locator_by_display["missing-locator"] = ReviewSourceLocator(
+                "copied-text", "missing"
+            )
+            app._apply_enmity_input()
+            self.assertIn(identifier, app.enmity_observed_var.get())
+            self.assertIn(identifier, app.enmity_result_detail.value)
+
+            app.enmity_u_var.set("75.5")
+            app._apply_enmity_input()
+            result = service.enmity_result()
+            self.assertEqual(result.state, "rounding-evidence-required")
+            self.assertIsNone(result.value)
+            self.assertIn("rounding-evidence-required", app.enmity_result_detail.value)
 
 
 class MigrationStatusPresentationTests(unittest.TestCase):

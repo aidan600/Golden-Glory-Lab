@@ -24,9 +24,16 @@ def _raw_digest(raw_text: str) -> str:
 
 
 def _recognition(
-    raw_text: str, enmity_reference: dict[str, Any] | None
+    raw_text: str,
+    enmity_reference: dict[str, Any] | None,
+    *,
+    admission: str,
 ):
-    return recognize_copied_item(raw_text, enmity_reference=enmity_reference)
+    return recognize_copied_item(
+        raw_text,
+        enmity_reference=enmity_reference,
+        admission=admission,
+    )
 
 
 def _pob_bindings(
@@ -117,7 +124,11 @@ def derive_item_reviews(
         for item in imported["document"]["items"]:
             locator = ReviewSourceLocator("pob-import", item["occurrenceId"])
             raw_text = item["xmlCharacterValue"]
-            recognition = _recognition(raw_text, enmity_reference)
+            recognition = _recognition(
+                raw_text,
+                enmity_reference,
+                admission="retained-source",
+            )
             bindings = _pob_bindings(document, item["occurrenceId"])
             labels = tuple(
                 dict.fromkeys(
@@ -154,7 +165,11 @@ def derive_item_reviews(
     for entry in document.get("copiedItemEntries", []):
         locator = ReviewSourceLocator("copied-text", entry["entryId"])
         raw_text = entry["rawText"]
-        recognition = _recognition(raw_text, enmity_reference)
+        recognition = _recognition(
+            raw_text,
+            enmity_reference,
+            admission="copied-entry",
+        )
         binding = AssignmentBinding(
             role=entry["role"],
             basis="explicit-copied-role",

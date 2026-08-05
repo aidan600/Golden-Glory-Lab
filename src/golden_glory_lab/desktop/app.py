@@ -785,6 +785,12 @@ class GoldenGloryApp(tk.Tk):
             self._refresh_status()
             self._refresh_mapping()
             self._refresh_notes()
+            try:
+                object.__getattribute__(self, "enmity_u_var")
+            except AttributeError:
+                pass
+            else:
+                self._refresh_enmity()
             self._refresh_title()
         finally:
             self._refreshing = was_refreshing

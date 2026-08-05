@@ -544,5 +544,205 @@ class BuildStateV2SchemaRuntimeParityTests(unittest.TestCase):
         self.assertEqual(raised.exception.code, "DANGLING_OBSERVED_ITEM_REFERENCE")
 
 
+class TransactionalOpenBoundaryTests(unittest.TestCase):
+    def _snapshot(self, service: ApplicationService) -> tuple:
+        return (
+            service.state,
+            service.canonical_bytes,
+            service.current_path,
+            service.dirty,
+            service.file_state,
+            service.migration_pending,
+            service.state["playerItemSetOccurrenceId"],
+            service.state["mercenarySourceMode"],
+            service.state["mercenaryItemSetOccurrenceId"],
+            service.state["copiedItemEntries"],
+            service.state["manualMercenaryEquipment"],
+            service.state["enmityManualInput"],
+            service.state["userNotes"],
+            service.pending_import_result,
+            service.last_failed_import,
+        )
+
+    def _saved_mapped_session(self, directory: Path) -> ApplicationService:
+        service = ApplicationService()
+        document = imported_v2()
+        document["playerItemSetOccurrenceId"] = "item-set-0001"
+        document["mercenarySourceMode"] = "mapped-item-set"
+        document["mercenaryItemSetOccurrenceId"] = "item-set-0002"
+        document["copiedItemEntries"] = [
+            {
+                "entryId": "copied-0001",
+                "rawText": "Rarity: Unique\nOpaque Copied\nSynthetic Base",
+                "role": "player",
+                "slotLabel": "Ring 1",
+                "userLabel": "Prior",
+                "note": "keep",
+            }
+        ]
+        document["manualMercenaryEquipment"] = [
+            {
+                "entryId": "manual-0001",
+                "slotLabel": "Ring 2",
+                "rawText": "Opaque manual",
+                "reviewState": "unparsed-manual",
+                "note": "manual",
+            }
+        ]
+        document["enmityManualInput"]["finalUncappedFireResistance"] = "300"
+        document["enmityManualInput"]["maximumFireResistance"] = "75"
+        document["enmityManualInput"]["equippedState"] = "equipped"
+        document["enmityManualInput"]["equipmentInclusionState"] = "included"
+        document["enmityManualInput"]["targetGameVersionAcknowledgement"] = (
+            "confirmed-3.29.1"
+        )
+        document["enmityManualInput"]["measurementContext"] = {
+            field: f"context-{field}" for field in MEASUREMENT_CONTEXT_FIELDS
+        }
+        document["enmityManualInput"]["observedItemReference"] = {
+            "provenanceKind": "copied-text",
+            "sourceId": "copied-0001",
+        }
+        document["userNotes"] = "baseline notes"
+        path = directory / "prior.json"
+        path.write_bytes(serialize(document))
+        service.open(path)
+        service.add_copied_entry("extra retained", role="unassigned")
+        self.assertTrue(service.dirty)
+        return service
+
+    def _assert_refreshable(self, service: ApplicationService) -> None:
+        reviews = service.item_reviews()
+        self.assertTrue(reviews)
+        self.assertTrue(service.item_reviews(provenance="copied-text"))
+        self.assertIsNotNone(service.enmity_result())
+        self.assertIsNotNone(service.runtime_evidence_status())
+
+    def test_surrogate_and_nesting_failures_preserve_complete_session(self) -> None:
+        mutations: list[tuple[str, dict]] = []
+
+        copied_id = copied_enmity_document()
+        copied_id["copiedItemEntries"][0]["entryId"] = "\ud800"
+        mutations.append(("copied-id", copied_id))
+
+        copied_raw = copied_enmity_document()
+        copied_raw["copiedItemEntries"][0]["rawText"] = "\ud800"
+        mutations.append(("copied-raw", copied_raw))
+
+        manual = imported_v2()
+        manual["mercenarySourceMode"] = "manual-equipment"
+        manual["manualMercenaryEquipment"] = [
+            {
+                "entryId": "\ud800",
+                "slotLabel": "Ring",
+                "rawText": "opaque",
+                "reviewState": "unparsed-manual",
+                "note": "",
+            }
+        ]
+        mutations.append(("manual-id", manual))
+
+        manual_raw = imported_v2()
+        manual_raw["mercenarySourceMode"] = "manual-equipment"
+        manual_raw["manualMercenaryEquipment"] = [
+            {
+                "entryId": "manual-0001",
+                "slotLabel": "Ring",
+                "rawText": "\ud800",
+                "reviewState": "unparsed-manual",
+                "note": "",
+            }
+        ]
+        mutations.append(("manual-raw", manual_raw))
+
+        imported = imported_v2()
+        imported["importedResult"]["document"]["items"][0]["occurrenceId"] = "\ud800"
+        imported["importedResultSha256"] = imported_result_digest(
+            imported["importedResult"]
+        )
+        mutations.append(("imported-id", imported))
+
+        imported_raw = imported_v2()
+        imported_raw["importedResult"]["document"]["items"][0][
+            "xmlCharacterValue"
+        ] = "\ud800"
+        imported_raw["importedResultSha256"] = imported_result_digest(
+            imported_raw["importedResult"]
+        )
+        mutations.append(("imported-raw", imported_raw))
+
+        bad_locator = copied_enmity_document()
+        bad_locator["enmityManualInput"]["observedItemReference"] = {
+            "provenanceKind": "copied-text",
+            "sourceId": "\ud800",
+        }
+        mutations.append(("locator", bad_locator))
+
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            service = self._saved_mapped_session(directory)
+            before = self._snapshot(service)
+            for name, mutation in mutations:
+                path = directory / f"bad-{name}.json"
+                path.write_bytes(external_bytes(mutation))
+                with self.subTest(name=name), self.assertRaises(BuildStateError) as raised:
+                    service.open(path)
+                self.assertEqual(raised.exception.code, "STRICT_UTF8_REQUIRED")
+                self.assertEqual(self._snapshot(service), before)
+                self._assert_refreshable(service)
+
+            nesting_path = directory / "nesting.json"
+            nesting_path.write_bytes(serialize(copied_enmity_document()))
+            with (
+                patch(
+                    "golden_glory_lab.desktop.service.copy.deepcopy",
+                    side_effect=RecursionError("simulated"),
+                ),
+                self.assertRaises(BuildStateError) as raised,
+            ):
+                service.open(nesting_path)
+            self.assertEqual(raised.exception.code, "OPEN_STATE_NESTING")
+            self.assertEqual(self._snapshot(service), before)
+            self._assert_refreshable(service)
+
+            migration_path = directory / "migration-v1.json"
+            migration_path.write_bytes(
+                (BUILD_FIXTURES / "manual.build-state-v1.json").read_bytes()
+            )
+            with (
+                patch(
+                    "golden_glory_lab.build_state.codec_v2.copy.deepcopy",
+                    side_effect=RecursionError("simulated migration"),
+                ),
+                self.assertRaises(BuildStateError) as raised,
+            ):
+                service.open(migration_path)
+            self.assertEqual(raised.exception.code, "MIGRATION_NESTING")
+            self.assertEqual(self._snapshot(service), before)
+            self._assert_refreshable(service)
+
+    def test_moderately_deep_retained_material_still_opens(self) -> None:
+        document = imported_v2()
+        nested: dict = {"leaf": "retained"}
+        current = nested
+        for index in range(40):
+            nxt = {"level": index}
+            current["child"] = nxt
+            current = nxt
+        document["importedResult"]["document"]["items"][0][
+            "orderedChildMaterial"
+        ].append({"kind": "opaque-retained", "value": nested})
+        document["importedResultSha256"] = imported_result_digest(
+            document["importedResult"]
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "deep.json"
+            path.write_bytes(serialize(document))
+            service = ApplicationService()
+            service.open(path)
+            self.assertFalse(service.dirty)
+            self.assertEqual(len(service.item_reviews()), len(document["importedResult"]["document"]["items"]))
+
+
 if __name__ == "__main__":
     unittest.main()

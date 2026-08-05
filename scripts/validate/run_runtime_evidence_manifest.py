@@ -7,6 +7,7 @@ import argparse
 import hashlib
 import json
 import re
+import subprocess
 import sys
 from collections.abc import Mapping
 from pathlib import Path
@@ -133,6 +134,43 @@ def _fail(message: str) -> NoReturn:
 
 def _sha256(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
+
+
+def _git_output(root: Path, *args: str) -> bytes:
+    try:
+        return subprocess.check_output(
+            ["git", "-C", str(root), *args],
+            stderr=subprocess.STDOUT,
+        )
+    except FileNotFoundError as error:
+        _fail(f"git is required to validate canonical evidence bytes: {error}")
+    except subprocess.CalledProcessError as error:
+        detail = error.output.decode("utf-8", errors="replace").strip()
+        _fail(f"git {' '.join(args)} failed: {detail or error}")
+
+
+def _require_tracked_path(root: Path, relative_path: str) -> None:
+    try:
+        subprocess.check_call(
+            ["git", "-C", str(root), "ls-files", "--error-unmatch", relative_path],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+    except subprocess.CalledProcessError:
+        _fail(f"{relative_path} is not a tracked repository path")
+
+
+def _canonical_tracked_bytes(root: Path, relative_path: str) -> bytes:
+    """Return exact Git blob bytes for a tracked path; do not normalize them."""
+
+    _require_tracked_path(root, relative_path)
+    data = _git_output(root, "cat-file", "blob", f"HEAD:{relative_path}")
+    if b"\r" in data:
+        _fail(
+            f"{relative_path} canonical tracked bytes contain CR; "
+            "pinned evidence sources must use LF line endings"
+        )
+    return data
 
 
 def _strict_json(data: bytes, label: str) -> dict[str, Any]:
@@ -328,6 +366,37 @@ def _validate_machine_artifacts(source_bytes: Mapping[str, bytes]) -> None:
         _fail("AUD-005 fixture no longer covers every runtime mechanics/policy claim")
 
 
+def _packaged_runtime_bytes(root: Path, relative_path: str) -> bytes:
+    """Hash packaged runtime resources from the checkout that will be shipped.
+
+    Source-artifact pins use canonical Git blob bytes. The runtime resources
+    themselves are validated from working-tree bytes so a reviewed pin update can
+    be checked before commit, then re-checked against HEAD after commit.
+    """
+
+    _require_tracked_path(root, relative_path)
+    working = (root / relative_path).read_bytes()
+    if b"\r" in working:
+        _fail(
+            f"{relative_path} working-tree bytes contain CR; "
+            "runtime resources must check out as LF"
+        )
+    blob = _git_output(root, "cat-file", "blob", f"HEAD:{relative_path}")
+    if b"\r" in blob:
+        _fail(
+            f"{relative_path} canonical tracked bytes contain CR; "
+            "runtime resources must use LF line endings"
+        )
+    # When the resource is unmodified, the conforming checkout must match HEAD.
+    # Dirty pin updates are allowed to differ until the repair commit lands.
+    status = _git_output(
+        root, "status", "--porcelain", "--", relative_path
+    ).decode("utf-8", errors="replace")
+    if not status.strip():
+        _require_equal(working, blob, f"clean working-tree bytes for {relative_path}")
+    return working
+
+
 def validate_manifest(
     *,
     root: Path = ROOT,
@@ -338,8 +407,19 @@ def validate_manifest(
 ) -> dict[str, Any]:
     """Validate exact bytes, claim fields, requirements, and consumer pins."""
 
-    manifest_data = MANIFEST_PATH.read_bytes() if manifest_bytes is None else manifest_bytes
-    reference_data = REFERENCE_PATH.read_bytes() if reference_bytes is None else reference_bytes
+    root = root.resolve()
+    if manifest_bytes is None:
+        manifest_data = _packaged_runtime_bytes(
+            root, "src/golden_glory_lab/runtime_data/enmity-manual-gate-v1.json"
+        )
+    else:
+        manifest_data = manifest_bytes
+    if reference_bytes is None:
+        reference_data = _packaged_runtime_bytes(
+            root, "src/golden_glory_lab/runtime_data/enmity-reference-v1.json"
+        )
+    else:
+        reference_data = reference_bytes
     manifest = parse_gate_manifest_bytes(
         manifest_data, verify_pinned_hash=verify_consumer_pins
     )
@@ -356,11 +436,23 @@ def validate_manifest(
     )
     overrides = dict(source_overrides or {})
     source_bytes: dict[str, bytes] = {}
+    source_hashes: dict[str, str] = {}
     for source in manifest.sourceArtifacts:
         path = source.repositoryPath
-        data = overrides.get(path, (root / path).read_bytes())
+        if path in overrides:
+            data = overrides[path]
+        else:
+            data = _canonical_tracked_bytes(root, path)
+            working = (root / path).read_bytes()
+            _require_equal(
+                working,
+                data,
+                f"working-tree bytes for {path}",
+            )
         source_bytes[path] = data
-        _require_equal(_sha256(data), source.sha256, f"source byte hash {path}")
+        digest = _sha256(data)
+        source_hashes[path] = digest
+        _require_equal(digest, source.sha256, f"source byte hash {path}")
 
     _validate_claims(manifest, source_bytes)
     _validate_outputs(manifest)
@@ -379,6 +471,7 @@ def validate_manifest(
         "manifestSha256": manifest.byteSha256,
         "referenceSha256": reference["byteSha256"],
         "sourceArtifacts": len(source_bytes),
+        "sourceHashes": source_hashes,
         "claims": len(manifest.claims),
         "outputs": len(manifest.outputs),
         "targetGameVersion": manifest.targetGameVersion,

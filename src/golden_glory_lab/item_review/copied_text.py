@@ -218,18 +218,8 @@ def _report_unparsed_remainder(
             )
 
 
-def recognize_copied_item(
-    raw_text: str,
-    *,
-    enmity_reference: dict[str, Any] | None = None,
-) -> RecognitionResult:
-    """Recognize only the reviewed English envelope and Enmity range patterns.
-
-    The returned ``rawText`` is the caller's exact object value. A transient
-    line view excludes line terminators for exact comparisons; every such use
-    is disclosed in ``normalizations`` and all report offsets address the
-    retained original string.
-    """
+def _admit_copied_entry_text(raw_text: str) -> bytes:
+    """Enforce the user-created copied-entry admission boundary."""
 
     if not isinstance(raw_text, str):
         _fail("COPIED_TEXT_TYPE", "Copied-item input must be a string")
@@ -242,12 +232,104 @@ def recognize_copied_item(
     if not raw_text:
         _fail("COPIED_TEXT_EMPTY", "Copied-item input must not be empty")
     try:
-        encoded = raw_text.encode("utf-8", errors="strict")
+        return raw_text.encode("utf-8", errors="strict")
     except UnicodeEncodeError as error:
         _fail(
             "COPIED_TEXT_UTF8",
             f"Copied-item input is not strict UTF-8 encodable at character {error.start}",
         )
+
+
+def _encode_retained_source_text(raw_text: str) -> bytes:
+    """Encode already-admitted retained source text without copied-entry limits."""
+
+    if not isinstance(raw_text, str):
+        _fail("COPIED_TEXT_TYPE", "Retained item text must be a string")
+    try:
+        return raw_text.encode("utf-8", errors="strict")
+    except UnicodeEncodeError as error:
+        _fail(
+            "COPIED_TEXT_UTF8",
+            f"Retained item text is not strict UTF-8 encodable at character {error.start}",
+        )
+
+
+def _bounded_retained_result(
+    raw_text: str,
+    encoded: bytes,
+    *,
+    code: str,
+    category: str,
+    explanation: str,
+    state: str,
+) -> RecognitionResult:
+    reports = _ReportBuilder()
+    reports.add(code, category, explanation)
+    return RecognitionResult(
+        state,
+        raw_text,
+        hashlib.sha256(encoded).hexdigest(),
+        None,
+        None,
+        (),
+        tuple(reports.values),
+    )
+
+
+def recognize_copied_item(
+    raw_text: str,
+    *,
+    enmity_reference: dict[str, Any] | None = None,
+    admission: str = "copied-entry",
+) -> RecognitionResult:
+    """Recognize only the reviewed English envelope and Enmity range patterns.
+
+    The returned ``rawText`` is the caller's exact object value. A transient
+    line view excludes line terminators for exact comparisons; every such use
+    is disclosed in ``normalizations`` and all report offsets address the
+    retained original string.
+
+    ``admission`` separates user-created copied-entry limits from recognition of
+    already-admitted retained source material such as PoB item text:
+
+    - ``copied-entry`` rejects empty input and text above 100,000 characters;
+    - ``retained-source`` preserves every strict-UTF-8 admitted value, including
+      empty text and text larger than the copied-entry admission limit.
+    """
+
+    if admission not in {"copied-entry", "retained-source"}:
+        _fail("COPIED_ADMISSION_MODE", f"Unsupported admission mode: {admission}")
+    if admission == "copied-entry":
+        encoded = _admit_copied_entry_text(raw_text)
+    else:
+        encoded = _encode_retained_source_text(raw_text)
+        if not raw_text:
+            return _bounded_retained_result(
+                raw_text,
+                encoded,
+                code="POB_ITEM_TEXT_EMPTY",
+                category="manually required",
+                explanation=(
+                    "The retained PoB item character value is empty, so no "
+                    "copied-item structure is available for recognition."
+                ),
+                state="unrecognized",
+            )
+        analysis_limit = COPIED_ITEM_LIMITS["maxRawTextCharacters"]
+        if len(raw_text) > analysis_limit:
+            return _bounded_retained_result(
+                raw_text,
+                encoded,
+                code="POB_ITEM_TEXT_EXCEEDS_COPIED_RECOGNITION_ANALYSIS_LIMIT",
+                category="manually required",
+                explanation=(
+                    f"Detailed copied-item recognition was withheld because the "
+                    f"retained PoB item text is {len(raw_text)} characters and "
+                    f"exceeds the {analysis_limit}-character analysis limit. "
+                    "The exact text and digest remain preserved."
+                ),
+                state="manually-required",
+            )
 
     lines = _split_exact_lines(raw_text)
     reports = _ReportBuilder()

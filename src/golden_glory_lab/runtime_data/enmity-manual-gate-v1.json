@@ -110,27 +110,27 @@
     {
       "artifactId": "aud-002-claim-inventory",
       "repositoryPath": "docs/audits/AUD-002.md",
-      "sha256": "2d3a0677f431c8450f6eb5a358161debd66f81cbcff229bee94ff1f6781aa889"
+      "sha256": "711568e6036ae4a8168ba69516bd20c43cf0d00d5debf2bbc3e7342df39a6779"
     },
     {
       "artifactId": "aud-005-claim-inventory",
       "repositoryPath": "docs/audits/AUD-005.md",
-      "sha256": "5c0141682ca8be32b3958103895e92dd8946704e94f46aa75e3be0314865b10b"
+      "sha256": "5d1206af0199d34502f75e3a0e3d4ceb9a6fe67b51217cbee890d896128edfb2"
     },
     {
       "artifactId": "aud-002-mercenary-input-contract-v1",
       "repositoryPath": "data/curated/aud-002-mercenary-input-contract-v1.json",
-      "sha256": "0e1c674c375dad85a32050aa3c61e1a2b0ba31519275a7ebb7f1a0f2fb9c2723"
+      "sha256": "513c04020776a06447ca42a2d2f0a1eafd59ff111169510315a536ddf1cd78b1"
     },
     {
       "artifactId": "aud-005-enmitys-embrace-reference-v1",
       "repositoryPath": "data/curated/aud-005-enmitys-embrace-reference-v1.json",
-      "sha256": "e45c6d92185bd8944fa6311076cc01d64912b7fa0c3608c747e8cd53d2a24976"
+      "sha256": "de4a2ba40b1512705536172e0777048777df6b68bb8d3571690d1a667d901c2d"
     },
     {
       "artifactId": "aud-005-enmitys-embrace-gates-v1",
       "repositoryPath": "fixtures/mechanics/aud-005-enmitys-embrace-gates-v1.json",
-      "sha256": "78a24f557932cab5add96a9f0e57081933cd5a404e1b106a5236bc3aee8dadd2"
+      "sha256": "72d6316c8a1ec8e006a3bedae11b26aa0568390f68fa02ff4ee40ea61ab46b89"
     }
   ]
 }
