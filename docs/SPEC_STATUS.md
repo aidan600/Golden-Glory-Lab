@@ -30,6 +30,19 @@ override a higher-authority current decision or task constraint. An explicit
 supersession record is required when a confirmed or supported conclusion is
 replaced.
 
+## Attachments and noncanonical snapshots
+
+Attachments, exported plans, external source packs, and detached roadmap files
+are not canonical merely because they were included in a prompt. An explicit
+current-task instruction may adopt or use attached material for that task.
+Durable authority still requires the accepted result to be recorded in the
+repository and merged through the normal workflow.
+
+Chat summaries and local unmerged branches remain noncanonical durable records.
+An attachment must not silently override current repository state when the
+task does not explicitly adopt it. See [CURRENT_STATE.md](CURRENT_STATE.md)
+and [DEC-003](decisions/DEC-003-manual-first-input-boundaries.md).
+
 ## Status discipline
 
 Use the verification statuses defined in [SOURCE_POLICY.md](SOURCE_POLICY.md):

@@ -334,9 +334,12 @@ execution and enforced outbound denial remain unproven. PROOF-002's ordinary-
 user DPI, accessibility, broader multi-monitor, firewall/VM, and egress
 limitations remain unchanged.
 
-Phase 3 remains in progress. OQ-002 through OQ-006 remain open, so derived
-Mercenary inputs, component addition, penalty reconstruction, aggregate
-penetration, Light Radius, Golden Glory, and Flame Link are still blocked. The
-next Phase 3 slice should resolve a separately audited exact mechanics/source
-boundary and then enable only its smallest evidence-gated user result; it must
-not widen copied-item semantics or begin completeness recommendations.
+Phase 3 remains in progress. The isolated manual Enmity contribution delivered
+here is the first-release Mercenary fallback; automatic or aggregate Enmity
+work remains deferred under OQ-006. OQ-002 and OQ-003 are deferred and
+nonblocking for first-release planning. Derived Mercenary inputs, component
+addition, penalty reconstruction, aggregate penetration, and the unfinished
+player-side Light Radius / Golden Glory / Flame Link chain remain unavailable
+until their active evidence work (OQ-004, OQ-005) and a later BUILD authorize
+them. See [CURRENT_STATE.md](../CURRENT_STATE.md). Later Phase 3 work must not
+widen copied-item semantics or begin completeness recommendations.

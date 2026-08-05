@@ -20,7 +20,7 @@ without becoming a second product definition.
 
 | Order | Phase and intended outcome | Exit condition |
 | --- | --- | --- |
-| 1 | **First-release evidence-pack PR.** Deliver AUD-002 (permanent Mercenary passive-sheet contract), AUD-003 (Light Radius and direct Link Skill Buff Effect source contract), AUD-004 (Flame Link data and calculation contract), and AUD-005 (Enmity's Embrace calculation contract) sequentially as separate evidence records in one coherent PR. | All four audit deliverables are structurally complete **and every load-bearing claim required by the scoped downstream result, including exact upstream contract/version dependencies, is confirmed or supported.** A provisional, unknown, superseded, or version-mismatched dependency withholds its dependent result. |
+| 1 | **First-release evidence-pack PR.** Deliver AUD-002 (permanent Mercenary passive-sheet contract), AUD-003 (Light Radius and direct Link Skill Buff Effect source contract), AUD-004 (Flame Link data and calculation contract), and AUD-005 (Enmity's Embrace calculation contract) sequentially as separate evidence records in one coherent PR. | All four audit records are structurally complete, exact claim/version dependencies are machine-readable, and unresolved dependencies explicitly withhold only their dependent outputs. |
 | 2 | **Desktop packaging PROOF consuming the adopted importer.** Test a Windows-first offline package that includes the adopted `golden_glory_lab.pob_import` module, calls `importPobRawXml` or `importPobShareCode`, and parses a permanent synthetic fixture inside the package. | The package runs the retained importer and its regression behavior from the packaged runtime without adding a second importer, selecting a framework by assumption, or implementing gated Flame Link/Enmity mechanics. |
 | 3 | **First usable desktop BUILD.** Extend the adopted packaged shell and importer with explicit item-set mapping, only mechanics whose exact claim/version gates are satisfied, local persistence, UI, and evidence-aware target/gap/cap/surplus reporting. | A user can complete the first-release workflow and save/reopen local build state, while blocked mechanics remain explicit unavailable/review states. |
 | 4 | **Completeness review and improvement patches.** Add reviewed/unreviewed and intentionally unused states, one-slot suggestions, and small multi-slot patches that preserve locked items and requirements. | Constraint-aware review explains practical changes without rewarding already-satisfied objectives. |
@@ -29,11 +29,21 @@ without becoming a second product definition.
 
 ## Current Phase 1 status
 
-The first-release evidence pack is structurally complete as an AUDIT task, but
-Phase 1 exit is not achieved: load-bearing dependencies remain unknown or
-version-mismatched for the scoped mechanics results. The evidence-integrity repair adds regression guards for the recorded contracts, but it does not change any exit status or authorize a BUILD calculation.
+Phase 1 is complete as the first-release evidence-pack deliverable. All four
+audit records are structurally complete, exact claim/version dependencies are
+machine-readable, and unresolved dependencies explicitly withhold only their
+dependent automatic outputs.
 
-The evidence pack is structurally complete, but it does not yet authorize the affected BUILD calculation.
+Some load-bearing claims remain unsatisfied. Those claims remain exact
+downstream gates. Their dependent automatic mechanics remain unavailable.
+Phase 1 does not need to be reopened. Manual-first and unrelated Phase 3 work
+may proceed. The evidence-integrity repair adds regression guards for the
+recorded contracts; it does not upgrade claim statuses or authorize gated
+automatic results that remain unknown, provisional, superseded, or
+version-mismatched.
+
+See [first-release evidence-pack status](audits/FIRST_RELEASE_EVIDENCE_PACK.md)
+and [CURRENT_STATE.md](CURRENT_STATE.md).
 
 The narrow evidence-batching and proof-adoption rules remain in
 [the audit workflow](AUDIT_WORKFLOW.md). The owner has decided that no
@@ -53,23 +63,39 @@ run and directly enforced outbound-network denial remain named limitations.
 
 ## Current Phase 3 status
 
-Phase 3 is in progress. [BUILD-001](builds/BUILD-001-desktop-intake-mapping.md)
-delivers the offline desktop intake, source-order item-set review, explicit
-Player/Mercenary mapping, opaque manual Mercenary equipment, and deterministic
-local save/open workflow.
+Phase 3 is in progress. See [CURRENT_STATE.md](CURRENT_STATE.md) for the
+operational summary and
+[DEC-003](decisions/DEC-003-manual-first-input-boundaries.md) for the
+manual-first input boundary.
 
-[BUILD-002](builds/BUILD-002-copied-item-enmity.md) adds bounded copied-item
-recognition with exact source preservation, a common provenance-aware item
-review over PoB/copied/manual sources, exact claim/contract/status/polarity/
-policy gates, build-state v2 migration, and only the authorized manual isolated
-`Enmity’s own Fire Penetration contribution` with Enmity-only targets. OQ-007
-is resolved only to that bounded recognition contract.
+[BUILD-001](builds/BUILD-001-desktop-intake-mapping.md) is merged. It delivers
+offline desktop intake, source-order item-set review, explicit Player/Mercenary
+mapping, opaque manual Mercenary equipment, and deterministic local save/open.
 
-Phase 3 is not complete. OQ-002 through OQ-006 remain open. Derived permanent-
-Mercenary values, component addition, Enmity's resistance-penalty
-reconstruction, aggregate penetration, Light Radius, Golden Glory, Flame Link,
-damage, DPS, recommendations, and a combined score remain blocked and
-nonnumeric.
+[BUILD-002](builds/BUILD-002-copied-item-enmity.md) is merged. It adds bounded
+copied-item recognition, common PoB/copied/manual review, exact evidence gates,
+build-state v2 migration, and the authorized manual isolated Enmity
+contribution with Enmity-only target, gap, surplus, cap, and input-beyond-cap
+reporting. That manual isolated Enmity path satisfies the first-release
+Mercenary Enmity fallback. OQ-007 is resolved only to the bounded recognition
+contract.
+
+Automatic Mercenary-sheet derivation is deferred and nonblocking for the first
+release. OQ-002 and OQ-003 remain deferred evidence work for that future
+automation only. OQ-006 retains only derived or aggregate Enmity questions;
+the isolated manual result is implemented.
+
+OQ-004 and OQ-005 are the active mechanics work for the player-side Light
+Radius → Golden Glory, direct Link Skill Buff Effect, and Flame Link damage
+granted chain. The intended next BUILD is a manual-first player calculation
+chain with progressive recognition and labelled manual contribution entries.
+
+Phase 3 remains incomplete until that player-side chain and the ordinary
+first-release workflow are usable. Blocked derived Mercenary values, aggregate
+penetration, unproven player-chain formulas, DPS labelling, recommendations,
+and a combined score remain unavailable and nonnumeric. Unsatisfied Phase 1
+claim gates carry forward as exact downstream output gates only; they do not
+reopen the evidence-pack deliverable.
 
 ## Roadmap guardrails
 

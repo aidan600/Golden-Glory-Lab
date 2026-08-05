@@ -8,9 +8,11 @@ chat summary.
 
 1. [Repository agent guide](../AGENTS.md)
 2. [Specification status and authority](SPEC_STATUS.md)
-3. [Current product direction](PRODUCT_DIRECTION.md)
-4. [Product roadmap](PRODUCT_ROADMAP.md)
-5. The mode-specific route below
+3. [Current state](CURRENT_STATE.md) — what is implemented, what is active, and
+   what is deferred now?
+4. [Current product direction](PRODUCT_DIRECTION.md)
+5. [Product roadmap](PRODUCT_ROADMAP.md)
+6. The mode-specific route below
 
 ## Task-mode routes
 
@@ -54,4 +56,9 @@ current repository material subject to the authority order in
 [SPEC_STATUS.md](SPEC_STATUS.md). Everything under
 [docs/reference/](reference/README.md) is historical or supporting material:
 use it for leads, then verify the underlying source and record any current
-conclusion through the workflow.
+conclusion through the workflow. Attachments, exported plans, external source
+packs, and detached roadmap files are not canonical merely because they were
+included in a prompt; an explicit current-task instruction may adopt or use
+attached material for that task, but durable authority still requires a merged
+repository record. See [CURRENT_STATE.md](CURRENT_STATE.md) and
+[SPEC_STATUS.md](SPEC_STATUS.md).

@@ -7,25 +7,34 @@ The first-release evidence-pack task covers [AUD-002](AUD-002.md),
 [AUD-005](AUD-005.md). Each audit now has a versioned claim contract, material
 sources in the [source registry](../../data/sources/registry.json), minimal
 curated reference and/or synthetic gate material where appropriate, and
-repository validation coverage. This is a structural completion of the bounded
-AUDIT task, not an implementation approval.
+repository validation coverage.
 
-The evidence pack is structurally complete, but it does not yet authorize the affected BUILD calculation.
+The evidence-pack workstream/deliverable is structurally complete. Individual
+unknown, provisional, superseded, or version-mismatched claims remain
+downstream output gates. Those gates carry forward into Phase 3 and withhold
+only their dependent automatic calculations. They do not reopen the
+evidence-pack task and do not block manual-first or unrelated Phase 3 work.
+
+This structural completion is not an implementation approval of every gated
+mechanics result. Unsatisfied claim gates continue to withhold only their
+dependent automatic outputs.
 
 ## Evidence-integrity repair
 
 The pack is protected by `node scripts/validate/check_first_release_evidence_pack.mjs`:
 it invokes a pinned isolated Draft 2020-12 validator for all ten artifacts and then
 checks claim-inventory polarity, source manifests, source/claim containment, separate policy prerequisites, ordinal capability thresholds/ranks, Enmity locators, synthetic formula cases, withheld Flame Link fixture states, and real negative mutations. These regression guards make the existing evidence
-contract reviewable; they do not upgrade any mechanics conclusion or satisfy a Phase 1
-exit gate.
+contract reviewable; they do not upgrade any mechanics conclusion or reopen the
+evidence-pack deliverable.
 
-## Phase-exit status
+## Phase and downstream-gate status
 
-Phase 1 exit is **not achieved**. A supported audit headline does not promote
-its unknown, provisional, superseded, or version-mismatched load-bearing
-claims to supported mechanics. A downstream consumer must inspect the exact
-claim and contract-version dependencies recorded by each audit.
+Phase 1 is complete as the first-release evidence-pack deliverable. A supported
+audit headline does not promote its unknown, provisional, superseded, or
+version-mismatched load-bearing claims to supported mechanics. A downstream
+consumer must inspect the exact claim and contract-version dependencies
+recorded by each audit. Unresolved dependencies withhold only their dependent
+automatic outputs; they do not require reopening Phase 1.
 
 | Audit | Record status | Narrowly supported | Load-bearing gate that remains |
 | --- | --- | --- | --- |
@@ -47,25 +56,41 @@ the following:
   ownership/availability inference; or
 - a combined build score.
 
-The narrow AUD-005 manual formula remains a future consumer contract only. It
-requires manual, integral, same-state final values and
-`enmity.equipped-state=equipped`; it is not a license to infer the values from
-a sheet or item text.
+AUD-005 established the bounded manual isolated Enmity formula contract.
+[BUILD-002](../builds/BUILD-002-copied-item-enmity.md) now consumes that
+contract. The implemented output is Enmity’s own isolated contribution and
+Enmity-only target reporting. It still requires manual, integral, same-state
+final values and `enmity.equipped-state=equipped`. It is not a derived
+Mercenary-sheet result and is not a license to infer those values from a sheet
+or item text. Derived sheet inputs, penalty derivation, aggregation, enemy
+resistance, damage, and DPS remain gated.
 
-## Evidence still required
+## Active versus deferred evidence
 
-The next human or bounded-proof evidence requests are:
+### Active first-release evidence work
 
-- controlled PoE1 3.29.1 permanent-Mercenary sheet captures identifying field
-  labels, capped/uncapped semantics, Maximum Fire Resistance, equipment
-  inclusion, and comparable context;
-- controlled Golden Glory and direct-Link-effect arithmetic, condition, and
-  activation evidence, including the Powerful Bond interaction when relevant;
-- Flame Link observations that establish source Maximum Life handling and
-  effect/rounding behavior at deliberately nontrivial values; and
-- Enmity-equipped before/after observations that establish resistance-penalty
-  order, display precision, and rounding without treating a personal build as
-  general reference data.
+Current priorities are [OQ-004](../OPEN_QUESTIONS.md) and
+[OQ-005](../OPEN_QUESTIONS.md):
+
+- Golden Glory conversion and activation;
+- direct Link Skill Buff Effect treatment;
+- Flame Link required inputs, scaling, and rounding.
+
+### Deferred evidence for later automation
+
+The following remain documented needs for deferred automatic features only.
+They are not the current first-release evidence request and do not block the
+manual Enmity path or unrelated Phase 3 work:
+
+- [OQ-002](../OPEN_QUESTIONS.md) / [OQ-003](../OPEN_QUESTIONS.md): automatic
+  Mercenary-sheet labels, semantics, equipment inclusion, and comparison
+  context (future controlled sheet captures when that automation resumes);
+- [OQ-006](../OPEN_QUESTIONS.md): derived or aggregate Enmity work (future
+  Enmity-equipped before/after observations for penalty order, display
+  precision, and rounding when that path resumes).
+
+See [CURRENT_STATE.md](../CURRENT_STATE.md) and
+[DEC-003](../decisions/DEC-003-manual-first-input-boundaries.md).
 
 ## Source and rights posture
 
@@ -81,13 +106,11 @@ site-content terms do not establish redistribution rights for underlying game
 data. Retention and redistribution therefore remain a legal/policy governance
 decision rather than an affirmative licence conclusion.
 
-## Next packaging-proof boundary
+## Packaging status
 
-The next PROOF may package and exercise the adopted
-`golden_glory_lab.pob_import` module by calling the same public
-`importPobRawXml` or `importPobShareCode` entry point against a permanent
-synthetic fixture, then verify the retained importer regression behavior from
-the packaged runtime. It must not introduce a second importer, infer ownership,
-or implement a blocked mechanics calculation. If a packaging proof includes a
-UI surface, it must render the contract's unavailable/review state rather
-than manufacture a Flame Link or Enmity result.
+[PROOF-002](../proofs/PROOF-002-desktop-packaging.md) completed the Windows
+desktop packaging proof and was adopted with named limitations.
+[BUILD-001](../builds/BUILD-001-desktop-intake-mapping.md) and
+[BUILD-002](../builds/BUILD-002-copied-item-enmity.md) consume that adopted
+packaging path. The remaining Python-free clean-machine and enforced-egress
+limitations are still real, but packaging is not the next roadmap task.
