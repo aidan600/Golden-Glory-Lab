@@ -313,7 +313,7 @@ def recognize_copied_item(
                     "The retained PoB item character value is empty, so no "
                     "copied-item structure is available for recognition."
                 ),
-                state="unrecognized",
+                state="manually-required",
             )
         analysis_limit = COPIED_ITEM_LIMITS["maxRawTextCharacters"]
         if len(raw_text) > analysis_limit:

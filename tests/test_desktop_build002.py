@@ -284,6 +284,50 @@ class CommonReviewPresentationTests(unittest.TestCase):
         self.assertEqual(app.common_tree.rows, {})
         self.assertIn("No common item-review instance", app.common_detail.value)
 
+    def test_empty_pob_item_appears_under_manually_required_filter(self) -> None:
+        xml = (
+            '<PathOfBuilding><Build targetVersion="3_0"/>'
+            '<Items activeItemSet="1"><Item id="1"></Item>'
+            '<ItemSet id="1" title="Boundary" useSecondWeaponSet="false">'
+            '<Slot name="Weapon 1" itemId="1"/></ItemSet></Items></PathOfBuilding>'
+        )
+        from golden_glory_lab.build_state import (
+            empty_document,
+            imported_result_digest,
+            serialize,
+        )
+        from golden_glory_lab.pob_import import importPobRawXml
+
+        result = importPobRawXml(xml)
+        self.assertEqual(result["status"], "success")
+        document = empty_document()
+        document["importedResult"] = result
+        document["importedResultSha256"] = imported_result_digest(result)
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "empty-pob.json"
+            path.write_bytes(serialize(document))
+            service = ApplicationService()
+            service.open(path)
+            review = next(
+                item
+                for item in service.item_reviews()
+                if item.sourceLocator.sourceId
+                == result["document"]["items"][0]["occurrenceId"]
+            )
+            self.assertEqual(review.recognitionState, "manually-required")
+            app = GoldenGloryApp.__new__(GoldenGloryApp)
+            app.service = service
+            app.common_tree = FakeTree()
+            app.common_detail = FakeText()
+            app.common_provenance_var = FakeValue("all")
+            app.common_role_var = FakeValue("all")
+            app.common_recognition_var = FakeValue("manually-required")
+            app._refresh_common_review()
+            self.assertIn(review.reviewInstanceId, app.common_tree.rows)
+            app.common_recognition_var.set("unrecognized")
+            app._refresh_common_review()
+            self.assertNotIn(review.reviewInstanceId, app.common_tree.rows)
+
 
 class EnmityControllerPresentationTests(unittest.TestCase):
     def _headless_form(self, service: ApplicationService) -> GoldenGloryApp:

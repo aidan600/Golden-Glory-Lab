@@ -288,7 +288,13 @@ class RetainedPobReviewBoundaryTests(unittest.TestCase):
             '<Slot name="Weapon 1" itemId="1"/></ItemSet></Items></PathOfBuilding>'
         )
 
-    def _assert_reviewable(self, text: str, *, expected_code: str | None = None) -> None:
+    def _assert_reviewable(
+        self,
+        text: str,
+        *,
+        expected_code: str | None = None,
+        expected_state: str | None = None,
+    ) -> ApplicationService:
         result = importPobRawXml(self._item_xml(text))
         self.assertEqual(result["status"], "success")
         document = empty_document()
@@ -303,6 +309,10 @@ class RetainedPobReviewBoundaryTests(unittest.TestCase):
             review.rawTextSha256,
             hashlib.sha256(text.encode("utf-8")).hexdigest(),
         )
+        self.assertEqual(review.provenanceKind, "pob-import")
+        self.assertTrue(review.bindings)
+        if expected_state is not None:
+            self.assertEqual(review.recognitionState, expected_state)
         service = ApplicationService()
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary) / "boundary.json"
@@ -312,23 +322,71 @@ class RetainedPobReviewBoundaryTests(unittest.TestCase):
             self.assertEqual(len(opened), 1)
             self.assertEqual(opened[0].exactRawText, text)
             self.assertEqual(opened[0].rawTextSha256, review.rawTextSha256)
+            if expected_state is not None:
+                self.assertEqual(opened[0].recognitionState, expected_state)
             self.assertIsNotNone(service.enmity_result())
         if expected_code is not None:
             self.assertEqual(review.recognitionReports[0].code, expected_code)
+        return service
+
+    def test_empty_retained_pob_text_is_manually_required(self) -> None:
+        empty_digest = hashlib.sha256(b"").hexdigest()
+        direct = recognize_copied_item("", admission="retained-source")
+        self.assertEqual(direct.state, "manually-required")
+        self.assertEqual(direct.rawText, "")
+        self.assertEqual(direct.rawTextSha256, empty_digest)
+        self.assertEqual(len(direct.reports), 1)
+        self.assertEqual(direct.reports[0].code, "POB_ITEM_TEXT_EMPTY")
+        self.assertEqual(direct.reports[0].category, "manually required")
+        self.assertIsNone(direct.parsedIdentity)
+        self.assertIsNone(direct.referenceMatch)
+
+        result = importPobRawXml(self._item_xml(""))
+        document = empty_document()
+        document["importedResult"] = result
+        document["importedResultSha256"] = imported_result_digest(result)
+        service = ApplicationService()
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "empty-pob.json"
+            path.write_bytes(serialize(document))
+            service.open(path)
+            review = service.item_reviews()[0]
+            locator = review.sourceLocator
+            self.assertEqual(review.recognitionState, "manually-required")
+            self.assertEqual(review.exactRawText, "")
+            self.assertEqual(review.rawTextSha256, empty_digest)
+            self.assertEqual(review.provenanceKind, "pob-import")
+            self.assertTrue(review.bindings)
+            manual = service.item_reviews(recognition_state="manually-required")
+            unrecognized = service.item_reviews(recognition_state="unrecognized")
+            self.assertTrue(
+                any(item.sourceLocator == locator for item in manual)
+            )
+            self.assertFalse(
+                any(item.sourceLocator == locator for item in unrecognized)
+            )
 
     def test_empty_and_large_pob_item_text_remain_reviewable(self) -> None:
-        self._assert_reviewable("", expected_code="POB_ITEM_TEXT_EMPTY")
+        self._assert_reviewable(
+            "",
+            expected_code="POB_ITEM_TEXT_EMPTY",
+            expected_state="manually-required",
+        )
         exact = "a" * COPIED_ITEM_LIMITS["maxRawTextCharacters"]
-        self._assert_reviewable(exact)
+        exact_service = self._assert_reviewable(exact)
+        exact_state = exact_service.item_reviews()[0].recognitionState
+        self.assertNotEqual(exact_state, "manually-required")
         over_analysis = "b" * (COPIED_ITEM_LIMITS["maxRawTextCharacters"] + 1)
         self._assert_reviewable(
             over_analysis,
             expected_code="POB_ITEM_TEXT_EXCEEDS_COPIED_RECOGNITION_ANALYSIS_LIMIT",
+            expected_state="manually-required",
         )
         importer_max = "c" * DEFAULT_IMPORT_LIMITS.maxTextBytesPerElement
         self._assert_reviewable(
             importer_max,
             expected_code="POB_ITEM_TEXT_EXCEEDS_COPIED_RECOGNITION_ANALYSIS_LIMIT",
+            expected_state="manually-required",
         )
         over_importer = "d" * (DEFAULT_IMPORT_LIMITS.maxTextBytesPerElement + 1)
         failed = importPobRawXml(self._item_xml(over_importer))

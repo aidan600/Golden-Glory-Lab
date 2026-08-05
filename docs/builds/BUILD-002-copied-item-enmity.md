@@ -78,7 +78,8 @@ Copied-entry admission remains nonempty and at most 100,000 characters. PoB
 retained item text is reviewed through a separate retained-source path that
 accepts every strict-UTF-8 value already admitted by the neutral importer,
 including empty text and text larger than the copied-entry limit. Empty PoB
-text yields an explicit unrecognized/manually-required review report without
+text yields overall recognition state `manually-required` with report category
+`manually required`, matching the canonical aggregation precedence, without
 raising. Text above the copied-recognition analysis limit keeps the exact text
 and digest, preserves provenance bindings, and returns one bounded
 source-limit report instead of a line-by-line parse. This is a review state, not
@@ -257,7 +258,7 @@ all prohibited outputs unavailable.
 
 The complete final gate passed with:
 
-- 149 Python unit tests;
+- 151 Python unit tests;
 - isolated Ruff `0.15.22` with no findings and a complete `compileall` pass;
 - 27 repository JSON documents plus Markdown links and agent-guide references;
 - 10 evidence artifacts, 22 semantic mutations, and 12 schema mutations;
