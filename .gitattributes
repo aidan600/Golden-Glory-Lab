@@ -1,3 +1,14 @@
+# PoB proof fixtures remain LF so golden comparisons are platform-stable.
 fixtures/pob/golden/*.json text eol=lf
 fixtures/pob/proof/*.xml text eol=lf
 fixtures/pob/proof/*.txt text eol=lf
+
+# BUILD-002 pinned evidence sources and packaged runtime resources must check
+# out as exact LF bytes. Escaped "\r\n" sequences inside JSON string values are
+# data, not line endings, and are unaffected by this policy.
+docs/audits/AUD-002.md text eol=lf
+docs/audits/AUD-005.md text eol=lf
+data/curated/aud-002-mercenary-input-contract-v1.json text eol=lf
+data/curated/aud-005-enmitys-embrace-reference-v1.json text eol=lf
+fixtures/mechanics/aud-005-enmitys-embrace-gates-v1.json text eol=lf
+src/golden_glory_lab/runtime_data/*.json text eol=lf

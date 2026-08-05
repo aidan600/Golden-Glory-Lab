@@ -1,7 +1,7 @@
-"""Evidence-gated BUILD-001 availability presentation.
+"""Evidence-gated BUILD-002 unavailable-output presentation.
 
 These are nonnumeric derived statuses. No mechanics formula is implemented in
-this module or elsewhere in BUILD-001.
+this module; BUILD-002's one isolated Enmity formula lives in the domain package.
 """
 
 from __future__ import annotations
@@ -57,7 +57,7 @@ _UNAVAILABLE = (
     (
         "damage-and-dps",
         "Damage and DPS",
-        "BUILD-001 has no combat model and Flame Link granted damage is not DPS.",
+        "BUILD-002 has no combat model and Flame Link granted damage is not DPS.",
         ("AUD-004-C12", "AUD-005-C07"),
     ),
 )

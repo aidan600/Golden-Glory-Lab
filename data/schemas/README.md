@@ -27,3 +27,19 @@ versions, and constrains explicit mapping/source-mode combinations. Runtime
 code performs only the typed and semantic checks BUILD-001 consumes; tests use
 the schema for complete contract parity without adding a production validator
 dependency.
+
+`build-state-v2.schema.json` is the closed BUILD-002 saved-state contract. It
+retains v1 intake/mapping/manual state, adds only canonical copied-item metadata
+and authored isolated-Enmity input state, composes the unchanged neutral import
+schema, and rejects dangling typed observed-item references. Runtime validation
+has parity mutations for every newly consumed field. Derived recognition,
+common review, gates, calculations, comparisons, and session/UI state are not
+persisted. Valid v1 documents are validated and migrated in memory before a v2
+session can replace the current one.
+
+`runtime-evidence-gate-v1.schema.json` is the deeply closed build-time contract
+for the packaged Enmity runtime gate manifest. It distinguishes ordinal
+positive-capability thresholds from explicit policy modes, fixes contract and
+target versions, binds exact source artifacts and byte hashes, and records the
+smallest dependent output/unmet behavior. Production uses a narrow typed
+standard-library loader rather than this test-only schema engine.

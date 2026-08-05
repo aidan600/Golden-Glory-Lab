@@ -58,10 +58,18 @@ delivers the offline desktop intake, source-order item-set review, explicit
 Player/Mercenary mapping, opaque manual Mercenary equipment, and deterministic
 local save/open workflow.
 
-Phase 3 is not complete. Evidence-gated recognized item parsing, calculations,
-and target/gap/cap/surplus reporting remain later BUILD slices. Mechanics below
-their exact claim/version gates continue to render as nonnumeric unavailable
-states; BUILD-001 does not resolve OQ-002 through OQ-007.
+[BUILD-002](builds/BUILD-002-copied-item-enmity.md) adds bounded copied-item
+recognition with exact source preservation, a common provenance-aware item
+review over PoB/copied/manual sources, exact claim/contract/status/polarity/
+policy gates, build-state v2 migration, and only the authorized manual isolated
+`Enmity’s own Fire Penetration contribution` with Enmity-only targets. OQ-007
+is resolved only to that bounded recognition contract.
+
+Phase 3 is not complete. OQ-002 through OQ-006 remain open. Derived permanent-
+Mercenary values, component addition, Enmity's resistance-penalty
+reconstruction, aggregate penetration, Light Radius, Golden Glory, Flame Link,
+damage, DPS, recommendations, and a combined score remain blocked and
+nonnumeric.
 
 ## Roadmap guardrails
 

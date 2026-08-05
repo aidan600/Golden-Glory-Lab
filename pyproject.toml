@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "golden-glory-lab"
-version = "0.1.0"
+version = "0.2.0"
 description = "Offline Golden Glory Lab production-intent core"
 requires-python = ">=3.11"
 dependencies = []
@@ -28,3 +28,6 @@ select = ["E4", "E7", "E9", "F"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+"golden_glory_lab.runtime_data" = ["*.json"]

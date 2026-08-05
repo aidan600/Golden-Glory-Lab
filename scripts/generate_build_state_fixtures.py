@@ -1,7 +1,7 @@
-"""Generate deterministic BUILD-001 canonical build-state fixtures.
+"""Generate deterministic BUILD-001 v1 and BUILD-002 v2 state fixtures.
 
-Inputs are permanent synthetic PoB proof fixtures in this repository. The
-script performs no network access and emits a review report for every target.
+Inputs are permanent synthetic PoB proof and copied-item fixtures in this
+repository. The script performs no network access and reports every target.
 """
 
 from __future__ import annotations
@@ -16,14 +16,20 @@ from typing import Any, Sequence
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from golden_glory_lab.build_state import (  # noqa: E402
-    empty_document,
+from golden_glory_lab.build_state.codec import (  # noqa: E402
+    empty_document as empty_v1_document,
     imported_result_digest,
-    serialize,
+    serialize as serialize_v1,
+)
+from golden_glory_lab.build_state.codec_v2 import (  # noqa: E402
+    empty_document as empty_v2_document,
+    migrate_v1_document,
+    serialize as serialize_v2,
 )
 from golden_glory_lab.pob_import import importPobRawXml  # noqa: E402
 
 SOURCE = ROOT / "fixtures" / "pob" / "proof"
+COPIED_SOURCE = ROOT / "fixtures" / "item_review" / "copied-items-v1.json"
 OUTPUT = ROOT / "fixtures" / "build_state"
 
 
@@ -35,21 +41,21 @@ def _import(name: str) -> dict[str, Any]:
     return result
 
 
-def _with_import(name: str) -> dict[str, Any]:
-    document = empty_document()
+def _with_v1_import(name: str) -> dict[str, Any]:
+    document = empty_v1_document()
     result = _import(name)
     document["importedResult"] = result
     document["importedResultSha256"] = imported_result_digest(result)
     return document
 
 
-def _documents() -> dict[str, dict[str, Any]]:
-    imported = _with_import("equivalent.xml")
-    mapped = _with_import("reimport-before.xml")
+def _v1_documents() -> dict[str, dict[str, Any]]:
+    imported = _with_v1_import("equivalent.xml")
+    mapped = _with_v1_import("reimport-before.xml")
     mapped["playerItemSetOccurrenceId"] = "item-set-0001"
     mapped["mercenarySourceMode"] = "mapped-item-set"
     mapped["mercenaryItemSetOccurrenceId"] = "item-set-0002"
-    manual = _with_import("equivalent.xml")
+    manual = _with_v1_import("equivalent.xml")
     manual["playerItemSetOccurrenceId"] = "item-set-0001"
     manual["mercenarySourceMode"] = "manual-equipment"
     manual["manualMercenaryEquipment"] = [
@@ -62,11 +68,69 @@ def _documents() -> dict[str, dict[str, Any]]:
         }
     ]
     return {
-        "empty.build-state-v1.json": empty_document(),
+        "empty.build-state-v1.json": empty_v1_document(),
         "imported.build-state-v1.json": imported,
         "mapped.build-state-v1.json": mapped,
         "manual.build-state-v1.json": manual,
     }
+
+
+def _copied_enmity_v2() -> dict[str, Any]:
+    copied = json.loads(COPIED_SOURCE.read_text(encoding="utf-8"))
+    raw_text = next(
+        case["rawText"]
+        for case in copied["cases"]
+        if case["id"] == "recognizable-enmity-crlf"
+    )
+    document = empty_v2_document()
+    document["copiedItemEntries"] = [
+        {
+            "entryId": "copied-0001",
+            "rawText": raw_text,
+            "role": "mercenary",
+            "slotLabel": "Ring 1",
+            "userLabel": "Synthetic observed Enmity",
+            "note": "Fixture material only; explicit role is user metadata.",
+        }
+    ]
+    document["enmityManualInput"] = {
+        "finalUncappedFireResistance": "0300.00",
+        "maximumFireResistance": "075.0",
+        "equippedState": "equipped",
+        "equipmentInclusionState": "unknown",
+        "measurementContext": {
+            "mercenaryIdentityLevel": "Synthetic permanent Mercenary, level 90",
+            "activeStateSelection": "Active combat state recorded",
+            "zoneOrUiContext": "Hideout character UI",
+            "relevantEffectsConditions": "No temporary resistance effects",
+            "equipmentStateDescription": "Enmity equipped in Ring 1",
+            "captureTimingDescription": "Captured after UI refresh",
+        },
+        "targetGameVersionAcknowledgement": "confirmed-3.29.1",
+        "observedItemReference": {
+            "provenanceKind": "copied-text",
+            "sourceId": "copied-0001",
+        },
+        "target": "200.0",
+    }
+    document["userNotes"] = "Synthetic BUILD-002 v2 fixture."
+    return document
+
+
+def _documents() -> dict[str, tuple[dict[str, Any], Any]]:
+    v1 = _v1_documents()
+    expected: dict[str, tuple[dict[str, Any], Any]] = {
+        name: (document, serialize_v1) for name, document in v1.items()
+    }
+    expected["empty-migrated.build-state-v2.json"] = (
+        migrate_v1_document(v1["empty.build-state-v1.json"]),
+        serialize_v2,
+    )
+    expected["copied-enmity.build-state-v2.json"] = (
+        _copied_enmity_v2(),
+        serialize_v2,
+    )
+    return expected
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -82,7 +146,10 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     OUTPUT.mkdir(parents=True, exist_ok=True)
-    expected = {name: serialize(value) for name, value in _documents().items()}
+    expected = {
+        name: serializer(document)
+        for name, (document, serializer) in _documents().items()
+    }
     report: dict[str, Any] = {
         "addedRecords": [],
         "removedRecords": [],

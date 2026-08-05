@@ -1,4 +1,4 @@
-"""Functional Tkinter/ttk presentation for BUILD-001."""
+"""Functional Tkinter/ttk presentation for BUILD-002."""
 
 from __future__ import annotations
 
@@ -7,9 +7,10 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 from typing import Any
 
-from golden_glory_lab.build_state import BuildStateError
+from golden_glory_lab.build_state import BuildStateError, MEASUREMENT_CONTEXT_FIELDS
+from golden_glory_lab.item_review import ReviewSourceLocator
 
-from .dialogs import ManualEntryDialog, ShareCodeDialog
+from .dialogs import CopiedItemDialog, ManualEntryDialog, ShareCodeDialog
 from .service import ApplicationService
 
 
@@ -29,8 +30,58 @@ def _json_text(value: Any) -> str:
     )
 
 
+def _review_identity_text(review: Any) -> str:
+    identity = review.parsedIdentity
+    if identity is None:
+        return "unrecognized"
+    return " / ".join(
+        value
+        for value in (identity.itemName, identity.baseType)
+        if value
+    ) or "structure only"
+
+
+def _review_row(review: Any) -> tuple[str, ...]:
+    roles = ", ".join(dict.fromkeys(binding.role for binding in review.bindings))
+    return (
+        review.provenanceKind,
+        roles,
+        review.sourceLocator.sourceId,
+        ", ".join(review.slotOrAssignmentLabels) or "none",
+        _review_identity_text(review),
+        review.recognitionState,
+        ", ".join(review.warnings) or "none",
+    )
+
+
+def _review_detail_text(review: Any) -> str:
+    metadata = review.to_dict()
+    exact = metadata.pop("exactRawText")
+    return (
+        "SOURCE PROVENANCE AND ORDERED RECOGNITION REPORT\n"
+        + _json_text(metadata)
+        + "\n\n--- EXACT RETAINED RAW TEXT START ---\n"
+        + exact
+        + "\n--- EXACT RETAINED RAW TEXT END ---\n"
+    )
+
+
+def _enmity_result_text(result: Any, observed_summary: Any = None) -> str:
+    numeric_summary = (
+        f"AVAILABLE NUMERIC VALUE: {result.value}"
+        if result.available
+        else "NUMERIC VALUE: unavailable (null; never substituted with zero)"
+    )
+    return numeric_summary + "\n\n" + _json_text(
+        {
+            "result": result.to_dict(),
+            "observedItemSummary": observed_summary,
+        }
+    )
+
+
 class GoldenGloryApp(tk.Tk):
-    """BUILD-001 review UI; canonical behavior remains in ApplicationService."""
+    """BUILD-002 review UI; canonical behavior remains in ApplicationService."""
 
     def __init__(self, service: ApplicationService | None = None) -> None:
         super().__init__()
@@ -67,6 +118,7 @@ class GoldenGloryApp(tk.Tk):
             ("Save As", self._save_as),
             ("Import raw XML", self._import_raw_xml),
             ("Paste share code", self._import_share_code),
+            ("Paste copied item", self._add_copied),
         )
         for column, (label, command) in enumerate(actions):
             ttk.Button(toolbar, text=label, command=command).grid(
@@ -145,17 +197,26 @@ class GoldenGloryApp(tk.Tk):
         notebook.grid(row=0, column=0, sticky="nsew")
         mapping = ttk.Frame(notebook, padding=10)
         review = ttk.Frame(notebook, padding=6)
+        common = ttk.Frame(notebook, padding=6)
+        copied = ttk.Frame(notebook, padding=8)
         manual = ttk.Frame(notebook, padding=8)
+        enmity = ttk.Frame(notebook, padding=8)
         evidence = ttk.Frame(notebook, padding=8)
         notes = ttk.Frame(notebook, padding=8)
-        notebook.add(mapping, text="Explicit mapping")
-        notebook.add(review, text="Imported review")
-        notebook.add(manual, text="Manual Mercenary equipment")
-        notebook.add(evidence, text="Evidence status")
+        notebook.add(mapping, text="Mapping")
+        notebook.add(review, text="PoB review")
+        notebook.add(common, text="Common review")
+        notebook.add(copied, text="Copied")
+        notebook.add(manual, text="Manual gear")
+        notebook.add(enmity, text="Enmity")
+        notebook.add(evidence, text="Evidence")
         notebook.add(notes, text="Notes")
         self._build_mapping(mapping)
         self._build_review(review)
+        self._build_common_review(common)
+        self._build_copied(copied)
         self._build_manual(manual)
+        self._build_enmity(enmity)
         self._build_evidence(evidence)
         self._build_notes(notes)
 
@@ -344,6 +405,315 @@ class GoldenGloryApp(tk.Tk):
         self.manual_detail = self._text_box(detail_frame)
         self.manual_detail.grid(row=0, column=0, sticky="nsew")
 
+    def _build_common_review(self, parent: ttk.Frame) -> None:
+        parent.grid_rowconfigure(1, weight=2)
+        parent.grid_rowconfigure(3, weight=3)
+        parent.grid_columnconfigure(0, weight=1)
+        filters = ttk.Frame(parent)
+        filters.grid(row=0, column=0, sticky="ew", pady=(0, 6))
+        self.common_provenance_var = tk.StringVar(value="all")
+        self.common_role_var = tk.StringVar(value="all")
+        self.common_recognition_var = tk.StringVar(value="all")
+        filter_specs = (
+            (
+                "Provenance",
+                self.common_provenance_var,
+                ("all", "pob-import", "copied-text", "manual-entry"),
+            ),
+            (
+                "Role",
+                self.common_role_var,
+                ("all", "player", "mercenary", "unassigned"),
+            ),
+            (
+                "Recognition",
+                self.common_recognition_var,
+                (
+                    "all",
+                    "recognized",
+                    "partially-recognized",
+                    "unrecognized",
+                    "malformed",
+                    "manually-required",
+                ),
+            ),
+        )
+        column = 0
+        for label, variable, values in filter_specs:
+            ttk.Label(filters, text=label).grid(row=0, column=column, padx=(0, 4))
+            combo = ttk.Combobox(
+                filters,
+                textvariable=variable,
+                values=values,
+                state="readonly",
+                width=21,
+            )
+            combo.grid(row=0, column=column + 1, padx=(0, 10))
+            combo.bind("<<ComboboxSelected>>", self._common_filter_changed)
+            column += 2
+
+        columns = (
+            "provenance",
+            "roles",
+            "source",
+            "slot",
+            "identity",
+            "recognition",
+            "warnings",
+        )
+        self.common_tree = ttk.Treeview(parent, columns=columns, show="headings")
+        for name, heading, width in (
+            ("provenance", "Provenance", 110),
+            ("roles", "Explicit role binding(s)", 170),
+            ("source", "Source / entry", 155),
+            ("slot", "Slot / assignment", 180),
+            ("identity", "Recognized identity", 220),
+            ("recognition", "Recognition state", 160),
+            ("warnings", "Warnings", 240),
+        ):
+            self.common_tree.heading(name, text=heading)
+            self.common_tree.column(name, width=width, minwidth=80)
+        self.common_tree.grid(row=1, column=0, sticky="nsew")
+        common_scroll = ttk.Scrollbar(
+            parent, orient="vertical", command=self.common_tree.yview
+        )
+        self.common_tree.configure(yscrollcommand=common_scroll.set)
+        common_scroll.grid(row=1, column=1, sticky="ns")
+        self.common_tree.bind("<<TreeviewSelect>>", self._show_common_review_detail)
+        ttk.Button(
+            parent,
+            text="Copy exact raw text",
+            command=self._copy_common_raw,
+        ).grid(row=2, column=0, sticky="w", pady=6)
+        detail_frame = ttk.Frame(parent)
+        detail_frame.grid(row=3, column=0, columnspan=2, sticky="nsew")
+        detail_frame.grid_rowconfigure(0, weight=1)
+        detail_frame.grid_columnconfigure(0, weight=1)
+        self.common_detail = self._text_box(detail_frame)
+        self.common_detail.grid(row=0, column=0, sticky="nsew")
+
+    def _build_copied(self, parent: ttk.Frame) -> None:
+        parent.grid_rowconfigure(1, weight=2)
+        parent.grid_rowconfigure(3, weight=3)
+        parent.grid_columnconfigure(0, weight=1)
+        ttk.Label(
+            parent,
+            text=(
+                "Copied text is retained exactly. Role, slot, label, and note are "
+                "explicit build-state metadata; recognition never assigns ownership."
+            ),
+            wraplength=850,
+        ).grid(row=0, column=0, sticky="w", pady=(0, 6))
+        columns = ("id", "role", "slot", "label", "recognition", "note")
+        self.copied_tree = ttk.Treeview(parent, columns=columns, show="headings")
+        for name, heading, width in (
+            ("id", "Entry ID", 120),
+            ("role", "Explicit role", 110),
+            ("slot", "Slot label", 130),
+            ("label", "User label", 170),
+            ("recognition", "Recognition", 160),
+            ("note", "Note", 260),
+        ):
+            self.copied_tree.heading(name, text=heading)
+            self.copied_tree.column(name, width=width, minwidth=75)
+        self.copied_tree.grid(row=1, column=0, sticky="nsew")
+        copied_scroll = ttk.Scrollbar(
+            parent, orient="vertical", command=self.copied_tree.yview
+        )
+        self.copied_tree.configure(yscrollcommand=copied_scroll.set)
+        copied_scroll.grid(row=1, column=1, sticky="ns")
+        self.copied_tree.bind("<<TreeviewSelect>>", self._show_copied_detail)
+        buttons = ttk.Frame(parent)
+        buttons.grid(row=2, column=0, sticky="w", pady=6)
+        for column, (label, command) in enumerate(
+            (
+                ("Paste copied item", self._add_copied),
+                ("Edit explicit metadata", self._edit_copied),
+                ("Delete", self._delete_copied),
+            )
+        ):
+            ttk.Button(buttons, text=label, command=command).grid(
+                row=0, column=column, padx=(0, 5)
+            )
+        detail_frame = ttk.Frame(parent)
+        detail_frame.grid(row=3, column=0, columnspan=2, sticky="nsew")
+        detail_frame.grid_rowconfigure(0, weight=1)
+        detail_frame.grid_columnconfigure(0, weight=1)
+        self.copied_detail = self._text_box(detail_frame)
+        self.copied_detail.grid(row=0, column=0, sticky="nsew")
+
+    def _build_enmity(self, parent: ttk.Frame) -> None:
+        parent.grid_rowconfigure(1, weight=1)
+        parent.grid_columnconfigure(0, weight=1)
+        ttk.Label(
+            parent,
+            text=(
+                "Manual isolated output only — Path of Exile 1 3.29.1. "
+                "No sheet derivation, resistance-penalty reconstruction, aggregate "
+                "penetration, enemy resistance, damage, or DPS is calculated."
+            ),
+            wraplength=900,
+        ).grid(row=0, column=0, sticky="w", pady=(0, 8))
+        split = ttk.Panedwindow(parent, orient="vertical")
+        split.grid(row=1, column=0, sticky="nsew")
+        form = ttk.Frame(split, padding=(0, 0, 0, 6))
+        output = ttk.Frame(split)
+        # Keep the form at its requested height so its final context entry and
+        # Apply button cannot be hidden behind the output pane. The output pane
+        # receives all surplus vertical space.
+        split.add(form, weight=0)
+        split.add(output, weight=1)
+        form.grid_columnconfigure(0, weight=1)
+        input_notebook = ttk.Notebook(form)
+        input_notebook.grid(row=0, column=0, sticky="nsew")
+        numeric = ttk.Frame(input_notebook, padding=6)
+        states = ttk.Frame(input_notebook, padding=6)
+        context = ttk.Frame(input_notebook, padding=6)
+        input_notebook.add(numeric, text="Numbers")
+        input_notebook.add(states, text="States")
+        input_notebook.add(context, text="Context")
+        numeric.grid_columnconfigure(0, weight=1)
+        states.grid_columnconfigure(0, weight=1)
+        context.grid_columnconfigure(0, weight=1)
+        context.grid_columnconfigure(1, weight=1)
+
+        self.enmity_u_var = tk.StringVar()
+        self.enmity_m_var = tk.StringVar()
+        self.enmity_target_var = tk.StringVar()
+        self.enmity_equipped_var = tk.StringVar()
+        self.enmity_inclusion_var = tk.StringVar()
+        self.enmity_ack_var = tk.StringVar()
+        self.enmity_observed_var = tk.StringVar()
+        row = 0
+        for label, variable in (
+            ("Final Uncapped Fire Resistance U", self.enmity_u_var),
+            ("Maximum Fire Resistance M", self.enmity_m_var),
+            ("Optional Enmity-only target T", self.enmity_target_var),
+        ):
+            field_row = row * 2
+            ttk.Label(numeric, text=label).grid(
+                row=field_row,
+                column=0,
+                sticky="w",
+                pady=(2, 0),
+            )
+            ttk.Entry(numeric, textvariable=variable, width=18).grid(
+                row=field_row + 1,
+                column=0,
+                sticky="ew",
+                pady=(0, 2),
+            )
+            row += 1
+        state_row = 0
+        for label, variable, values in (
+            (
+                "Enmity equipped state",
+                self.enmity_equipped_var,
+                ("unknown", "equipped", "not-equipped"),
+            ),
+            (
+                "Equipment inclusion state",
+                self.enmity_inclusion_var,
+                ("unrecorded", "included", "excluded", "unknown"),
+            ),
+            (
+                "Target-version acknowledgement",
+                self.enmity_ack_var,
+                ("unknown", "confirmed-3.29.1", "other-version"),
+            ),
+        ):
+            field_row = state_row * 2
+            ttk.Label(states, text=label).grid(
+                row=field_row,
+                column=0,
+                sticky="w",
+                pady=(2, 0),
+            )
+            ttk.Combobox(
+                states,
+                textvariable=variable,
+                values=values,
+                state="readonly",
+                width=17,
+            ).grid(
+                row=field_row + 1,
+                column=0,
+                sticky="ew",
+                pady=(0, 2),
+            )
+            state_row += 1
+        ttk.Label(states, text="Optional observed item material").grid(
+            row=state_row * 2,
+            column=0,
+            sticky="w",
+            pady=(2, 0),
+        )
+        self.enmity_observed_combo = ttk.Combobox(
+            states,
+            textvariable=self.enmity_observed_var,
+            state="readonly",
+            width=17,
+        )
+        self.enmity_observed_combo.grid(
+            row=state_row * 2 + 1,
+            column=0,
+            sticky="ew",
+            pady=(0, 2),
+        )
+
+        self.enmity_context_vars: dict[str, tk.StringVar] = {}
+        context_labels = {
+            "mercenaryIdentityLevel": "Mercenary identity / level",
+            "activeStateSelection": "Active-state selection",
+            "zoneOrUiContext": "Zone or UI context",
+            "relevantEffectsConditions": "Relevant effects / conditions",
+            "equipmentStateDescription": "Equipment-state description",
+            "captureTimingDescription": "Capture timing description",
+        }
+        for context_row, field in enumerate(MEASUREMENT_CONTEXT_FIELDS):
+            variable = tk.StringVar()
+            self.enmity_context_vars[field] = variable
+            field_column = context_row % 2
+            field_row = (context_row // 2) * 2
+            ttk.Label(context, text=context_labels[field]).grid(
+                row=field_row,
+                column=field_column,
+                sticky="w",
+                padx=(0, 4) if field_column == 0 else (4, 0),
+                pady=(2, 0),
+            )
+            ttk.Entry(context, textvariable=variable, width=24).grid(
+                row=field_row + 1,
+                column=field_column,
+                sticky="ew",
+                padx=(0, 4) if field_column == 0 else (4, 0),
+                pady=(0, 2),
+            )
+        ttk.Button(
+            form,
+            text="Apply manual Enmity input",
+            command=self._apply_enmity_input,
+        ).grid(row=1, column=0, sticky="w", pady=(4, 1))
+
+        output.grid_rowconfigure(0, weight=1)
+        output.grid_columnconfigure(0, weight=1)
+        notebook = ttk.Notebook(output)
+        notebook.grid(row=0, column=0, sticky="nsew")
+        result_page = ttk.Frame(notebook)
+        gate_page = ttk.Frame(notebook)
+        notebook.add(result_page, text="Result and target")
+        notebook.add(gate_page, text="Exact evidence gates")
+        for page in (result_page, gate_page):
+            page.grid_rowconfigure(0, weight=1)
+            page.grid_columnconfigure(0, weight=1)
+        self.enmity_result_detail = self._text_box(result_page)
+        self.enmity_result_detail.grid(row=0, column=0, sticky="nsew")
+        self.enmity_gate_detail = self._text_box(gate_page)
+        self.enmity_gate_detail.grid(row=0, column=0, sticky="nsew")
+        self._observed_locator_by_display: dict[str, ReviewSourceLocator | None] = {
+            "(none)": None
+        }
+
     def _build_evidence(self, parent: ttk.Frame) -> None:
         parent.grid_rowconfigure(1, weight=1)
         parent.grid_rowconfigure(2, weight=1)
@@ -352,7 +722,8 @@ class GoldenGloryApp(tk.Tk):
             parent,
             text=(
                 "Unavailable mechanics are evidence states, never numeric zero. "
-                "BUILD-001 performs no mechanics calculation."
+                "Only the separately labelled isolated manual Enmity contribution "
+                "is available in BUILD-002; every output below remains unavailable."
             ),
             wraplength=850,
         ).grid(row=0, column=0, sticky="w", pady=(0, 8))
@@ -414,6 +785,12 @@ class GoldenGloryApp(tk.Tk):
             self._refresh_status()
             self._refresh_mapping()
             self._refresh_notes()
+            try:
+                object.__getattribute__(self, "enmity_u_var")
+            except AttributeError:
+                pass
+            else:
+                self._refresh_enmity()
             self._refresh_title()
         finally:
             self._refreshing = was_refreshing
@@ -502,17 +879,35 @@ class GoldenGloryApp(tk.Tk):
                 parent=self,
             )
         elif outcome == "confirmation-required":
+            observed = self.service.state["enmityManualInput"][
+                "observedItemReference"
+            ]
+            clears_observed = bool(
+                observed is not None
+                and observed["provenanceKind"] == "pob-import"
+            )
             confirmed = messagebox.askyesno(
                 "Replace successful import?",
                 (
                     "The new import is staged. Replacing the existing import clears "
                     "player and Mercenary occurrence mappings, preserves manual "
                     "equipment and notes, and requires explicit mapping again."
+                    + (
+                        " It also atomically clears the selected observed-item "
+                        "reference because that reference belongs to the old PoB source."
+                        if clears_observed
+                        else ""
+                    )
                 ),
                 icon="warning",
                 parent=self,
             )
-            self._guard(lambda: self.service.confirm_pending_import(confirmed))
+            self._guard(
+                lambda: self.service.confirm_pending_import(
+                    confirmed,
+                    clear_observed_reference=confirmed and clears_observed,
+                )
+            )
             return
         self._refresh()
 
@@ -590,15 +985,137 @@ class GoldenGloryApp(tk.Tk):
         if entry is None:
             messagebox.showinfo("Manual equipment", "Select an entry first.", parent=self)
             return
+        observed = self.service.state["enmityManualInput"]["observedItemReference"]
+        clears_observed = observed == {
+            "provenanceKind": "manual-entry",
+            "sourceId": entry["entryId"],
+        }
         confirmed = messagebox.askyesno(
             "Delete manual entry?",
-            f"Delete {entry['entryId']}? This explicit action cannot be undone.",
+            (
+                f"Delete {entry['entryId']}? This explicit action cannot be undone."
+                + (
+                    " The observed-item reference will be cleared atomically."
+                    if clears_observed
+                    else ""
+                )
+            ),
             icon="warning",
             parent=self,
         )
         self._guard(
             lambda: self.service.delete_manual_entry(
-                entry["entryId"], confirmed=confirmed
+                entry["entryId"],
+                confirmed=confirmed,
+                clear_observed_reference=confirmed and clears_observed,
+            )
+        )
+
+    def _selected_copied(self) -> dict[str, Any] | None:
+        selected = self.copied_tree.selection()
+        if not selected:
+            return None
+        identifier = selected[0]
+        return next(
+            (
+                entry
+                for entry in self.service.state["copiedItemEntries"]
+                if entry["entryId"] == identifier
+            ),
+            None,
+        )
+
+    def _add_copied(self) -> None:
+        dialog = CopiedItemDialog(self, title="Paste copied item")
+        if dialog.value is None:
+            return
+        value = dialog.value
+        self._guard(
+            lambda: self.service.add_copied_entry(
+                value["rawText"],
+                role=value["role"],
+                slot_label=value["slotLabel"],
+                user_label=value["userLabel"],
+                note=value["note"],
+            )
+        )
+
+    def _edit_copied(self) -> None:
+        entry = self._selected_copied()
+        if entry is None:
+            messagebox.showinfo("Copied items", "Select an entry first.", parent=self)
+            return
+        dialog = CopiedItemDialog(
+            self,
+            title=f"Edit metadata for {entry['entryId']}",
+            initial=entry,
+            metadata_only=True,
+        )
+        if dialog.value is None:
+            return
+        value = dialog.value
+        self._guard(
+            lambda: self.service.edit_copied_entry(
+                entry["entryId"],
+                role=value["role"],
+                slot_label=value["slotLabel"],
+                user_label=value["userLabel"],
+                note=value["note"],
+            )
+        )
+
+    def _delete_copied(self) -> None:
+        entry = self._selected_copied()
+        if entry is None:
+            messagebox.showinfo("Copied items", "Select an entry first.", parent=self)
+            return
+        observed = self.service.state["enmityManualInput"]["observedItemReference"]
+        clears_observed = observed == {
+            "provenanceKind": "copied-text",
+            "sourceId": entry["entryId"],
+        }
+        confirmed = messagebox.askyesno(
+            "Delete copied item?",
+            (
+                f"Delete {entry['entryId']} and its exact retained source text?"
+                + (
+                    " The observed-item reference will be cleared atomically."
+                    if clears_observed
+                    else ""
+                )
+            ),
+            icon="warning",
+            parent=self,
+        )
+        self._guard(
+            lambda: self.service.delete_copied_entry(
+                entry["entryId"],
+                confirmed=confirmed,
+                clear_observed_reference=confirmed and clears_observed,
+            )
+        )
+
+    def _common_filter_changed(self, _event: tk.Event[Any]) -> None:
+        if not self._refreshing:
+            self._refresh_common_review()
+
+    def _apply_enmity_input(self) -> None:
+        display = self.enmity_observed_var.get() or "(none)"
+        locator = self._observed_locator_by_display.get(display)
+        context = {
+            field: variable.get()
+            for field, variable in self.enmity_context_vars.items()
+        }
+        self._guard(
+            lambda: self.service.set_enmity_input(
+                final_uncapped_fire_resistance=self.enmity_u_var.get() or None,
+                maximum_fire_resistance=self.enmity_m_var.get() or None,
+                equipped_state=self.enmity_equipped_var.get(),
+                equipment_inclusion_state=self.enmity_inclusion_var.get(),
+                measurement_context=context,
+                target_game_version_acknowledgement=self.enmity_ack_var.get(),
+                observed_item_reference=locator,
+                target=self.enmity_target_var.get() or None,
             )
         )
 
@@ -630,7 +1147,10 @@ class GoldenGloryApp(tk.Tk):
             self._refresh_item_sets()
             self._refresh_mapping()
             self._refresh_import_review()
+            self._refresh_common_review()
+            self._refresh_copied()
             self._refresh_manual()
+            self._refresh_enmity()
             self._refresh_evidence()
             self._refresh_notes()
             self._refresh_title()
@@ -646,7 +1166,10 @@ class GoldenGloryApp(tk.Tk):
                     f"Player mapping: {status['playerMapping']}",
                     f"Mercenary: {status['mercenarySourceMode']}",
                     f"File: {status['localFileState']}",
+                    f"Migration: {'upgrade pending' if status['migrationPending'] else 'current v2'}",
                     f"Importer warnings: {status['importerWarnings']}",
+                    f"Runtime evidence: {status['runtimeEvidence']}",
+                    f"Enmity output: {status['enmityOutput']}",
                     f"Mechanics: {status['mechanics']}",
                     f"Intake ready: {'yes' if status['intakeReady'] else 'no'}",
                 )
@@ -774,6 +1297,135 @@ class GoldenGloryApp(tk.Tk):
                 ),
             )
 
+    @staticmethod
+    def _active_filter(value: str) -> str | None:
+        return None if value == "all" else value
+
+    def _refresh_common_review(self) -> None:
+        selected = self.common_tree.selection()
+        selected_id = selected[0] if selected else None
+        self.common_tree.delete(*self.common_tree.get_children())
+        reviews = self.service.item_reviews(
+            provenance=self._active_filter(self.common_provenance_var.get()),
+            role=self._active_filter(self.common_role_var.get()),
+            recognition_state=self._active_filter(self.common_recognition_var.get()),
+        )
+        for review in reviews:
+            self.common_tree.insert(
+                "",
+                "end",
+                iid=review.reviewInstanceId,
+                values=_review_row(review),
+            )
+        children = self.common_tree.get_children()
+        if selected_id in children:
+            self.common_tree.selection_set(selected_id)
+        elif children:
+            self.common_tree.selection_set(children[0])
+        if children:
+            self._show_common_review_detail(None)
+        else:
+            self._set_readonly_text(
+                self.common_detail,
+                "No common item-review instance matches the current filters.",
+            )
+
+    def _refresh_copied(self) -> None:
+        selected = self.copied_tree.selection()
+        selected_id = selected[0] if selected else None
+        self.copied_tree.delete(*self.copied_tree.get_children())
+        reviews = {
+            review.sourceLocator.sourceId: review
+            for review in self.service.item_reviews(provenance="copied-text")
+        }
+        for entry in self.service.state["copiedItemEntries"]:
+            review = reviews[entry["entryId"]]
+            self.copied_tree.insert(
+                "",
+                "end",
+                iid=entry["entryId"],
+                values=(
+                    entry["entryId"],
+                    entry["role"],
+                    entry["slotLabel"] or "none",
+                    entry["userLabel"] or "none",
+                    review.recognitionState,
+                    entry["note"],
+                ),
+            )
+        children = self.copied_tree.get_children()
+        if selected_id in children:
+            self.copied_tree.selection_set(selected_id)
+        elif children:
+            self.copied_tree.selection_set(children[0])
+        if children:
+            self._show_copied_detail(None)
+        else:
+            self._set_readonly_text(
+                self.copied_detail,
+                "No copied-item entries. Use Paste copied item to retain one exactly.",
+            )
+
+    def _refresh_enmity(self) -> None:
+        state = self.service.state["enmityManualInput"]
+        self.enmity_u_var.set(state["finalUncappedFireResistance"] or "")
+        self.enmity_m_var.set(state["maximumFireResistance"] or "")
+        self.enmity_target_var.set(state["target"] or "")
+        self.enmity_equipped_var.set(state["equippedState"])
+        self.enmity_inclusion_var.set(state["equipmentInclusionState"])
+        self.enmity_ack_var.set(state["targetGameVersionAcknowledgement"])
+        for field, variable in self.enmity_context_vars.items():
+            variable.set(state["measurementContext"][field])
+
+        options: dict[str, ReviewSourceLocator | None] = {"(none)": None}
+        selected_display = "(none)"
+        selected_locator = state["observedItemReference"]
+        for review in self.service.item_reviews():
+            display = (
+                f"{review.sourceLocator.key} | {_review_identity_text(review)} | "
+                f"{review.recognitionState}"
+            )
+            options[display] = review.sourceLocator
+            if (
+                selected_locator is not None
+                and review.sourceLocator.to_dict() == selected_locator
+            ):
+                selected_display = display
+        self._observed_locator_by_display = options
+        self.enmity_observed_combo.configure(values=tuple(options))
+        self.enmity_observed_var.set(selected_display)
+
+        result = self.service.enmity_result()
+        observed_review = (
+            None
+            if selected_locator is None
+            else self.service.review_for_locator(selected_locator)
+        )
+        observed_summary = (
+            None
+            if observed_review is None
+            else {
+                "sourceLocator": observed_review.sourceLocator.to_dict(),
+                "rawTextSha256": observed_review.rawTextSha256,
+                "recognitionState": observed_review.recognitionState,
+                "identity": (
+                    None
+                    if observed_review.parsedIdentity is None
+                    else observed_review.parsedIdentity.to_dict()
+                ),
+                "ownershipInferred": False,
+                "equippedStateInferred": False,
+            }
+        )
+        self._set_readonly_text(
+            self.enmity_result_detail,
+            _enmity_result_text(result, observed_summary),
+        )
+        self._set_readonly_text(
+            self.enmity_gate_detail,
+            _json_text(self.service.runtime_evidence_status()),
+        )
+
     def _refresh_evidence(self) -> None:
         self.evidence_tree.delete(*self.evidence_tree.get_children())
         for entry in self.service.mechanics_status():
@@ -894,6 +1546,45 @@ class GoldenGloryApp(tk.Tk):
         )
         if entry is not None:
             self._set_readonly_text(self.report_detail, _json_text(entry))
+
+    def _selected_common_review(self) -> Any | None:
+        selected = self.common_tree.selection()
+        if not selected:
+            return None
+        identifier = selected[0]
+        return next(
+            (
+                review
+                for review in self.service.item_reviews()
+                if review.reviewInstanceId == identifier
+            ),
+            None,
+        )
+
+    def _show_common_review_detail(
+        self, _event: tk.Event[Any] | None
+    ) -> None:
+        review = self._selected_common_review()
+        if review is not None:
+            self._set_readonly_text(self.common_detail, _review_detail_text(review))
+
+    def _copy_common_raw(self) -> None:
+        review = self._selected_common_review()
+        if review is None:
+            messagebox.showinfo("Common item review", "Select an item first.", parent=self)
+            return
+        self.clipboard_clear()
+        self.clipboard_append(review.exactRawText)
+
+    def _show_copied_detail(self, _event: tk.Event[Any] | None) -> None:
+        entry = self._selected_copied()
+        if entry is None:
+            return
+        review = self.service.review_for_locator(
+            ReviewSourceLocator("copied-text", entry["entryId"])
+        )
+        if review is not None:
+            self._set_readonly_text(self.copied_detail, _review_detail_text(review))
 
     def _show_manual_detail(self, _event: tk.Event[Any]) -> None:
         entry = self._selected_manual()

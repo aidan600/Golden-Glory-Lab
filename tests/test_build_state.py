@@ -16,7 +16,7 @@ from referencing import Registry, Resource
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from golden_glory_lab.build_state import (  # noqa: E402
+from golden_glory_lab.build_state.codec import (  # noqa: E402
     BuildStateError,
     MAX_SAVED_STATE_FILE_BYTES,
     atomic_save,
@@ -664,7 +664,7 @@ class TransactionalMalformedOpenTests(unittest.TestCase):
 
             with (
                 patch(
-                    "golden_glory_lab.build_state.codec.MAX_SAVED_STATE_FILE_BYTES",
+                    "golden_glory_lab.build_state.codec_v2.MAX_SAVED_STATE_FILE_BYTES",
                     len(expected),
                 ),
                 patch.object(
@@ -680,7 +680,7 @@ class TransactionalMalformedOpenTests(unittest.TestCase):
 
             with (
                 patch(
-                    "golden_glory_lab.build_state.codec.MAX_SAVED_STATE_FILE_BYTES",
+                    "golden_glory_lab.build_state.codec_v2.MAX_SAVED_STATE_FILE_BYTES",
                     len(expected),
                 ),
                 patch.object(
@@ -929,8 +929,10 @@ class BuildStateSchemaParityTests(unittest.TestCase):
             "mapped.build-state-v1.json",
             "manual.build-state-v1.json",
         }
-        self.assertEqual({path.name for path in fixtures.glob("*.json")}, names)
-        for path in sorted(fixtures.glob("*.json")):
+        self.assertEqual(
+            {path.name for path in fixtures.glob("*.build-state-v1.json")}, names
+        )
+        for path in sorted(fixtures.glob("*.build-state-v1.json")):
             data = path.read_bytes()
             document = deserialize(data)
             self.validator.validate(document)
