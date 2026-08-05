@@ -30,7 +30,8 @@ chat summary.
   task-completion, phase-exit, claim-gate, and evidence-integrity boundary for AUD-002 through AUD-005.
 - [Proof index](proofs/INDEX.md) — bounded technical results, adoption status,
   and downstream consumers.
-- [Build index](builds/INDEX.md) — implemented user-facing outcomes, validation,
+- [Build index](builds/INDEX.md) — implemented user-facing outcomes, including
+  BUILD-002 copied-item recognition and isolated Enmity reporting, validation,
   limitations, and next slices.
 - [Audit template](audits/TEMPLATE.md) — required evidence-aware audit record.
 - [Decision index](decisions/INDEX.md) — current decision records.

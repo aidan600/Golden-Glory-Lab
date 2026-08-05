@@ -1,4 +1,4 @@
-"""BUILD-001 desktop application services and presentation."""
+"""BUILD-002 desktop application services and presentation."""
 
 from .service import ApplicationService
 

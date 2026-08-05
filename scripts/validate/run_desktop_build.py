@@ -1,4 +1,4 @@
-"""Build and validate the isolated Windows BUILD-001 desktop package."""
+"""Build and validate the isolated Windows BUILD-002 desktop package."""
 
 from __future__ import annotations
 
@@ -17,7 +17,8 @@ from pathlib import Path
 from typing import Any, Sequence
 
 ROOT = Path(__file__).resolve().parents[2]
-FIXTURE = ROOT / "fixtures" / "pob" / "proof" / "comprehensive.xml"
+POB_FIXTURE = ROOT / "fixtures" / "pob" / "proof" / "comprehensive.xml"
+COPIED_FIXTURE = ROOT / "fixtures" / "item_review" / "copied-items-v1.json"
 REQUIREMENTS = ROOT / "requirements" / "desktop-packaging-proof.txt"
 PACKAGE_NAME = "GoldenGloryLab"
 RUN_COUNT_DEFAULT = 3
@@ -29,6 +30,14 @@ EXPECTED_PACKAGING_DEPENDENCIES = {
     "pyinstaller-hooks-contrib": "2026.6",
     "pywin32-ctypes": "0.2.3",
     "setuptools": "75.8.2",
+}
+EXPECTED_RUNTIME_RESOURCE_SHA256 = {
+    "enmity-manual-gate-v1.json": (
+        "030529551ce44b8a533b57dba98da7318e8eb638b7ee9aef417e53643b5a8ac2"
+    ),
+    "enmity-reference-v1.json": (
+        "ef604dce20bdf067b83609731c0516a9423c2a722a13e7121470881e64bd141d"
+    ),
 }
 BLOCKED_NETWORK_IMPORTS = {
     "aiohttp",
@@ -170,7 +179,9 @@ def _source_network_imports() -> list[dict[str, str]]:
     return blocked
 
 
-def _verify_installed_package(environment_root: Path) -> tuple[Path, Path]:
+def _verify_installed_package(
+    environment_root: Path,
+) -> tuple[Path, Path, dict[str, Any]]:
     site_packages = environment_root / "Lib" / "site-packages"
     package = site_packages / "golden_glory_lab"
     launcher = package / "desktop" / "launcher.py"
@@ -186,7 +197,29 @@ def _verify_installed_package(environment_root: Path) -> tuple[Path, Path]:
     ]
     if requires_dist:
         raise AssertionError(f"unexpected production dependencies: {requires_dist}")
-    return launcher, site_packages
+    metadata_lines = metadata_files[0].read_text(encoding="utf-8").splitlines()
+    versions = [line.removeprefix("Version: ") for line in metadata_lines if line.startswith("Version: ")]
+    if versions != ["0.2.0"]:
+        raise AssertionError(f"unexpected installed project version: {versions}")
+    resource_root = package / "runtime_data"
+    resource_hashes: dict[str, str] = {}
+    for name, expected_hash in EXPECTED_RUNTIME_RESOURCE_SHA256.items():
+        path = resource_root / name
+        if not path.is_file():
+            raise AssertionError(f"installed runtime resource is missing: {path}")
+        observed_hash = _sha256_file(path)
+        if observed_hash != expected_hash:
+            raise AssertionError(
+                f"installed runtime resource hash mismatch: {name}: {observed_hash}"
+            )
+        resource_hashes[name] = observed_hash
+    return launcher, site_packages, {
+        "name": "golden-glory-lab",
+        "version": versions[0],
+        "requiresDist": requires_dist,
+        "metadataPath": str(metadata_files[0].resolve()),
+        "runtimeResourceSha256": resource_hashes,
+    }
 
 
 def _verify_packaging_dependencies(
@@ -275,6 +308,10 @@ def _verify_analysis(work_root: Path, site_packages: Path) -> dict[str, str]:
     expected_sources = {
         "pobImporter": site_packages / "golden_glory_lab" / "pob_import" / "__init__.py",
         "buildState": site_packages / "golden_glory_lab" / "build_state" / "__init__.py",
+        "itemReview": site_packages / "golden_glory_lab" / "item_review" / "__init__.py",
+        "domain": site_packages / "golden_glory_lab" / "domain" / "__init__.py",
+        "evidenceGate": site_packages / "golden_glory_lab" / "evidence_gate" / "__init__.py",
+        "runtimeData": site_packages / "golden_glory_lab" / "runtime_data" / "__init__.py",
         "desktop": site_packages / "golden_glory_lab" / "desktop" / "main.py",
     }
     for label, source in expected_sources.items():
@@ -296,9 +333,23 @@ def _bundle_inventory(bundle: Path) -> dict[str, Any]:
         raise AssertionError(f"packaged executable is missing: {executable}")
     files = sorted(value for value in bundle.rglob("*") if value.is_file())
     relative = {value.relative_to(bundle).as_posix() for value in files}
-    required_fixture = "_internal/ggl_app_resources/pob/proof/comprehensive.xml"
-    if required_fixture not in relative:
-        raise AssertionError(f"packaged proof fixture is missing: {required_fixture}")
+    required_resources = {
+        "pobFixture": "_internal/ggl_app_resources/pob/proof/comprehensive.xml",
+        "copiedItemFixture": (
+            "_internal/ggl_app_resources/item_review/copied-items-v1.json"
+        ),
+        "runtimeGateManifest": (
+            "_internal/golden_glory_lab/runtime_data/enmity-manual-gate-v1.json"
+        ),
+        "runtimeEnmityReference": (
+            "_internal/golden_glory_lab/runtime_data/enmity-reference-v1.json"
+        ),
+    }
+    missing_resources = {
+        label: path for label, path in required_resources.items() if path not in relative
+    }
+    if missing_resources:
+        raise AssertionError(f"packaged BUILD-002 resources are missing: {missing_resources}")
     tkinter_extensions = [value for value in files if value.name == "_tkinter.pyd"]
     if len(tkinter_extensions) != 1:
         raise AssertionError(f"expected one bundled _tkinter extension: {tkinter_extensions}")
@@ -318,7 +369,7 @@ def _bundle_inventory(bundle: Path) -> dict[str, Any]:
         "tkinterExtension": tkinter_extensions[0].relative_to(bundle).as_posix(),
         "tclInitializerCount": len(tcl_initializers),
         "tkInitializerCount": len(tk_initializers),
-        "proofFixture": required_fixture,
+        "requiredResources": required_resources,
     }
 
 
@@ -394,7 +445,7 @@ def _copy_validated_bundle(source: Path, destination: Path) -> None:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Build and validate the isolated Windows BUILD-001 package."
+        description="Build and validate the isolated Windows BUILD-002 package."
     )
     parser.add_argument("--runs", type=int, default=RUN_COUNT_DEFAULT)
     parser.add_argument(
@@ -414,7 +465,7 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     if platform.system() != "Windows":
-        raise RuntimeError("BUILD-001 desktop packaging validation requires Windows")
+        raise RuntimeError("BUILD-002 desktop packaging validation requires Windows")
     if args.runs < RUN_COUNT_DEFAULT:
         raise ValueError(f"--runs must be at least {RUN_COUNT_DEFAULT}")
     if not args.temp_root.is_dir():
@@ -425,7 +476,7 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     build_environment = _build_environment()
     with tempfile.TemporaryDirectory(
-        prefix="golden-glory-lab-build-001-",
+        prefix="golden-glory-lab-build-002-",
         dir=args.temp_root,
     ) as temporary:
         workspace = Path(temporary)
@@ -509,7 +560,9 @@ def main(argv: Sequence[str] | None = None) -> int:
             cwd=build_cwd,
             env=build_environment,
         )
-        launcher, site_packages = _verify_installed_package(environment_root)
+        launcher, site_packages, project_metadata = _verify_installed_package(
+            environment_root
+        )
         build_tk = _verify_tk_runtime(
             python,
             cwd=build_cwd,
@@ -528,6 +581,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                 "--windowed",
                 "--name",
                 PACKAGE_NAME,
+                "--hidden-import",
+                "golden_glory_lab.runtime_data",
                 "--distpath",
                 str(distribution_root),
                 "--workpath",
@@ -535,7 +590,19 @@ def main(argv: Sequence[str] | None = None) -> int:
                 "--specpath",
                 str(spec_root),
                 "--add-data",
-                f"{FIXTURE}{os.pathsep}ggl_app_resources/pob/proof",
+                f"{POB_FIXTURE}{os.pathsep}ggl_app_resources/pob/proof",
+                "--add-data",
+                f"{COPIED_FIXTURE}{os.pathsep}ggl_app_resources/item_review",
+                "--add-data",
+                (
+                    f"{site_packages / 'golden_glory_lab' / 'runtime_data' / 'enmity-manual-gate-v1.json'}"
+                    f"{os.pathsep}golden_glory_lab/runtime_data"
+                ),
+                "--add-data",
+                (
+                    f"{site_packages / 'golden_glory_lab' / 'runtime_data' / 'enmity-reference-v1.json'}"
+                    f"{os.pathsep}golden_glory_lab/runtime_data"
+                ),
                 str(launcher),
             ),
             cwd=build_cwd,
@@ -575,6 +642,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 "filename": wheels[0].name,
                 "sha256": _sha256_file(wheels[0]),
             },
+            "projectMetadata": project_metadata,
             "productionRequiresDist": [],
             "sourceNetworkClientImports": network_imports,
             "runtimeNetworkPolicy": (

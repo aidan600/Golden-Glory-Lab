@@ -1,0 +1,43 @@
+{
+  "documentType": "golden-glory-lab-build-state",
+  "schemaVersion": "2.0.0",
+  "applicationDataContractVersion": "2.0.0",
+  "importerContractVersion": "1.0.0",
+  "importedResult": null,
+  "importedResultSha256": null,
+  "playerItemSetOccurrenceId": null,
+  "mercenarySourceMode": "not-yet-selected",
+  "mercenaryItemSetOccurrenceId": null,
+  "manualMercenaryEquipment": [],
+  "copiedItemEntries": [
+    {
+      "entryId": "copied-0001",
+      "rawText": "Item Class: Rings\r\nRarity: Unique\r\nEnmity's Embrace\r\nVermillion Ring\r\n--------\r\nRequirements:\r\nLevel: 80\r\n--------\r\n+50 to Strength\r\n20% increased Fire Damage\r\n75% reduced Fire Resistance\r\n500 Fire Damage taken when you use a Skill\r\nDamage Penetrates Fire Resistance equal to your Overcapped Fire Resistance, up to a maximum of 200%\r\n",
+      "role": "mercenary",
+      "slotLabel": "Ring 1",
+      "userLabel": "Synthetic observed Enmity",
+      "note": "Fixture material only; explicit role is user metadata."
+    }
+  ],
+  "enmityManualInput": {
+    "finalUncappedFireResistance": "0300.00",
+    "maximumFireResistance": "075.0",
+    "equippedState": "equipped",
+    "equipmentInclusionState": "unknown",
+    "measurementContext": {
+      "mercenaryIdentityLevel": "Synthetic permanent Mercenary, level 90",
+      "activeStateSelection": "Active combat state recorded",
+      "zoneOrUiContext": "Hideout character UI",
+      "relevantEffectsConditions": "No temporary resistance effects",
+      "equipmentStateDescription": "Enmity equipped in Ring 1",
+      "captureTimingDescription": "Captured after UI refresh"
+    },
+    "targetGameVersionAcknowledgement": "confirmed-3.29.1",
+    "observedItemReference": {
+      "provenanceKind": "copied-text",
+      "sourceId": "copied-0001"
+    },
+    "target": "200.0"
+  },
+  "userNotes": "Synthetic BUILD-002 v2 fixture."
+}

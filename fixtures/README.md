@@ -18,3 +18,13 @@ mapped, and manual BUILD-001 documents. Regenerate them with
 added/removed/changed/review sets, and rerun without `--write` to prove the
 committed bytes are current. They are build-instance fixtures, never reference
 authority.
+
+BUILD-002 adds deterministic v2 empty-migration and copied-Enmity build-state
+fixtures in `fixtures/build_state/`. The same generator validates/regenerates
+both retained v1 and current v2 documents; v1 bytes remain unchanged.
+
+`fixtures/item_review/copied-items-v1.json` is a small synthetic copied-text
+matrix covering recognizable Enmity, generic/partial/malformed/localized/
+ambiguous structures, exact LF/CRLF and boundary preservation, reviewed-range
+differences, and accepted/rejected limits. These cases establish recognizer
+behavior only; they are not reference data or evidence of general game rules.

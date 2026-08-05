@@ -67,7 +67,7 @@ access, and reports output bytes and SHA-256. After intentional regeneration,
 review the changed artifact and rerun the generator followed by
 `git diff --exit-code -- fixtures/pob/golden/comprehensive.raw.neutral-v1.json`
 to prove a clean second regeneration.
-Run the BUILD-001 focused Windows package gate with:
+Run the BUILD-002 focused Windows package gate with:
 
     py scripts/validate/run_desktop_build.py
 
@@ -75,15 +75,31 @@ The runner creates a fresh virtual environment, installs the exact packaging
 pins, builds and installs the current wheel, verifies a real build-interpreter
 Tk root, freezes the installed launcher as a PyInstaller one-directory Windows
 GUI application, and rejects repository-source module origins. It verifies the
-GUI subsystem, `_tkinter`, Tcl/Tk scripts, bundled permanent fixture, production
-metadata, and source networking imports. It copies the package outside the
-repository, runs its self-test at least three times from an empty directory
+GUI subsystem, `_tkinter`, Tcl/Tk scripts, bundled permanent/copied fixtures,
+packaged runtime Enmity reference and gate manifest, production metadata, and
+source networking imports. It copies the package outside the repository, runs
+the 17-step BUILD-002 self-test at least three times from an empty directory
 with a sanitized environment, compares deterministic output bytes, reports
 hashes/inventory/runtime versions, and removes disposable build material. Use
 `--copy-output` only with a nonexistent path outside the repository when a
 validated bundle is needed for manual inspection.
 
-Regenerate and compare the deterministic BUILD-001 state fixtures with:
+Validate the exact tracked-source/runtime evidence manifest contract with:
+
+    py scripts/validate/run_runtime_evidence_manifest.py
+
+The validator hashes tracked bytes, checks the current AUD-002/AUD-005 claim
+inventories and machine-readable artifacts, loads the packaged-form manifest
+and reference through their typed loaders, and exercises gate/status/polarity/
+policy/source mutations. It performs no network access.
+
+Run BUILD-002 Draft 2020-12 schema self-checks, v1/v2 fixtures and migrations,
+typed resource validation, and negative parity mutations with:
+
+    py scripts/validate/run_build002_schema_validation.py
+
+Regenerate and compare the deterministic BUILD-001/v2 BUILD-002 state fixtures
+with:
 
     py scripts/generate_build_state_fixtures.py
     py scripts/generate_build_state_fixtures.py --write
@@ -91,7 +107,7 @@ Regenerate and compare the deterministic BUILD-001 state fixtures with:
 The generator has no network behavior. It reports added, removed, changed, and
 human-review records; `--write` is required for intentional updates.
 
-Run the exact isolated BUILD-001 Ruff gate with:
+Run the exact isolated BUILD-002 Ruff gate with:
 
     py scripts/validate/run_build_quality.py
 

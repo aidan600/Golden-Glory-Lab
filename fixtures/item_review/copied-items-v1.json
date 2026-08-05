@@ -1,0 +1,63 @@
+{
+  "fixtureVersion": "1.0.0",
+  "scope": "Original synthetic copied-item recognition cases; not game-data or mechanics authority.",
+  "cases": [
+    {
+      "id": "recognizable-enmity-crlf",
+      "rawText": "Item Class: Rings\r\nRarity: Unique\r\nEnmity's Embrace\r\nVermillion Ring\r\n--------\r\nRequirements:\r\nLevel: 80\r\n--------\r\n+50 to Strength\r\n20% increased Fire Damage\r\n75% reduced Fire Resistance\r\n500 Fire Damage taken when you use a Skill\r\nDamage Penetrates Fire Resistance equal to your Overcapped Fire Resistance, up to a maximum of 200%\r\n",
+      "expectedState": "partially-recognized",
+      "expectedReferenceId": "poe1-enmitys-embrace"
+    },
+    {
+      "id": "generic-recognized-lf",
+      "rawText": "Item Class: Rings\nRarity: Rare\nSynthetic Band\nVermillion Ring\n--------\nItem Level: 85\n",
+      "expectedState": "recognized"
+    },
+    {
+      "id": "partial-unknown-line",
+      "rawText": "Item Class: Rings\nRarity: Rare\nSynthetic Band\nVermillion Ring\n--------\nUnsupported synthetic modifier\n",
+      "expectedState": "partially-recognized"
+    },
+    {
+      "id": "malformed-structure",
+      "rawText": "Item Class: Rings\nVermillion Ring\n--------\n",
+      "expectedState": "malformed"
+    },
+    {
+      "id": "unsupported-localized-structure",
+      "rawText": "Gegenstandsklasse: Ringe\nSeltenheit: Einzigartig\nFeindschaft\nVermillionring\n",
+      "expectedState": "unrecognized"
+    },
+    {
+      "id": "ambiguous-duplicate-identity",
+      "rawText": "Item Class: Rings\nRarity: Unique\nRarity: Unique\nEnmity's Embrace\nVermillion Ring\n--------\n",
+      "expectedState": "manually-required"
+    },
+    {
+      "id": "leading-trailing-blank-material",
+      "rawText": "\n\nItem Class: Rings\nRarity: Rare\nSynthetic Band\nVermillion Ring\n--------\n\n",
+      "expectedState": "recognized"
+    },
+    {
+      "id": "out-of-reviewed-range",
+      "rawText": "Item Class: Rings\nRarity: Unique\nEnmity's Embrace\nVermillion Ring\n--------\n123% reduced Fire Resistance\n",
+      "expectedState": "recognized",
+      "expectedReferenceId": "poe1-enmitys-embrace",
+      "expectedOutsideRange": true
+    },
+    {
+      "id": "maximum-accepted-generated",
+      "kind": "generated-boundary",
+      "baseText": "Item Class: Rings\nRarity: Rare\nSynthetic Band\nVermillion Ring\n--------\n",
+      "targetCharacters": 100000,
+      "expectedAccepted": true
+    },
+    {
+      "id": "over-limit-generated",
+      "kind": "generated-boundary",
+      "baseText": "Item Class: Rings\nRarity: Rare\nSynthetic Band\nVermillion Ring\n--------\n",
+      "targetCharacters": 100001,
+      "expectedError": "COPIED_TEXT_LIMIT"
+    }
+  ]
+}

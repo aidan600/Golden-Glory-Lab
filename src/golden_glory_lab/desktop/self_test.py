@@ -1,4 +1,4 @@
-"""Noninteractive packaged BUILD-001 self-test."""
+"""Noninteractive packaged BUILD-002 self-test."""
 
 from __future__ import annotations
 
@@ -14,28 +14,28 @@ from typing import Any
 from xml.parsers import expat
 
 from golden_glory_lab.build_state import imported_result_digest, serialize
+from golden_glory_lab.domain import ENMITY_OUTPUT_LABEL
+from golden_glory_lab.item_review import ReviewSourceLocator
 
 from .service import ApplicationService
 
-SELF_TEST_VERSION = "1.0.0"
+SELF_TEST_VERSION = "2.0.0"
 
 
-def _fixture_path() -> Path:
+def _fixture_path(*parts: str) -> Path:
     bundle_root = getattr(sys, "_MEIPASS", None)
     if isinstance(bundle_root, str):
-        return (
-            Path(bundle_root)
-            / "ggl_app_resources"
-            / "pob"
-            / "proof"
-            / "comprehensive.xml"
-        )
-    return (
-        Path(__file__).resolve().parents[3]
-        / "fixtures"
-        / "pob"
-        / "proof"
-        / "comprehensive.xml"
+        return Path(bundle_root).joinpath("ggl_app_resources", *parts)
+    return Path(__file__).resolve().parents[3].joinpath("fixtures", *parts)
+
+
+def _copied_enmity_fixture() -> str:
+    path = _fixture_path("item_review", "copied-items-v1.json")
+    value = json.loads(path.read_text(encoding="utf-8"))
+    return next(
+        case["rawText"]
+        for case in value["cases"]
+        if case["id"] == "recognizable-enmity-crlf"
     )
 
 
@@ -75,11 +75,23 @@ def _canonical_json_bytes(value: dict[str, Any]) -> bytes:
     ).encode("utf-8")
 
 
+def _complete_context() -> dict[str, str]:
+    return {
+        "mercenaryIdentityLevel": "Synthetic permanent Mercenary, level 90",
+        "activeStateSelection": "Active combat state recorded",
+        "zoneOrUiContext": "Hideout character UI",
+        "relevantEffectsConditions": "No temporary resistance effects",
+        "equipmentStateDescription": "Enmity equipped in Ring 1",
+        "captureTimingDescription": "Captured after UI refresh",
+    }
+
+
 def build_self_test_result() -> dict[str, Any]:
     tkinter_runtime = _tk_runtime()
-    fixture = _fixture_path()
+    pob_fixture = _fixture_path("pob", "proof", "comprehensive.xml")
+    copied_raw = _copied_enmity_fixture()
     service = ApplicationService()
-    outcome = service.attempt_raw_xml(fixture)
+    outcome = service.attempt_raw_xml(pob_fixture)
     if outcome != "imported":
         raise AssertionError(f"permanent fixture import failed: {outcome}")
     item_sets = service.item_sets()
@@ -89,11 +101,74 @@ def build_self_test_result() -> dict[str, Any]:
     service.set_player_mapping("item-set-0001")
     service.set_mercenary_source("manual-equipment")
     service.add_manual_entry(
-        "Ring 1",
+        "Ring 2",
         "Synthetic opaque +999% observed text",
         "Self-test material; deliberately unparsed.",
         entry_id="manual-0001",
     )
+    service.set_mercenary_source("mapped-item-set", "item-set-0002")
+    copied_id = service.add_copied_entry(
+        copied_raw,
+        role="unassigned",
+        slot_label="Ring 1",
+        user_label="Synthetic observed Enmity",
+        note="Identity recognition does not establish ownership or equipped state.",
+        entry_id="copied-0001",
+    )
+
+    reviews = service.item_reviews()
+    provenance_counts = {
+        kind: len([review for review in reviews if review.provenanceKind == kind])
+        for kind in ("pob-import", "copied-text", "manual-entry")
+    }
+    copied_review = next(
+        review
+        for review in reviews
+        if review.sourceLocator == ReviewSourceLocator("copied-text", copied_id)
+    )
+    if copied_review.exactRawText != copied_raw:
+        raise AssertionError("copied-item exact raw text changed during review")
+    if copied_review.referenceMatch is None or copied_review.referenceMatch.get(
+        "stableReferenceId"
+    ) != "poe1-enmitys-embrace":
+        raise AssertionError("copied Enmity identity was not recognized")
+    if [binding.role for binding in copied_review.bindings] != ["unassigned"]:
+        raise AssertionError("copied Enmity identity inferred an owner")
+    if service.state["enmityManualInput"]["equippedState"] != "unknown":
+        raise AssertionError("copied Enmity identity inferred equipped state")
+
+    evidence = service.runtime_evidence_status()
+    if evidence["state"] != "available":
+        raise AssertionError(f"runtime evidence resource failed: {evidence}")
+    if not all(value["available"] for value in evidence["outputs"].values()):
+        raise AssertionError(f"reviewed runtime evidence gates did not pass: {evidence}")
+
+    service.set_enmity_input(
+        final_uncapped_fire_resistance="300",
+        maximum_fire_resistance="75",
+        equipped_state="equipped",
+        equipment_inclusion_state="unknown",
+        measurement_context=_complete_context(),
+        target_game_version_acknowledgement="confirmed-3.29.1",
+        observed_item_reference=ReviewSourceLocator("copied-text", copied_id),
+        target="200",
+    )
+    result = service.enmity_result()
+    if (
+        not result.available
+        or result.label != ENMITY_OUTPUT_LABEL
+        or result.overcap != 225
+        or result.value != 200
+        or result.inputBeyondCap != 25
+    ):
+        raise AssertionError(f"unexpected isolated Enmity result: {result.to_dict()}")
+    if (
+        result.target.state != "available"
+        or result.target.gap != 0
+        or result.target.surplus != 0
+        or result.target.capHeadroom != 0
+    ):
+        raise AssertionError(f"unexpected Enmity-only target result: {result.target}")
 
     with tempfile.TemporaryDirectory(prefix="ggl-build-self-test-") as temporary:
         state_path = Path(temporary) / "state.ggl.json"
@@ -102,7 +177,7 @@ def build_self_test_result() -> dict[str, Any]:
         reopened.open(state_path)
         second_bytes = reopened.save()
         if first_bytes != second_bytes or second_bytes != serialize(reopened.state):
-            raise AssertionError("saved and reopened canonical bytes differ")
+            raise AssertionError("saved and reopened canonical v2 bytes differ")
 
     state = reopened.state
     imported = state["importedResult"]
@@ -110,34 +185,65 @@ def build_self_test_result() -> dict[str, Any]:
         raise AssertionError("imported-result digest verification failed")
     if state["playerItemSetOccurrenceId"] != "item-set-0001":
         raise AssertionError("explicit player mapping did not survive")
-    if state["mercenaryItemSetOccurrenceId"] is not None:
-        raise AssertionError("manual Mercenary mode invented an occurrence mapping")
+    if state["mercenaryItemSetOccurrenceId"] != "item-set-0002":
+        raise AssertionError("explicit Mercenary mapping did not survive")
     if state["manualMercenaryEquipment"][0]["reviewState"] != "unparsed-manual":
         raise AssertionError("manual entry review state did not survive")
+    reopened_copied = reopened.review_for_locator(
+        ReviewSourceLocator("copied-text", copied_id)
+    )
+    if reopened_copied is None or reopened_copied.exactRawText != copied_raw:
+        raise AssertionError("recomputed copied-item review lost exact raw text")
+    reopened_result = reopened.enmity_result()
+    if reopened_result.to_dict() != result.to_dict():
+        raise AssertionError("recomputed Enmity result changed after reopen")
 
     mechanics = reopened.mechanics_status()
-    if not mechanics or any(entry["value"] is not None for entry in mechanics):
-        raise AssertionError("evidence-gated mechanics became numeric")
+    expected_blocked = {
+        "derived-permanent-mercenary-sheet-values",
+        "complete-light-radius-direct-link",
+        "golden-glory-arithmetic",
+        "definitive-flame-link-granted-damage",
+        "sheet-derived-or-aggregate-enmity",
+        "total-penetration",
+        "damage-and-dps",
+    }
+    if {entry["id"] for entry in mechanics} != expected_blocked:
+        raise AssertionError("blocked output inventory changed")
+    if any(entry["value"] is not None for entry in mechanics):
+        raise AssertionError("a prohibited output became numeric")
     if any(entry["status"] != "unavailable-pending-evidence" for entry in mechanics):
-        raise AssertionError("mechanics availability state changed")
+        raise AssertionError("blocked mechanics availability state changed")
 
     keys = _all_keys(state)
     invented_owner_keys = [key for key in keys if "owner" in key.lower()]
-    prohibited = {
+    derived_output_keys = {
+        "capHeadroom",
+        "gateDecision",
+        "inputBeyondCap",
+        "overcap",
+        "recognitionReports",
+        "recognitionState",
+        "reviewInstanceId",
+        "targetComparison",
+    }
+    persisted_derived_keys = sorted(derived_output_keys.intersection(keys))
+    prohibited_names = {
         "combinedscore",
         "damagepersecond",
         "dps",
-        "enmitycalculation",
-        "firepenetration",
         "flamelinkdamage",
         "goldenglorycontribution",
         "lightradiuscalculation",
         "resistancecalculation",
+        "totalfirepenetration",
     }
-    invented_mechanics_keys = [key for key in keys if key.lower() in prohibited]
-    if invented_owner_keys or invented_mechanics_keys:
+    invented_mechanics_keys = [key for key in keys if key.lower() in prohibited_names]
+    if invented_owner_keys or persisted_derived_keys or invented_mechanics_keys:
         raise AssertionError(
-            f"invented fields: owner={invented_owner_keys}, mechanics={invented_mechanics_keys}"
+            "invented/persisted fields: "
+            f"owner={invented_owner_keys}, derived={persisted_derived_keys}, "
+            f"mechanics={invented_mechanics_keys}"
         )
 
     return {
@@ -152,14 +258,28 @@ def build_self_test_result() -> dict[str, Any]:
         "workflow": {
             "importedItemSetOccurrences": occurrences,
             "playerMapping": "item-set-0001",
-            "mercenarySourceMode": "manual-equipment",
+            "mercenaryMapping": "item-set-0002",
             "manualEntryCount": 1,
+            "copiedEntryCount": 1,
+            "commonReviewCount": len(reviews),
+            "commonReviewProvenanceCounts": provenance_counts,
+            "copiedRawTextSha256": copied_review.rawTextSha256,
+            "copiedRawTextPreserved": True,
+            "enmityReferenceRecognized": True,
+            "ownerInferred": False,
+            "equippedStateInferredByRecognition": False,
+            "runtimeManifestSha256": evidence["manifest"]["byteSha256"],
+            "runtimeEvidenceGatesVerified": True,
+            "enmityOvercap": reopened_result.overcap,
+            "enmityOwnContribution": reopened_result.value,
+            "enmityInputBeyondCap": reopened_result.inputBeyondCap,
+            "enmityTargetState": reopened_result.target.state,
             "stateSha256": hashlib.sha256(second_bytes).hexdigest(),
-            "deterministicSaveReopen": True,
+            "deterministicV2SaveReopen": True,
             "importedResultDigestVerified": True,
-            "mechanicsUnavailableCount": len(mechanics),
+            "prohibitedOutputsUnavailable": sorted(expected_blocked),
             "noOwnershipFieldInvented": True,
-            "noMechanicsFieldInvented": True,
+            "noDerivedOutputPersisted": True,
         },
     }
 

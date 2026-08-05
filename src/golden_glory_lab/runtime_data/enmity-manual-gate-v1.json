@@ -1,0 +1,136 @@
+{
+  "resourceType": "golden-glory-lab-runtime-evidence-gate",
+  "manifestVersion": "1.0.0",
+  "targetGameVersion": "Path of Exile 1 3.29.1",
+  "claims": [
+    {
+      "auditId": "AUD-005",
+      "contractVersion": "1.0.0",
+      "claimId": "AUD-005-C03",
+      "currentClaimStatus": "supported",
+      "gatePolarity": "positive-capability"
+    },
+    {
+      "auditId": "AUD-005",
+      "contractVersion": "1.0.0",
+      "claimId": "AUD-005-C04",
+      "currentClaimStatus": "supported",
+      "gatePolarity": "positive-capability"
+    },
+    {
+      "auditId": "AUD-002",
+      "contractVersion": "1.0.0",
+      "claimId": "AUD-002-C06",
+      "currentClaimStatus": "supported",
+      "gatePolarity": "product-policy",
+      "policyMode": "requires-adopted-policy"
+    },
+    {
+      "auditId": "AUD-005",
+      "contractVersion": "1.0.0",
+      "claimId": "AUD-005-C10",
+      "currentClaimStatus": "supported",
+      "gatePolarity": "product-policy",
+      "policyMode": "requires-applicable-policy"
+    }
+  ],
+  "outputs": [
+    {
+      "outputId": "enmity-own-fire-penetration-contribution-v1",
+      "targetGameVersion": "Path of Exile 1 3.29.1",
+      "unmetBehavior": "withhold-only-the-manual-isolated-Enmity-output-and-preserve-inputs",
+      "requirements": [
+        {
+          "auditId": "AUD-005",
+          "contractVersion": "1.0.0",
+          "claimId": "AUD-005-C03",
+          "gateMode": "requires-positive-capability",
+          "minimumStatus": "supported",
+          "unmetBehavior": "withhold-manual-output-preserve-entered-review-state"
+        },
+        {
+          "auditId": "AUD-005",
+          "contractVersion": "1.0.0",
+          "claimId": "AUD-005-C04",
+          "gateMode": "requires-positive-capability",
+          "minimumStatus": "supported",
+          "unmetBehavior": "withhold-manual-output-preserve-entered-review-state"
+        },
+        {
+          "auditId": "AUD-002",
+          "contractVersion": "1.0.0",
+          "claimId": "AUD-002-C06",
+          "policyMode": "requires-adopted-policy",
+          "requiredStatus": "supported",
+          "unmetBehavior": "do-not-offer-manual-output-preserve-entered-review-state"
+        }
+      ]
+    },
+    {
+      "outputId": "enmity-only-target-comparison-v1",
+      "targetGameVersion": "Path of Exile 1 3.29.1",
+      "unmetBehavior": "withhold-only-the-Enmity-target-comparison-and-preserve-the-contribution",
+      "requirements": [
+        {
+          "auditId": "AUD-005",
+          "contractVersion": "1.0.0",
+          "claimId": "AUD-005-C03",
+          "gateMode": "requires-positive-capability",
+          "minimumStatus": "supported",
+          "unmetBehavior": "withhold-target-comparison"
+        },
+        {
+          "auditId": "AUD-005",
+          "contractVersion": "1.0.0",
+          "claimId": "AUD-005-C04",
+          "gateMode": "requires-positive-capability",
+          "minimumStatus": "supported",
+          "unmetBehavior": "withhold-target-comparison"
+        },
+        {
+          "auditId": "AUD-002",
+          "contractVersion": "1.0.0",
+          "claimId": "AUD-002-C06",
+          "policyMode": "requires-adopted-policy",
+          "requiredStatus": "supported",
+          "unmetBehavior": "withhold-target-comparison"
+        },
+        {
+          "auditId": "AUD-005",
+          "contractVersion": "1.0.0",
+          "claimId": "AUD-005-C10",
+          "policyMode": "requires-applicable-policy",
+          "requiredStatus": "supported",
+          "unmetBehavior": "withhold-only-the-Enmity-target-comparison"
+        }
+      ]
+    }
+  ],
+  "sourceArtifacts": [
+    {
+      "artifactId": "aud-002-claim-inventory",
+      "repositoryPath": "docs/audits/AUD-002.md",
+      "sha256": "2d3a0677f431c8450f6eb5a358161debd66f81cbcff229bee94ff1f6781aa889"
+    },
+    {
+      "artifactId": "aud-005-claim-inventory",
+      "repositoryPath": "docs/audits/AUD-005.md",
+      "sha256": "5c0141682ca8be32b3958103895e92dd8946704e94f46aa75e3be0314865b10b"
+    },
+    {
+      "artifactId": "aud-002-mercenary-input-contract-v1",
+      "repositoryPath": "data/curated/aud-002-mercenary-input-contract-v1.json",
+      "sha256": "0e1c674c375dad85a32050aa3c61e1a2b0ba31519275a7ebb7f1a0f2fb9c2723"
+    },
+    {
+      "artifactId": "aud-005-enmitys-embrace-reference-v1",
+      "repositoryPath": "data/curated/aud-005-enmitys-embrace-reference-v1.json",
+      "sha256": "e45c6d92185bd8944fa6311076cc01d64912b7fa0c3608c747e8cd53d2a24976"
+    },
+    {
+      "artifactId": "aud-005-enmitys-embrace-gates-v1",
+      "repositoryPath": "fixtures/mechanics/aud-005-enmitys-embrace-gates-v1.json",
+      "sha256": "78a24f557932cab5add96a9f0e57081933cd5a404e1b106a5236bc3aee8dadd2"
+    }
+  ]
+}

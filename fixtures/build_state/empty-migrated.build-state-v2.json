@@ -1,0 +1,31 @@
+{
+  "documentType": "golden-glory-lab-build-state",
+  "schemaVersion": "2.0.0",
+  "applicationDataContractVersion": "2.0.0",
+  "importerContractVersion": "1.0.0",
+  "importedResult": null,
+  "importedResultSha256": null,
+  "playerItemSetOccurrenceId": null,
+  "mercenarySourceMode": "not-yet-selected",
+  "mercenaryItemSetOccurrenceId": null,
+  "manualMercenaryEquipment": [],
+  "copiedItemEntries": [],
+  "enmityManualInput": {
+    "finalUncappedFireResistance": null,
+    "maximumFireResistance": null,
+    "equippedState": "unknown",
+    "equipmentInclusionState": "unrecorded",
+    "measurementContext": {
+      "mercenaryIdentityLevel": "",
+      "activeStateSelection": "",
+      "zoneOrUiContext": "",
+      "relevantEffectsConditions": "",
+      "equipmentStateDescription": "",
+      "captureTimingDescription": ""
+    },
+    "targetGameVersionAcknowledgement": "unknown",
+    "observedItemReference": null,
+    "target": null
+  },
+  "userNotes": ""
+}
