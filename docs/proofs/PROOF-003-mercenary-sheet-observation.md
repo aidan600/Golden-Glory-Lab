@@ -25,10 +25,10 @@ equipment-inclusion behavior needed by a future automatic derivation path
 
 ## Local scaffolding only
 
-Scaffolding exists only on the local branch
-`proof/mercenary-sheet-observation` at commit `157d90b`. That branch is
-noncanonical until merged. This documentation PR does not import its DEC-002
-record, schemas, validators, fixtures, tests, or captures.
+Unmerged local scaffolding existed but was not adopted or imported. This
+documentation record does not import any DEC-002 record, schemas, validators,
+fixtures, tests, or captures from that scaffolding. Canonical project status
+does not depend on a local-only branch continuing to exist.
 
 ## Observation status
 
@@ -58,4 +58,4 @@ This record does not:
 - change AUD-002 or AUD-005 claim statuses;
 - authorize automatic sheet derivation;
 - require ordinary users to submit screenshots;
-- treat the local scaffolding branch as current authority.
+- treat unmerged local scaffolding as current authority.

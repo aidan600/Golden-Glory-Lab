@@ -321,8 +321,10 @@ installer or signed release. Python-free Windows Sandbox/VM execution and
 enforced outbound denial remain unproven. Ordinary-user DPI, accessibility,
 and broader multi-monitor hardening are still needed.
 
-Phase 3 is in progress, not complete. The exact next BUILD slice is a
-recognized copied-item/manual-input parser and evidence-aware calculation
-enablement for only those mechanics whose exact claim/version gates are
-satisfied. It must continue to preserve original item text and out-of-natural-
-range observed values, and it must not turn blocked mechanics into zero.
+Phase 3 is in progress, not complete. At BUILD-001 completion, the recorded
+next slice was copied-item recognition, common review, exact evidence gating,
+and the isolated manual Enmity path. [BUILD-002](BUILD-002-copied-item-enmity.md)
+subsequently fulfilled that slice. The current next direction is recorded in
+[CURRENT_STATE.md](../CURRENT_STATE.md). Later work must continue to preserve
+original item text and out-of-natural-range observed values, and it must not
+turn blocked mechanics into zero.

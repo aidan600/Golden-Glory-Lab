@@ -87,7 +87,8 @@ mode, league, UI language, and display resolution are not product inputs.
 Client version may be evidence metadata but is not normally a user input.
 
 [PROOF-003](proofs/PROOF-003-mercenary-sheet-observation.md) is deferred before
-observation. Its local scaffolding is noncanonical until merged.
+observation. Unmerged local scaffolding existed but was not adopted or
+imported.
 
 ## Active open questions
 
@@ -129,8 +130,10 @@ historical plan listed it as a phase. See
 
 ## Historical-material warning
 
-External project-source packs, exported chat plans, prompt attachments,
-detached roadmap files, and local unmerged branches are noncanonical snapshots.
-They may supply leads. Current repository documents and merged records control
-status. Material under [docs/reference/](reference/README.md) is historical or
-supporting only.
+Attachments, exported plans, external source packs, and detached roadmap files
+are not canonical merely because they were included in a prompt. An explicit
+current-task instruction may adopt or use attached material for that task.
+Durable authority still requires the accepted result to be recorded in the
+repository and merged through the normal workflow. Chat summaries and local
+unmerged branches remain noncanonical durable records. Material under
+[docs/reference/](reference/README.md) is historical or supporting only.

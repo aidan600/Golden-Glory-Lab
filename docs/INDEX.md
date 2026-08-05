@@ -56,6 +56,9 @@ current repository material subject to the authority order in
 [SPEC_STATUS.md](SPEC_STATUS.md). Everything under
 [docs/reference/](reference/README.md) is historical or supporting material:
 use it for leads, then verify the underlying source and record any current
-conclusion through the workflow. External project-source packs, exported chat
-plans, prompt attachments, detached roadmap files, and local unmerged branches
-are noncanonical snapshots; see [CURRENT_STATE.md](CURRENT_STATE.md).
+conclusion through the workflow. Attachments, exported plans, external source
+packs, and detached roadmap files are not canonical merely because they were
+included in a prompt; an explicit current-task instruction may adopt or use
+attached material for that task, but durable authority still requires a merged
+repository record. See [CURRENT_STATE.md](CURRENT_STATE.md) and
+[SPEC_STATUS.md](SPEC_STATUS.md).

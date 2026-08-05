@@ -36,10 +36,14 @@ and deferred now. Settled manual-first input boundaries live in
 `docs/decisions/DEC-003-manual-first-input-boundaries.md`.
 
 Files under `docs/reference/` are supporting or historical research and are not
-canonical. External project-source packs, exported chat plans, prompt
-attachments, detached roadmap files, and local unmerged branches are
-noncanonical snapshots; they may supply leads but do not override current
-repository documents or merged records.
+canonical. Attachments, exported plans, external source packs, and detached
+roadmap files are not canonical merely because they were included in a prompt.
+An explicit current-task instruction may adopt or use attached material for
+that task. Durable authority still requires the accepted result to be recorded
+in the repository and merged through the normal workflow. Chat summaries and
+local unmerged branches remain noncanonical durable records; an attachment
+must not silently override current repository state when the task does not
+explicitly adopt it.
 
 ## Task modes
 

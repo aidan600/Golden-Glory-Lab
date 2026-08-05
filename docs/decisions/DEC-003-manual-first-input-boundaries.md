@@ -102,6 +102,6 @@ Revisit only when:
 
 Not superseded.
 
-DEC-002 exists only inside the deferred local `proof/mercenary-sheet-observation`
-scaffolding and is not a canonical repository decision. This record does not
-reuse or adopt that ID.
+DEC-002 exists only inside deferred, unmerged local PROOF-003 scaffolding and
+is not a canonical repository decision. This record does not reuse or adopt
+that ID.

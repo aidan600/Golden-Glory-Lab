@@ -1,22 +1,24 @@
 # Golden Glory Lab
 
-Golden Glory Lab is a planned offline desktop loadout-audit and
-improvement-planning tool for a Path of Exile Luminary and one active permanent
-Mercenary. This repository currently contains the durable workflow,
-documentation, data-boundary, and evidence policy for that project; it does not
-yet contain application code.
+Golden Glory Lab is an offline desktop loadout-audit and improvement-planning
+tool for a Path of Exile Luminary and one active permanent Mercenary.
+
+This repository now contains the current offline desktop application, the
+adopted PoB importer, BUILD-001 and BUILD-002, and the current documentation,
+contracts, fixtures, tests, and validation tooling.
 
 Start with [the documentation index](docs/INDEX.md) and
-[the repository agent guide](AGENTS.md). The current product direction is
-recorded in [docs/PRODUCT_DIRECTION.md](docs/PRODUCT_DIRECTION.md); unresolved
-work is tracked in [docs/OPEN_QUESTIONS.md](docs/OPEN_QUESTIONS.md).
+[the repository agent guide](AGENTS.md). For what is implemented, active, and
+deferred now, read [docs/CURRENT_STATE.md](docs/CURRENT_STATE.md). Product
+scope lives in [docs/PRODUCT_DIRECTION.md](docs/PRODUCT_DIRECTION.md);
+unresolved work is tracked in [docs/OPEN_QUESTIONS.md](docs/OPEN_QUESTIONS.md).
 
 ## Repository map
 
 - docs/ holds current operating documents, audit and decision records, and
   clearly separated historical reference material.
-- data/ holds the source registry plus future curated, generated, and schema
-  data.
+- src/ holds the application packages consumed by the desktop build.
+- data/ holds the source registry plus curated, generated, and schema data.
 - fixtures/ holds build-instance and synthetic test material, never general
   reference authority.
 - scripts/ holds small, documented extraction and validation tools.
