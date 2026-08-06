@@ -161,6 +161,7 @@ class LayoutPresentationTests(unittest.TestCase):
                     "Copied",
                     "Manual gear",
                     "Enmity",
+                    "Flame Link",
                     "Evidence",
                     "Notes",
                 ],
@@ -419,7 +420,9 @@ class EnmityControllerPresentationTests(unittest.TestCase):
         labels = {value["label"] for value in blocked}
         self.assertIn("Total penetration", labels)
         self.assertIn("Damage and DPS", labels)
-        self.assertIn("Golden Glory arithmetic", labels)
+        self.assertIn("Live-game Flame Link rounding confirmation", labels)
+        self.assertNotIn("Golden Glory arithmetic", labels)
+        self.assertNotIn("Definitive Flame Link granted damage", labels)
 
     def _restoring_form(self, service: ApplicationService) -> GoldenGloryApp:
         app = self._headless_form(service)

@@ -559,7 +559,7 @@ class EvidenceStatusTests(unittest.TestCase):
         }
         self.assertTrue(required.issubset(observed))
         for status in statuses:
-            self.assertEqual(status["status"], MECHANICS_STATUS)
+            self.assertEqual(status["status"], "unavailable-pending-evidence")
             self.assertIsNone(status["value"])
             self.assertNotEqual(status["value"], 0)
         persisted = json.loads(serialize(ApplicationService().state))

@@ -12,5 +12,8 @@ Current decisions:
   - accepted; missing mechanics evidence blocks automatic derivation only;
     BUILD-002’s manual Enmity path is the first-release fallback; screenshots
     and deferred sheet automation are not ordinary first-release blockers.
+- [DEC-004 - Manual-first Flame Link player chain](DEC-004-manual-first-flame-link-player-chain.md)
+  - accepted; owner-approved BUILD-003 formula, modelled rounding label,
+    three-state conditionals, and no separate AUD-006 for the manual-first path.
 
 Use [the decision template](TEMPLATE.md) for a new reviewed choice.

@@ -98,8 +98,12 @@ typed resource validation, and negative parity mutations with:
 
     py scripts/validate/run_build002_schema_validation.py
 
-Regenerate and compare the deterministic BUILD-001/v2 BUILD-002 state fixtures
-with:
+Run BUILD-003 Draft 2020-12 schema self-checks, v1/v2/v3 fixtures and
+migrations, Flame Link table load, and negative parity mutations with:
+
+    py scripts/validate/run_build003_schema_validation.py
+
+Regenerate and compare the deterministic BUILD-001/v2/v3 state fixtures with:
 
     py scripts/generate_build_state_fixtures.py
     py scripts/generate_build_state_fixtures.py --write

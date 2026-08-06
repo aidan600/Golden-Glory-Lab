@@ -1,0 +1,89 @@
+{
+  "documentType": "golden-glory-lab-build-state",
+  "schemaVersion": "3.0.0",
+  "applicationDataContractVersion": "3.0.0",
+  "importerContractVersion": "1.0.0",
+  "importedResult": null,
+  "importedResultSha256": null,
+  "playerItemSetOccurrenceId": null,
+  "mercenarySourceMode": "not-yet-selected",
+  "mercenaryItemSetOccurrenceId": null,
+  "manualMercenaryEquipment": [],
+  "copiedItemEntries": [],
+  "enmityManualInput": {
+    "finalUncappedFireResistance": null,
+    "maximumFireResistance": null,
+    "equippedState": "unknown",
+    "equipmentInclusionState": "unrecorded",
+    "measurementContext": {
+      "mercenaryIdentityLevel": "",
+      "activeStateSelection": "",
+      "zoneOrUiContext": "",
+      "relevantEffectsConditions": "",
+      "equipmentStateDescription": "",
+      "captureTimingDescription": ""
+    },
+    "targetGameVersionAcknowledgement": "unknown",
+    "observedItemReference": null,
+    "target": null
+  },
+  "flameLinkPlayerChain": {
+    "goldenGlory": {
+      "allocatedState": "unknown",
+      "mercenaryTargetState": "unknown",
+      "reviewedLightRadiusPct": null,
+      "provenanceKind": "unreviewed",
+      "reviewState": "unreviewed",
+      "rawSourceText": ""
+    },
+    "directLinkBuffEffect": {
+      "reviewedDirectPct": null,
+      "provenanceKind": "unreviewed",
+      "reviewState": "unreviewed",
+      "rawSourceText": ""
+    },
+    "conditionalContributions": [
+      {
+        "contributionId": "powerful-bond",
+        "label": "Powerful Bond",
+        "valuePct": "20",
+        "conditionState": "unknown",
+        "kind": "powerful-bond",
+        "provenanceKind": "catalog-default",
+        "rawSourceText": ""
+      },
+      {
+        "contributionId": "inspiring-bond",
+        "label": "Inspiring Bond",
+        "valuePct": "20",
+        "conditionState": "unknown",
+        "kind": "inspiring-bond",
+        "provenanceKind": "catalog-default",
+        "rawSourceText": ""
+      }
+    ],
+    "flameLinkLevel": {
+      "baseLevel": 21,
+      "baseLevelProvenance": "manual-benchmark-default",
+      "additionalLinkGemLevels": [
+        {
+          "contributionId": "empowered-bond",
+          "label": "Empowered Bond",
+          "levels": 2,
+          "activeState": "unknown",
+          "provenanceKind": "catalog-default",
+          "rawSourceText": ""
+        }
+      ]
+    },
+    "luminaryMaximumLife": {
+      "reviewedLife": null,
+      "provenanceKind": "unreviewed",
+      "reviewState": "unreviewed",
+      "rawSourceText": ""
+    },
+    "roundingPolicyId": "modelled-nearest-integer-half-up-v1",
+    "formulaVersionId": "flame-link-player-chain-v1"
+  },
+  "userNotes": ""
+}

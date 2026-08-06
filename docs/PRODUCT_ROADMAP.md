@@ -64,9 +64,11 @@ run and directly enforced outbound-network denial remain named limitations.
 ## Current Phase 3 status
 
 Phase 3 is in progress. See [CURRENT_STATE.md](CURRENT_STATE.md) for the
-operational summary and
+operational summary,
 [DEC-003](decisions/DEC-003-manual-first-input-boundaries.md) for the
-manual-first input boundary.
+manual-first input boundary, and
+[DEC-004](decisions/DEC-004-manual-first-flame-link-player-chain.md) for the
+Flame Link player-chain policy.
 
 [BUILD-001](builds/BUILD-001-desktop-intake-mapping.md) is merged. It delivers
 offline desktop intake, source-order item-set review, explicit Player/Mercenary
@@ -80,22 +82,24 @@ reporting. That manual isolated Enmity path satisfies the first-release
 Mercenary Enmity fallback. OQ-007 is resolved only to the bounded recognition
 contract.
 
+[BUILD-003](builds/BUILD-003-player-chain-flame-link.md) implements the
+manual-first player-side Light Radius → Golden Glory / direct Link / Flame Link
+chain with build-state v3, advisory recognition, and modelled granted Added
+Fire Damage. OQ-004 and OQ-005 are resolved for that manual-first path; live
+rounding confirmation, Powerful Bond auto-activation, and exhaustive recognition
+remain deferred labelled gaps.
+
 Automatic Mercenary-sheet derivation is deferred and nonblocking for the first
 release. OQ-002 and OQ-003 remain deferred evidence work for that future
 automation only. OQ-006 retains only derived or aggregate Enmity questions;
 the isolated manual result is implemented.
 
-OQ-004 and OQ-005 are the active mechanics work for the player-side Light
-Radius → Golden Glory, direct Link Skill Buff Effect, and Flame Link damage
-granted chain. The intended next BUILD is a manual-first player calculation
-chain with progressive recognition and labelled manual contribution entries.
-
-Phase 3 remains incomplete until that player-side chain and the ordinary
-first-release workflow are usable. Blocked derived Mercenary values, aggregate
-penetration, unproven player-chain formulas, DPS labelling, recommendations,
-and a combined score remain unavailable and nonnumeric. Unsatisfied Phase 1
-claim gates carry forward as exact downstream output gates only; they do not
-reopen the evidence-pack deliverable.
+Phase 3 remains incomplete until the ordinary first-release workflow is
+confirmed usable after BUILD-003 merge/packaging. Blocked derived Mercenary
+values, aggregate penetration, DPS labelling, recommendations, and a combined
+score remain unavailable and nonnumeric. Unsatisfied Phase 1 claim gates carry
+forward as exact downstream output gates only; they do not reopen the
+evidence-pack deliverable.
 
 ## Roadmap guardrails
 

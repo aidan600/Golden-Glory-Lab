@@ -664,7 +664,7 @@ class TransactionalMalformedOpenTests(unittest.TestCase):
 
             with (
                 patch(
-                    "golden_glory_lab.build_state.codec_v2.MAX_SAVED_STATE_FILE_BYTES",
+                    "golden_glory_lab.build_state.codec_v3.MAX_SAVED_STATE_FILE_BYTES",
                     len(expected),
                 ),
                 patch.object(
@@ -680,7 +680,7 @@ class TransactionalMalformedOpenTests(unittest.TestCase):
 
             with (
                 patch(
-                    "golden_glory_lab.build_state.codec_v2.MAX_SAVED_STATE_FILE_BYTES",
+                    "golden_glory_lab.build_state.codec_v3.MAX_SAVED_STATE_FILE_BYTES",
                     len(expected),
                 ),
                 patch.object(

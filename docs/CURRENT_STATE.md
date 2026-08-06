@@ -14,7 +14,7 @@ ordering, audit conclusions, or settled decisions:
 | Product scope | [PRODUCT_DIRECTION.md](PRODUCT_DIRECTION.md) |
 | Phase ordering | [PRODUCT_ROADMAP.md](PRODUCT_ROADMAP.md) |
 | Bounded audit, proof, or build conclusions | Their records under `docs/audits/`, `docs/proofs/`, and `docs/builds/` |
-| Settled product choices | [Decision records](decisions/INDEX.md), especially [DEC-003](decisions/DEC-003-manual-first-input-boundaries.md) |
+| Settled product choices | [Decision records](decisions/INDEX.md), especially [DEC-003](decisions/DEC-003-manual-first-input-boundaries.md) and [DEC-004](decisions/DEC-004-manual-first-flame-link-player-chain.md) |
 
 ## Status date
 
@@ -22,9 +22,11 @@ ordering, audit conclusions, or settled decisions:
 
 ## Current main milestone
 
-Phase 3 — first usable desktop BUILD — is in progress on `main` after
-[BUILD-001](builds/BUILD-001-desktop-intake-mapping.md) and
-[BUILD-002](builds/BUILD-002-copied-item-enmity.md).
+Phase 3 — first usable desktop BUILD — is in progress after
+[BUILD-001](builds/BUILD-001-desktop-intake-mapping.md),
+[BUILD-002](builds/BUILD-002-copied-item-enmity.md), and
+[BUILD-003](builds/BUILD-003-player-chain-flame-link.md) (implemented on the
+task branch; pending merge).
 
 ## Merged outcomes
 
@@ -35,6 +37,13 @@ Phase 3 — first usable desktop BUILD — is in progress on `main` after
   review; exact evidence gates; build-state v2 migration; manual isolated
   Enmity contribution; Enmity-only target, gap, surplus, cap, and
   input-beyond-cap reporting.
+
+## Implemented on the active BUILD-003 path
+
+- **BUILD-003:** manual-first Flame Link player chain; advisory Light Radius /
+  Link Buff Effect recognition; build-state v3 with `flameLinkPlayerChain`;
+  packaged level table 1–40; modelled nearest-integer half-up granted Added
+  Fire Damage; Flame Link desktop tab; Enmity isolation unchanged.
 
 ## Current phase
 
@@ -53,26 +62,27 @@ historical snapshots only.
 
 ## Active product path
 
-First-release player-side mechanics work:
+First-release player-side mechanics work is implemented for the manual-first
+path:
 
     Light Radius
         -> Golden Glory contribution
     Direct Link Skill Buff Effect
         -> separate contribution
-    Golden Glory contribution + direct Link contribution
-        -> Flame Link damage granted
+    Golden Glory contribution + direct Link contribution + active conditionals
+        -> Flame Link damage granted (modelled)
 
-Active evidence work: [OQ-004](OPEN_QUESTIONS.md) and
-[OQ-005](OPEN_QUESTIONS.md). That work determines only what is necessary to
-implement this chain (conversion, activation, required inputs, scaling,
-rounding, target-version applicability). Exhaustive source coverage is not a
-prerequisite for a manual-first BUILD.
+[OQ-004](OPEN_QUESTIONS.md) and [OQ-005](OPEN_QUESTIONS.md) are resolved for
+that manual-first path via [DEC-004](decisions/DEC-004-manual-first-flame-link-player-chain.md).
+Live-game rounding confirmation, Powerful Bond auto-activation, and exhaustive
+recognition remain unresolved and do not block the labelled manual workflow.
 
 ## Implemented manual fallbacks
 
-BUILD-002’s manual isolated Enmity path is the first-release Mercenary Enmity
-fallback. Missing mechanics evidence blocks automatic derivation, not manual
-entry and not the entire product workflow.
+BUILD-002’s manual isolated Enmity path and BUILD-003’s manual Flame Link player
+chain are the first-release calculation surfaces. Missing mechanics evidence
+blocks automatic derivation, not manual entry and not the entire product
+workflow.
 
 Manual inputs must be labelled manual or user-attested, retain provenance and
 context where needed, never be silently combined with uncertain derived
@@ -96,20 +106,16 @@ imported.
 | --- | --- |
 | OQ-002 | Nonblocking; deferred — sheet labels/semantics for future automatic derivation |
 | OQ-003 | Nonblocking; deferred — equipment inclusion/comparability for future automatic derivation |
-| OQ-004 | Blocking; active — player-chain source/mechanics evidence |
-| OQ-005 | Blocking; active — Golden Glory / direct Link / Flame Link formula evidence |
+| OQ-004 | Resolved for manual-first path — superseded by DEC-004 / BUILD-003; exhaustive recognition deferred |
+| OQ-005 | Resolved for manual-first path — superseded by DEC-004 / BUILD-003; live rounding still open |
 | OQ-006 | Nonblocking; deferred — derived/aggregate Enmity only; isolated manual path is implemented |
 | OQ-007 | Resolved — BUILD-002 copied-item recognition boundary |
 
 ## Next two planned outcomes
 
-1. Focused OQ-004 / OQ-005 mechanics contract for the player-side chain.
-2. BUILD-003 direction (not yet implemented): progressive recognition of
-   supported PoB/item/passive components; manual contribution entries for
-   unsupported sources; provenance for every component; reviewed, missing,
-   incomplete, and unavailable states; Golden Glory and direct Link shown
-   separately; Flame Link granted damage only when formula gates pass; no DPS
-   terminology; no comprehensive Mercenary model.
+1. Merge and package BUILD-003; confirm ordinary first-release workflow usability.
+2. Optional later evidence work for live Flame Link rounding and conditional
+   auto-activation; exhaustive recognition remains deferred.
 
 ## Owner-input boundary
 

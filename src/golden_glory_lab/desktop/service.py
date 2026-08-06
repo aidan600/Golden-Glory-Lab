@@ -1,10 +1,10 @@
-"""Testable BUILD-002 application service and derived session state."""
+"""Testable BUILD-003 application service and derived session state."""
 
 from __future__ import annotations
 
 import copy
 import re
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
@@ -21,7 +21,14 @@ from golden_glory_lab.domain import (
     ENMITY_OUTPUT_ID,
     ENMITY_TARGET_OUTPUT_ID,
     EnmityResult,
+    FlameLinkLevelTable,
+    FlameLinkResult,
+    FlameLinkTableError,
+    RecognizedPlayerChainLine,
     evaluate_enmity,
+    evaluate_flame_link,
+    load_flame_link_level_table,
+    recognize_player_chain_text,
 )
 from golden_glory_lab.evidence_gate import (
     GateDecision,
@@ -57,6 +64,8 @@ class ApplicationService:
         self._gate_manifest = None
         self._enmity_reference: dict[str, Any] | None = None
         self._runtime_resource_error: dict[str, str] | None = None
+        self._flame_link_table: FlameLinkLevelTable | None = None
+        self._flame_link_table_error: dict[str, str] | None = None
         self._load_runtime_resources()
 
     def _load_runtime_resources(self) -> None:
@@ -71,10 +80,19 @@ class ApplicationService:
                 "code": error.code,
                 "message": error.message,
             }
-            return
-        self._gate_manifest = manifest
-        self._enmity_reference = reference
-        self._runtime_resource_error = None
+        else:
+            self._gate_manifest = manifest
+            self._enmity_reference = reference
+            self._runtime_resource_error = None
+        try:
+            self._flame_link_table = load_flame_link_level_table()
+            self._flame_link_table_error = None
+        except FlameLinkTableError as error:
+            self._flame_link_table = None
+            self._flame_link_table_error = {
+                "code": error.code,
+                "message": error.message,
+            }
 
     @property
     def state(self) -> dict[str, Any]:
@@ -421,7 +439,7 @@ class ApplicationService:
         return saved
 
     def open(self, path_value: str | Path) -> None:
-        """Replace the session only after bounded decode and full v2 migration."""
+        """Replace the session only after bounded decode and full v3 migration."""
 
         path = Path(path_value)
         decoded, _raw_bytes = load_file_result(path)
@@ -444,10 +462,11 @@ class ApplicationService:
         self.pending_import_result = None
 
     def _preflight_open_consumers(self, candidate: Mapping[str, Any]) -> None:
-        """Prove BUILD-002 presentation consumers can derive from the candidate.
+        """Prove BUILD-003 presentation consumers can derive from the candidate.
 
         Runtime evidence resources may be unavailable; that fails closed only for
         dependent Enmity outputs and must not reject an otherwise valid build.
+        A missing Flame Link level table fails closed only for Flame Link output.
         """
 
         from golden_glory_lab.item_review import (
@@ -466,6 +485,11 @@ class ApplicationService:
                 self.gate_decisions()[ENMITY_OUTPUT_ID],
                 self.gate_decisions()[ENMITY_TARGET_OUTPUT_ID],
             )
+            if self._flame_link_table is not None:
+                evaluate_flame_link(
+                    candidate["flameLinkPlayerChain"],
+                    self._flame_link_table,
+                )
         except CopiedItemRecognitionError as error:
             raise BuildStateError(error.code, error.message) from error
         except UnicodeEncodeError as error:
@@ -651,6 +675,153 @@ class ApplicationService:
             decisions[ENMITY_TARGET_OUTPUT_ID],
         )
 
+    def flame_link_table_status(self) -> dict[str, Any]:
+        if self._flame_link_table is None:
+            return {
+                "state": "unavailable",
+                "resourceError": copy.deepcopy(self._flame_link_table_error),
+            }
+        return {
+            "state": "available",
+            "resourceError": None,
+            "artifactId": self._flame_link_table.artifactId,
+            "minimumLevel": self._flame_link_table.minimumLevel,
+            "maximumLevel": self._flame_link_table.maximumLevel,
+        }
+
+    def set_flame_link_input(
+        self,
+        *,
+        golden_glory: Mapping[str, Any] | object = _UNSET,
+        direct_link_buff_effect: Mapping[str, Any] | object = _UNSET,
+        conditional_contributions: Sequence[Mapping[str, Any]] | object = _UNSET,
+        flame_link_level: Mapping[str, Any] | object = _UNSET,
+        luminary_maximum_life: Mapping[str, Any] | object = _UNSET,
+    ) -> None:
+        """Atomically update canonical Flame Link player-chain input."""
+
+        candidate = self.state
+        chain = candidate["flameLinkPlayerChain"]
+        if golden_glory is not _UNSET:
+            chain["goldenGlory"] = dict(golden_glory)
+        if direct_link_buff_effect is not _UNSET:
+            chain["directLinkBuffEffect"] = dict(direct_link_buff_effect)
+        if conditional_contributions is not _UNSET:
+            chain["conditionalContributions"] = [
+                dict(entry) for entry in conditional_contributions
+            ]
+        if flame_link_level is not _UNSET:
+            level = dict(flame_link_level)
+            level["additionalLinkGemLevels"] = [
+                dict(entry) for entry in level.get("additionalLinkGemLevels", [])
+            ]
+            chain["flameLinkLevel"] = level
+        if luminary_maximum_life is not _UNSET:
+            chain["luminaryMaximumLife"] = dict(luminary_maximum_life)
+        self._commit(candidate)
+
+    def recognize_player_chain_from_text(
+        self, raw_text: str
+    ) -> tuple[RecognizedPlayerChainLine, ...]:
+        return recognize_player_chain_text(raw_text)
+
+    def recognize_player_chain_from_reviewed_sources(
+        self,
+    ) -> tuple[RecognizedPlayerChainLine, ...]:
+        """Advisory recognition across current PoB/copied/manual item texts."""
+
+        found: list[RecognizedPlayerChainLine] = []
+        for review in self.item_reviews():
+            found.extend(recognize_player_chain_text(review.exactRawText))
+        return tuple(found)
+
+    def apply_recognized_light_radius(
+        self,
+        signed_value_lexeme: str,
+        *,
+        raw_source_text: str = "",
+        allocated_state: str = "allocated",
+        mercenary_target_state: str = "yes",
+    ) -> None:
+        """Apply a user-confirmed Light Radius recognition into reviewed GG input."""
+
+        self.set_flame_link_input(
+            golden_glory={
+                "allocatedState": allocated_state,
+                "mercenaryTargetState": mercenary_target_state,
+                "reviewedLightRadiusPct": signed_value_lexeme,
+                "provenanceKind": "recognized-reviewed",
+                "reviewState": "reviewed",
+                "rawSourceText": raw_source_text,
+            }
+        )
+
+    def apply_recognized_direct_link_buff_effect(
+        self,
+        signed_value_lexeme: str,
+        *,
+        raw_source_text: str = "",
+    ) -> None:
+        """Apply a user-confirmed direct Link Buff Effect recognition."""
+
+        self.set_flame_link_input(
+            direct_link_buff_effect={
+                "reviewedDirectPct": signed_value_lexeme,
+                "provenanceKind": "recognized-reviewed",
+                "reviewState": "reviewed",
+                "rawSourceText": raw_source_text,
+            }
+        )
+
+    def flame_link_result(self) -> FlameLinkResult:
+        if self._flame_link_table is None:
+            error = self._flame_link_table_error or {
+                "code": "FLAME_LINK_TABLE_MISSING",
+                "message": "The packaged Flame Link level table is unavailable",
+            }
+            from golden_glory_lab.domain.flame_link import FlameLinkResult as Result
+
+            return Result(
+                outputId="flame-link-added-fire-damage-granted-v1",
+                label="Added Fire Damage granted to linked Mercenary",
+                targetGameVersion="Path of Exile 1 3.29.1",
+                formulaVersionId="flame-link-player-chain-v1",
+                roundingPolicyId="modelled-nearest-integer-half-up-v1",
+                roundingPolicyLabel="Modelled nearest-integer result",
+                state="unavailable",
+                available=False,
+                goldenGloryContributionPct=None,
+                directLinkContributionPct=None,
+                conditionalContributionPct=None,
+                netLinkSkillBuffEffectPct=None,
+                linkEffectMultiplier=None,
+                baseFlameLinkLevel=None,
+                additionalLinkGemLevels=None,
+                effectiveFlameLinkLevel=None,
+                luminaryMaximumLife=None,
+                lifeComponent=None,
+                levelFlatMin=None,
+                levelFlatMax=None,
+                unscaledMin=None,
+                unscaledMax=None,
+                exactPreRoundMin=None,
+                exactPreRoundMax=None,
+                modelledIntegerMin=None,
+                modelledIntegerMax=None,
+                contributionBreakdown={},
+                levelBreakdown={},
+                reasons=(
+                    {
+                        "code": error["code"],
+                        "message": error["message"],
+                    },
+                ),
+            )
+        return evaluate_flame_link(
+            self._state["flameLinkPlayerChain"],
+            self._flame_link_table,
+        )
+
     def readiness(self) -> dict[str, Any]:
         imported = self._state["importedResult"] is not None
         player = self._state["playerItemSetOccurrenceId"] is not None
@@ -686,6 +857,8 @@ class ApplicationService:
             "importerWarnings": self.importer_warning_state(),
             "runtimeEvidence": self.runtime_evidence_status()["state"],
             "enmityOutput": self.enmity_result().state,
+            "flameLinkOutput": self.flame_link_result().state,
+            "flameLinkTable": self.flame_link_table_status()["state"],
             "mechanics": MECHANICS_STATUS,
         }
 

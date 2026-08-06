@@ -2,6 +2,7 @@
 fixtures/pob/golden/*.json text eol=lf
 fixtures/pob/proof/*.xml text eol=lf
 fixtures/pob/proof/*.txt text eol=lf
+fixtures/build_state/*.json text eol=lf
 
 # BUILD-002 pinned evidence sources and packaged runtime resources must check
 # out as exact LF bytes. Escaped "\r\n" sequences inside JSON string values are
