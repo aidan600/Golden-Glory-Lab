@@ -1324,5 +1324,317 @@ class AdditionalLevelDomainContractTests(unittest.TestCase):
                 self.assertEqual(result.effectiveFlameLinkLevel, expected_level)
 
 
+class DomainRecognitionAndBaseProvenanceTests(unittest.TestCase):
+    """Direct evaluator recognition-source and base-level provenance contracts."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.table = load_flame_link_level_table()
+
+    def _baseline(self) -> dict[str, Any]:
+        return _domain_baseline_chain()
+
+    def _assert_unavailable_code(self, result: Any, code: str) -> None:
+        self.assertFalse(result.available, result.reasons)
+        self.assertIn(code, {reason["code"] for reason in result.reasons})
+
+    def test_malformed_recognition_source_rejected_across_inputs(self) -> None:
+        malformed: list[Any] = [
+            {"kind": "pob-import", "digest": "x"},
+            {"kind": "advisory-text", "digest": "A" * 64},
+            {"kind": "copied-text", "digest": None},
+            {"kind": "none", "digest": DIGEST},
+            {"kind": "pob-import"},
+            {"digest": DIGEST},
+            {"kind": "pob-import", "digest": DIGEST, "extra": True},
+            {},
+            None,
+            "bad",
+        ]
+        categories = (
+            "goldenGlory",
+            "directLinkBuffEffect",
+            "luminaryMaximumLife",
+            "conditional",
+            "additionalLevel",
+        )
+        for category in categories:
+            for index, source in enumerate(malformed):
+                with self.subTest(category=category, index=index, source=source):
+                    chain = self._baseline()
+                    chain["flameLinkLevel"]["additionalLinkGemLevels"][0][
+                        "activeState"
+                    ] = "inactive"
+                    if category == "goldenGlory":
+                        chain["goldenGlory"].update(
+                            {
+                                "allocatedState": "allocated",
+                                "mercenaryTargetState": "yes",
+                                "reviewedLightRadiusPct": "40",
+                                "provenanceKind": "recognized-reviewed",
+                                "reviewState": "reviewed",
+                                "rawSourceText": "   \t\n  ",
+                                "recognitionSource": source,
+                            }
+                        )
+                        expected = "GOLDEN_GLORY_PROVENANCE_INVALID"
+                    elif category == "directLinkBuffEffect":
+                        chain["directLinkBuffEffect"].update(
+                            {
+                                "reviewedDirectPct": "10",
+                                "provenanceKind": "recognized-reviewed",
+                                "reviewState": "reviewed",
+                                "rawSourceText": " \n ",
+                                "recognitionSource": source,
+                            }
+                        )
+                        expected = "DIRECT_LINK_BUFF_EFFECT_PROVENANCE_INVALID"
+                    elif category == "luminaryMaximumLife":
+                        chain["luminaryMaximumLife"].update(
+                            {
+                                "reviewedLife": "5000",
+                                "provenanceKind": "recognized-reviewed",
+                                "reviewState": "reviewed",
+                                "rawSourceText": "\t",
+                                "recognitionSource": source,
+                            }
+                        )
+                        expected = "LUMINARY_MAXIMUM_LIFE_PROVENANCE_INVALID"
+                    elif category == "conditional":
+                        chain["conditionalContributions"] = [
+                            {
+                                "contributionId": "manual-conditional-0001",
+                                "label": "Manual",
+                                "valuePct": "5",
+                                "conditionState": "active",
+                                "kind": "manual",
+                                "provenanceKind": "recognized-reviewed",
+                                "rawSourceText": "  ",
+                                "recognitionSource": source,
+                            },
+                            {
+                                "contributionId": "inspiring-bond",
+                                "label": "Inspiring Bond",
+                                "valuePct": "20",
+                                "conditionState": "inactive",
+                                "kind": "inspiring-bond",
+                                "provenanceKind": "catalog-default",
+                                "rawSourceText": "",
+                                "recognitionSource": {"kind": "none", "digest": None},
+                            },
+                        ]
+                        expected = "CONDITIONAL_CONTRIBUTION_PROVENANCE_INVALID"
+                    else:
+                        chain["flameLinkLevel"]["additionalLinkGemLevels"] = [
+                            {
+                                "contributionId": "manual-level-0001",
+                                "label": "Generic",
+                                "levels": 1,
+                                "activeState": "active",
+                                "provenanceKind": "recognized-reviewed",
+                                "rawSourceText": "\n\n",
+                                "recognitionSource": source,
+                            }
+                        ]
+                        expected = "ADDITIONAL_LINK_LEVEL_PROVENANCE_INVALID"
+                    result = evaluate_flame_link(chain, self.table)
+                    self._assert_unavailable_code(result, expected)
+
+        # Positive controls: meaningful raw, or exact valid digest identity.
+        for kind in ("advisory-text", "pob-import", "copied-text"):
+            with self.subTest(positive="digest", kind=kind):
+                chain = self._baseline()
+                chain["flameLinkLevel"]["additionalLinkGemLevels"][0][
+                    "activeState"
+                ] = "inactive"
+                chain["directLinkBuffEffect"].update(
+                    {
+                        "reviewedDirectPct": "10",
+                        "provenanceKind": "recognized-reviewed",
+                        "reviewState": "reviewed",
+                        "rawSourceText": "",
+                        "recognitionSource": {"kind": kind, "digest": DIGEST},
+                    }
+                )
+                result = evaluate_flame_link(chain, self.table)
+                self.assertTrue(result.available, result.reasons)
+        with self.subTest(positive="raw-text"):
+            chain = self._baseline()
+            chain["flameLinkLevel"]["additionalLinkGemLevels"][0]["activeState"] = (
+                "inactive"
+            )
+            chain["goldenGlory"].update(
+                {
+                    "allocatedState": "allocated",
+                    "mercenaryTargetState": "yes",
+                    "reviewedLightRadiusPct": "40",
+                    "provenanceKind": "recognized-reviewed",
+                    "reviewState": "reviewed",
+                    "rawSourceText": "40% increased Light Radius",
+                    "recognitionSource": {"kind": "none", "digest": None},
+                }
+            )
+            result = evaluate_flame_link(chain, self.table)
+            self.assertTrue(result.available, result.reasons)
+
+    def test_catalog_missing_and_extra_fields_rejected(self) -> None:
+        cases: list[tuple[str, Callable[[dict[str, Any]], None], str]] = [
+            (
+                "powerful-missing-raw",
+                lambda chain: chain["conditionalContributions"][0].pop("rawSourceText"),
+                "CONDITIONAL_CONTRIBUTION_PROVENANCE_INVALID",
+            ),
+            (
+                "powerful-missing-digest-key",
+                lambda chain: chain["conditionalContributions"][0][
+                    "recognitionSource"
+                ].pop("digest"),
+                "CONDITIONAL_CONTRIBUTION_PROVENANCE_INVALID",
+            ),
+            (
+                "powerful-extra-recognition-field",
+                lambda chain: chain["conditionalContributions"][0][
+                    "recognitionSource"
+                ].__setitem__("extra", True),
+                "CONDITIONAL_CONTRIBUTION_PROVENANCE_INVALID",
+            ),
+            (
+                "empowered-missing-raw",
+                lambda chain: (
+                    chain["flameLinkLevel"]["additionalLinkGemLevels"][0].update(
+                        {
+                            "activeState": "active",
+                            "provenanceKind": "catalog-default",
+                            "levels": 2,
+                        }
+                    ),
+                    chain["flameLinkLevel"]["additionalLinkGemLevels"][0].pop(
+                        "rawSourceText"
+                    ),
+                ),
+                "ADDITIONAL_LINK_LEVEL_PROVENANCE_INVALID",
+            ),
+            (
+                "empowered-missing-digest-key",
+                lambda chain: (
+                    chain["flameLinkLevel"]["additionalLinkGemLevels"][0].update(
+                        {
+                            "activeState": "active",
+                            "provenanceKind": "catalog-default",
+                            "levels": 2,
+                            "rawSourceText": "",
+                            "recognitionSource": {"kind": "none"},
+                        }
+                    )
+                ),
+                "ADDITIONAL_LINK_LEVEL_PROVENANCE_INVALID",
+            ),
+            (
+                "empowered-extra-recognition-field",
+                lambda chain: (
+                    chain["flameLinkLevel"]["additionalLinkGemLevels"][0].update(
+                        {
+                            "activeState": "active",
+                            "provenanceKind": "catalog-default",
+                            "levels": 2,
+                            "rawSourceText": "",
+                            "recognitionSource": {
+                                "kind": "none",
+                                "digest": None,
+                                "extra": True,
+                            },
+                        }
+                    )
+                ),
+                "ADDITIONAL_LINK_LEVEL_PROVENANCE_INVALID",
+            ),
+        ]
+        for label, mutator, code in cases:
+            with self.subTest(label=label):
+                chain = self._baseline()
+                for entry in chain["conditionalContributions"]:
+                    if entry["contributionId"] == "powerful-bond":
+                        entry.update(
+                            {
+                                "conditionState": "active",
+                                "provenanceKind": "catalog-default",
+                                "valuePct": "20",
+                                "kind": "powerful-bond",
+                                "rawSourceText": "",
+                                "recognitionSource": {"kind": "none", "digest": None},
+                            }
+                        )
+                    else:
+                        entry["conditionState"] = "inactive"
+                chain["flameLinkLevel"]["additionalLinkGemLevels"][0][
+                    "activeState"
+                ] = "inactive"
+                mutator(chain)
+                result = evaluate_flame_link(chain, self.table)
+                self._assert_unavailable_code(result, code)
+
+    def test_base_level_provenance_domain_validation(self) -> None:
+        negative: list[tuple[str, dict[str, Any], str]] = [
+            (
+                "benchmark-mismatch",
+                {"baseLevel": 25, "baseLevelProvenance": "manual-benchmark-default"},
+                "FLAME_LINK_BASE_LEVEL_BENCHMARK_MISMATCH",
+            ),
+            (
+                "forged",
+                {"baseLevel": 21, "baseLevelProvenance": "forged"},
+                "FLAME_LINK_BASE_LEVEL_PROVENANCE_INVALID",
+            ),
+            (
+                "null-provenance",
+                {"baseLevel": 21, "baseLevelProvenance": None},
+                "FLAME_LINK_BASE_LEVEL_PROVENANCE_INVALID",
+            ),
+            (
+                "empty-provenance",
+                {"baseLevel": 21, "baseLevelProvenance": ""},
+                "FLAME_LINK_BASE_LEVEL_PROVENANCE_INVALID",
+            ),
+        ]
+        for label, level_block, code in negative:
+            with self.subTest(label=label):
+                chain = self._baseline()
+                chain["flameLinkLevel"].update(level_block)
+                chain["flameLinkLevel"]["additionalLinkGemLevels"][0][
+                    "activeState"
+                ] = "inactive"
+                result = evaluate_flame_link(chain, self.table)
+                self._assert_unavailable_code(result, code)
+                self.assertIsNone(result.effectiveFlameLinkLevel)
+
+        positives: list[tuple[str, dict[str, Any], int]] = [
+            (
+                "benchmark-21",
+                {"baseLevel": 21, "baseLevelProvenance": "manual-benchmark-default"},
+                21,
+            ),
+            (
+                "manual-reviewed-20",
+                {"baseLevel": 20, "baseLevelProvenance": "manual-reviewed"},
+                20,
+            ),
+            (
+                "imported-recognized-22",
+                {"baseLevel": 22, "baseLevelProvenance": "imported-recognized"},
+                22,
+            ),
+        ]
+        for label, level_block, expected in positives:
+            with self.subTest(label=label):
+                chain = self._baseline()
+                chain["flameLinkLevel"].update(level_block)
+                chain["flameLinkLevel"]["additionalLinkGemLevels"][0][
+                    "activeState"
+                ] = "inactive"
+                result = evaluate_flame_link(chain, self.table)
+                self.assertTrue(result.available, result.reasons)
+                self.assertEqual(result.effectiveFlameLinkLevel, expected)
+
+
 if __name__ == "__main__":
     unittest.main()

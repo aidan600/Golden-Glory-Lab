@@ -487,19 +487,54 @@ def _unavailable(
     )
 
 
+_DIGEST_RE = re.compile(r"^[0-9a-f]{64}$")
+_RECOGNITION_KINDS_WITH_DIGEST = frozenset(
+    {"advisory-text", "pob-import", "copied-text"}
+)
+_BASE_LEVEL_PROVENANCES = frozenset(
+    {"manual-benchmark-default", "manual-reviewed", "imported-recognized"}
+)
+_RECOGNITION_SOURCE_KEYS = frozenset({"kind", "digest"})
+
+
+def _recognition_source_is_exact_none(recognition_source: Any) -> bool:
+    if not isinstance(recognition_source, Mapping):
+        return False
+    if set(recognition_source.keys()) != _RECOGNITION_SOURCE_KEYS:
+        return False
+    return (
+        recognition_source.get("kind") == "none"
+        and recognition_source.get("digest") is None
+    )
+
+
+def _recognition_source_has_valid_identity(recognition_source: Any) -> bool:
+    if not isinstance(recognition_source, Mapping):
+        return False
+    if set(recognition_source.keys()) != _RECOGNITION_SOURCE_KEYS:
+        return False
+    kind = recognition_source.get("kind")
+    digest = recognition_source.get("digest")
+    if kind not in _RECOGNITION_KINDS_WITH_DIGEST:
+        return False
+    return isinstance(digest, str) and bool(_DIGEST_RE.fullmatch(digest))
+
+
 def _has_meaningful_source_identity(
     raw_source_text: Any,
     recognition_source: Any,
 ) -> bool:
     if isinstance(raw_source_text, str) and bool(raw_source_text.strip()):
         return True
-    if not isinstance(recognition_source, Mapping):
+    return _recognition_source_has_valid_identity(recognition_source)
+
+
+def _catalog_source_metadata_ok(raw: Mapping[str, Any]) -> bool:
+    if "rawSourceText" not in raw or "recognitionSource" not in raw:
         return False
-    kind = recognition_source.get("kind")
-    digest = recognition_source.get("digest")
-    return kind in {"advisory-text", "pob-import", "copied-text"} and isinstance(
-        digest, str
-    ) and bool(digest)
+    if raw["rawSourceText"] != "":
+        return False
+    return _recognition_source_is_exact_none(raw["recognitionSource"])
 
 
 def _resolve_golden_glory(
@@ -644,12 +679,7 @@ def _catalog_conditional_ok(raw: Mapping[str, Any]) -> bool:
             return False
     else:
         return False
-    if raw.get("rawSourceText", "") != "":
-        return False
-    recognition = raw.get("recognitionSource")
-    if not isinstance(recognition, Mapping):
-        return False
-    return recognition.get("kind") == "none" and recognition.get("digest") is None
+    return _catalog_source_metadata_ok(raw)
 
 
 def _resolve_conditionals(
@@ -877,30 +907,6 @@ def _resolve_conditionals(
     return active_values, details, reasons
 
 
-_DIGEST_RE = re.compile(r"^[0-9a-f]{64}$")
-_RECOGNITION_KINDS_WITH_DIGEST = frozenset(
-    {"advisory-text", "pob-import", "copied-text"}
-)
-
-
-def _has_valid_level_recognition_source(recognition_source: Any) -> bool:
-    if not isinstance(recognition_source, Mapping):
-        return False
-    if set(recognition_source.keys()) - {"kind", "digest"}:
-        return False
-    kind = recognition_source.get("kind")
-    digest = recognition_source.get("digest")
-    if kind not in _RECOGNITION_KINDS_WITH_DIGEST:
-        return False
-    return isinstance(digest, str) and bool(_DIGEST_RE.fullmatch(digest))
-
-
-def _has_level_source_identity(raw_source_text: Any, recognition_source: Any) -> bool:
-    if isinstance(raw_source_text, str) and bool(raw_source_text.strip()):
-        return True
-    return _has_valid_level_recognition_source(recognition_source)
-
-
 def _resolve_levels(
     level_block: Mapping[str, Any],
 ) -> tuple[int | None, int | None, int | None, dict[str, Any], list[dict[str, Any]]]:
@@ -916,6 +922,33 @@ def _resolve_levels(
                 _reason(
                     "FLAME_LINK_BASE_LEVEL_INVALID",
                     "Base Flame Link level must be an integer",
+                )
+            ],
+        )
+    base_provenance = level_block.get("baseLevelProvenance")
+    if base_provenance not in _BASE_LEVEL_PROVENANCES:
+        return (
+            None,
+            None,
+            None,
+            {},
+            [
+                _reason(
+                    "FLAME_LINK_BASE_LEVEL_PROVENANCE_INVALID",
+                    "Base Flame Link level provenance must be manual-benchmark-default, manual-reviewed, or imported-recognized",
+                )
+            ],
+        )
+    if base_provenance == "manual-benchmark-default" and raw_base != 21:
+        return (
+            None,
+            None,
+            None,
+            {},
+            [
+                _reason(
+                    "FLAME_LINK_BASE_LEVEL_BENCHMARK_MISMATCH",
+                    "manual-benchmark-default requires baseLevel exactly 21",
                 )
             ],
         )
@@ -1035,16 +1068,10 @@ def _resolve_levels(
             addition_details.append(detail)
             continue
         if provenance == "catalog-default":
-            recognition = raw.get("recognitionSource")
-            raw_text = raw.get("rawSourceText", "")
             catalog_ok = (
                 contribution_id == "empowered-bond"
                 and levels == 2
-                and raw_text == ""
-                and isinstance(recognition, Mapping)
-                and recognition.get("kind") == "none"
-                and recognition.get("digest") is None
-                and set(recognition.keys()) <= {"kind", "digest"}
+                and _catalog_source_metadata_ok(raw)
             )
             if not catalog_ok:
                 reasons.append(
@@ -1058,7 +1085,7 @@ def _resolve_levels(
                 addition_details.append(detail)
                 continue
         elif provenance == "recognized-reviewed":
-            if not _has_level_source_identity(
+            if not _has_meaningful_source_identity(
                 raw.get("rawSourceText", ""),
                 raw.get("recognitionSource"),
             ):
@@ -1088,7 +1115,7 @@ def _resolve_levels(
         additional_total += levels
     breakdown = {
         "baseLevel": base_level,
-        "baseLevelProvenance": level_block.get("baseLevelProvenance"),
+        "baseLevelProvenance": base_provenance,
         "additionalLinkGemLevels": addition_details,
         "additionalTotal": additional_total if not reasons else None,
         "effectiveLevel": None if reasons else base_level + additional_total,
