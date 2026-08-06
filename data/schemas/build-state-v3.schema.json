@@ -1097,14 +1097,10 @@
                       "properties": {
                         "contributionId": {
                           "const": "empowered-bond"
-                        },
-                        "provenanceKind": {
-                          "const": "catalog-default"
                         }
                       },
                       "required": [
-                        "contributionId",
-                        "provenanceKind"
+                        "contributionId"
                       ]
                     },
                     "then": {
@@ -1133,6 +1129,25 @@
                         },
                         "levels": {
                           "const": 2
+                        },
+                        "rawSourceText": {
+                          "const": ""
+                        },
+                        "recognitionSource": {
+                          "type": "object",
+                          "required": [
+                            "kind",
+                            "digest"
+                          ],
+                          "additionalProperties": false,
+                          "properties": {
+                            "kind": {
+                              "const": "none"
+                            },
+                            "digest": {
+                              "type": "null"
+                            }
+                          }
                         }
                       }
                     }

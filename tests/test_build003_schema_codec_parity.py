@@ -728,6 +728,601 @@ class SchemaCodecDecodeContractTests(unittest.TestCase):
         self.assertTrue(result.available)
         self.assertEqual(result.netLinkSkillBuffEffectPct, "20")
 
+    def test_empowered_bond_levels_locked_across_provenance(self) -> None:
+        """Empowered Bond identity is always +2 regardless of provenance."""
+
+        def set_empowered(
+            *,
+            levels: int,
+            provenance: str,
+            raw: str = "",
+            recognition: dict[str, Any] | None = None,
+        ) -> Callable[[dict[str, Any]], None]:
+            if recognition is None:
+                recognition = {"kind": "none", "digest": None}
+
+            def mutator(doc: dict[str, Any]) -> None:
+                doc["flameLinkPlayerChain"]["flameLinkLevel"]["additionalLinkGemLevels"][
+                    0
+                ].update(
+                    {
+                        "contributionId": "empowered-bond",
+                        "label": "Empowered Bond",
+                        "levels": levels,
+                        "activeState": "inactive",
+                        "provenanceKind": provenance,
+                        "rawSourceText": raw,
+                        "recognitionSource": recognition,
+                    }
+                )
+
+            return mutator
+
+        cases: list[tuple[str, bool, Callable[[dict[str, Any]], None]]] = [
+            ("empowered-catalog-2", True, set_empowered(levels=2, provenance="catalog-default")),
+            (
+                "empowered-manual-2",
+                True,
+                set_empowered(levels=2, provenance="manual-reviewed"),
+            ),
+            (
+                "empowered-recognized-2",
+                True,
+                set_empowered(
+                    levels=2,
+                    provenance="recognized-reviewed",
+                    raw="Empowered Bond",
+                ),
+            ),
+            ("empowered-catalog-1", False, set_empowered(levels=1, provenance="catalog-default")),
+            ("empowered-catalog-3", False, set_empowered(levels=3, provenance="catalog-default")),
+            ("empowered-manual-1", False, set_empowered(levels=1, provenance="manual-reviewed")),
+            ("empowered-manual-3", False, set_empowered(levels=3, provenance="manual-reviewed")),
+            (
+                "empowered-recognized-1",
+                False,
+                set_empowered(
+                    levels=1,
+                    provenance="recognized-reviewed",
+                    raw="Empowered Bond",
+                ),
+            ),
+            (
+                "empowered-recognized-3",
+                False,
+                set_empowered(
+                    levels=3,
+                    provenance="recognized-reviewed",
+                    raw="Empowered Bond",
+                ),
+            ),
+            (
+                "empowered-catalog-with-raw",
+                False,
+                set_empowered(
+                    levels=2,
+                    provenance="catalog-default",
+                    raw="Empowered Bond",
+                ),
+            ),
+            (
+                "empowered-catalog-with-digest",
+                False,
+                set_empowered(
+                    levels=2,
+                    provenance="catalog-default",
+                    recognition={"kind": "advisory-text", "digest": DIGEST},
+                ),
+            ),
+            (
+                "empowered-catalog-with-pob-digest",
+                False,
+                set_empowered(
+                    levels=2,
+                    provenance="catalog-default",
+                    recognition={"kind": "pob-import", "digest": DIGEST},
+                ),
+            ),
+            (
+                "empowered-catalog-with-copied-digest",
+                False,
+                set_empowered(
+                    levels=2,
+                    provenance="catalog-default",
+                    recognition={"kind": "copied-text", "digest": DIGEST},
+                ),
+            ),
+            (
+                "empowered-catalog-none-with-digest",
+                False,
+                set_empowered(
+                    levels=2,
+                    provenance="catalog-default",
+                    recognition={"kind": "none", "digest": DIGEST},
+                ),
+            ),
+        ]
+        for label, expect_valid, mutator in cases:
+            document = _mutate(self.base, mutator)
+            self._assert_schema_codec_agree(label, document, expect_valid=expect_valid)
+            self._assert_decode_matches_codec(label, document, expect_valid=expect_valid)
+
+    def test_forbidden_bond_ids_as_additional_levels(self) -> None:
+        for bond_id, label in (
+            ("powerful-bond", "Powerful Bond"),
+            ("inspiring-bond", "Inspiring Bond"),
+        ):
+            document = _mutate(
+                self.base,
+                lambda doc, bond_id=bond_id, label=label: doc["flameLinkPlayerChain"][
+                    "flameLinkLevel"
+                ]["additionalLinkGemLevels"].append(
+                    {
+                        "contributionId": bond_id,
+                        "label": label,
+                        "levels": 1,
+                        "activeState": "inactive",
+                        "provenanceKind": "manual-reviewed",
+                        "rawSourceText": "",
+                        "recognitionSource": {"kind": "none", "digest": None},
+                    }
+                ),
+            )
+            self._assert_schema_codec_agree(
+                f"forbid-{bond_id}-level", document, expect_valid=False
+            )
+            self._assert_decode_matches_codec(
+                f"forbid-{bond_id}-level", document, expect_valid=False
+            )
+
+    def test_generic_recognized_additional_level_identity(self) -> None:
+        def append_generic(
+            *,
+            raw: str,
+            recognition: dict[str, Any],
+            levels: int = 1,
+        ) -> Callable[[dict[str, Any]], None]:
+            def mutator(doc: dict[str, Any]) -> None:
+                doc["flameLinkPlayerChain"]["flameLinkLevel"]["additionalLinkGemLevels"].append(
+                    {
+                        "contributionId": "manual-level-0001",
+                        "label": "Generic",
+                        "levels": levels,
+                        "activeState": "inactive",
+                        "provenanceKind": "recognized-reviewed",
+                        "rawSourceText": raw,
+                        "recognitionSource": recognition,
+                    }
+                )
+
+            return mutator
+
+        cases: list[tuple[str, bool, Callable[[dict[str, Any]], None]]] = [
+            (
+                "generic-recognized-raw",
+                True,
+                append_generic(
+                    raw="+1 to Level of all Link Skill Gems",
+                    recognition={"kind": "none", "digest": None},
+                ),
+            ),
+            (
+                "generic-recognized-digest",
+                True,
+                append_generic(
+                    raw="",
+                    recognition={"kind": "advisory-text", "digest": DIGEST},
+                ),
+            ),
+            (
+                "generic-recognized-no-identity",
+                False,
+                append_generic(
+                    raw="",
+                    recognition={"kind": "none", "digest": None},
+                ),
+            ),
+            (
+                "generic-recognized-whitespace",
+                False,
+                append_generic(
+                    raw="   \n\t  ",
+                    recognition={"kind": "none", "digest": None},
+                ),
+            ),
+            (
+                "generic-recognized-short-digest",
+                False,
+                append_generic(
+                    raw="",
+                    recognition={"kind": "advisory-text", "digest": "x"},
+                ),
+            ),
+            (
+                "generic-recognized-uppercase-digest",
+                False,
+                append_generic(
+                    raw="",
+                    recognition={"kind": "advisory-text", "digest": "A" * 64},
+                ),
+            ),
+        ]
+        for label, expect_valid, mutator in cases:
+            document = _mutate(self.base, mutator)
+            self._assert_schema_codec_agree(label, document, expect_valid=expect_valid)
+            self._assert_decode_matches_codec(label, document, expect_valid=expect_valid)
+
+    def test_strict_integer_representation_codec_only(self) -> None:
+        """Draft 2020-12 accepts 2.0 as integer; codec/decoder require JSON ints."""
+
+        base_float = _mutate(
+            self.base,
+            lambda doc: doc["flameLinkPlayerChain"]["flameLinkLevel"].update(
+                {"baseLevel": 21.0}
+            ),
+        )
+        schema_ok = _schema_valid(self.validator, base_float)
+        codec_ok = _codec_valid(base_float)
+        decode_ok, _migrated = _decode_raw(base_float)
+        self.assertTrue(schema_ok, "schema may accept mathematically integral float baseLevel")
+        self.assertFalse(codec_ok)
+        self.assertFalse(decode_ok)
+
+        levels_float = _mutate(
+            self.base,
+            lambda doc: doc["flameLinkPlayerChain"]["flameLinkLevel"][
+                "additionalLinkGemLevels"
+            ][0].update({"levels": 2.0}),
+        )
+        schema_ok = _schema_valid(self.validator, levels_float)
+        codec_ok = _codec_valid(levels_float)
+        decode_ok, _migrated = _decode_raw(levels_float)
+        self.assertTrue(schema_ok, "schema may accept mathematically integral float levels")
+        self.assertFalse(codec_ok)
+        self.assertFalse(decode_ok)
+
+
+def _domain_baseline_chain() -> dict[str, Any]:
+    chain = empty_flame_link_player_chain()
+    chain["goldenGlory"].update(
+        {
+            "allocatedState": "not-allocated",
+            "mercenaryTargetState": "yes",
+            "reviewedLightRadiusPct": "0",
+            "provenanceKind": "manual-reviewed",
+            "reviewState": "reviewed",
+        }
+    )
+    chain["directLinkBuffEffect"].update(
+        {
+            "reviewedDirectPct": "0",
+            "provenanceKind": "manual-reviewed",
+            "reviewState": "reviewed",
+        }
+    )
+    for entry in chain["conditionalContributions"]:
+        entry["conditionState"] = "inactive"
+    chain["luminaryMaximumLife"].update(
+        {
+            "reviewedLife": "0",
+            "provenanceKind": "manual-reviewed",
+            "reviewState": "reviewed",
+        }
+    )
+    return chain
+
+
+class AdditionalLevelDomainContractTests(unittest.TestCase):
+    """Direct evaluator fail-closed contract for malformed additional-level rows."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.table = load_flame_link_level_table()
+
+    def _evaluate_with_levels(
+        self,
+        rows: list[dict[str, Any]],
+        *,
+        base_level: Any = 21,
+    ) -> Any:
+        chain = _domain_baseline_chain()
+        chain["flameLinkLevel"]["baseLevel"] = base_level
+        chain["flameLinkLevel"]["baseLevelProvenance"] = "manual-benchmark-default"
+        chain["flameLinkLevel"]["additionalLinkGemLevels"] = rows
+        return evaluate_flame_link(chain, self.table)
+
+    def _assert_unavailable(
+        self,
+        result: Any,
+        *,
+        code: str,
+        expected_effective: int | None = None,
+    ) -> None:
+        self.assertFalse(result.available)
+        self.assertTrue(
+            any(reason["code"] == code for reason in result.reasons),
+            f"expected {code} in {[r['code'] for r in result.reasons]}",
+        )
+        if expected_effective is not None:
+            self.assertNotEqual(result.effectiveFlameLinkLevel, expected_effective)
+
+    def test_domain_adversarial_additional_levels(self) -> None:
+        none_source = {"kind": "none", "digest": None}
+        good_digest = {"kind": "advisory-text", "digest": DIGEST}
+
+        def row(
+            contribution_id: str,
+            levels: Any,
+            *,
+            provenance: Any = "manual-reviewed",
+            active: str = "active",
+            raw: str = "",
+            recognition: dict[str, Any] | None = None,
+            label: str = "Row",
+        ) -> dict[str, Any]:
+            return {
+                "contributionId": contribution_id,
+                "label": label,
+                "levels": levels,
+                "activeState": active,
+                "provenanceKind": provenance,
+                "rawSourceText": raw,
+                "recognitionSource": recognition if recognition is not None else none_source,
+            }
+
+        negative_cases: list[tuple[str, list[dict[str, Any]], str, Any]] = [
+            (
+                "empowered-manual-3",
+                [row("empowered-bond", 3, provenance="manual-reviewed", label="Empowered Bond")],
+                "ADDITIONAL_LINK_LEVEL_CATALOG_INVALID",
+                21,
+            ),
+            (
+                "empowered-recognized-1",
+                [
+                    row(
+                        "empowered-bond",
+                        1,
+                        provenance="recognized-reviewed",
+                        raw="Empowered Bond",
+                        label="Empowered Bond",
+                    )
+                ],
+                "ADDITIONAL_LINK_LEVEL_CATALOG_INVALID",
+                21,
+            ),
+            (
+                "powerful-bond-level",
+                [row("powerful-bond", 1, label="Powerful Bond")],
+                "ADDITIONAL_LINK_LEVEL_CATALOG_INVALID",
+                21,
+            ),
+            (
+                "inspiring-bond-level",
+                [row("inspiring-bond", 1, label="Inspiring Bond")],
+                "ADDITIONAL_LINK_LEVEL_CATALOG_INVALID",
+                21,
+            ),
+            (
+                "unknown-provenance",
+                [row("manual-level-0001", 1, provenance="forged")],
+                "ADDITIONAL_LINK_LEVEL_PROVENANCE_INVALID",
+                21,
+            ),
+            (
+                "unreviewed-provenance",
+                [row("manual-level-0001", 1, provenance="unreviewed")],
+                "ADDITIONAL_LINK_LEVEL_PROVENANCE_INVALID",
+                21,
+            ),
+            (
+                "missing-provenance",
+                [row("manual-level-0001", 1, provenance=None)],
+                "ADDITIONAL_LINK_LEVEL_PROVENANCE_INVALID",
+                21,
+            ),
+            (
+                "empty-provenance",
+                [row("manual-level-0001", 1, provenance="")],
+                "ADDITIONAL_LINK_LEVEL_PROVENANCE_INVALID",
+                21,
+            ),
+            (
+                "recognized-without-source",
+                [row("manual-level-0001", 1, provenance="recognized-reviewed")],
+                "ADDITIONAL_LINK_LEVEL_PROVENANCE_INVALID",
+                21,
+            ),
+            (
+                "recognized-short-digest",
+                [
+                    row(
+                        "manual-level-0001",
+                        1,
+                        provenance="recognized-reviewed",
+                        recognition={"kind": "advisory-text", "digest": "x"},
+                    )
+                ],
+                "ADDITIONAL_LINK_LEVEL_PROVENANCE_INVALID",
+                21,
+            ),
+            (
+                "recognized-uppercase-digest",
+                [
+                    row(
+                        "manual-level-0001",
+                        1,
+                        provenance="recognized-reviewed",
+                        recognition={"kind": "advisory-text", "digest": "A" * 64},
+                    )
+                ],
+                "ADDITIONAL_LINK_LEVEL_PROVENANCE_INVALID",
+                21,
+            ),
+            (
+                "recognized-null-digest-whitespace",
+                [
+                    row(
+                        "manual-level-0001",
+                        1,
+                        provenance="recognized-reviewed",
+                        raw="   ",
+                        recognition={"kind": "advisory-text", "digest": None},
+                    )
+                ],
+                "ADDITIONAL_LINK_LEVEL_PROVENANCE_INVALID",
+                21,
+            ),
+            (
+                "string-levels",
+                [row("manual-level-0001", "2")],
+                "ADDITIONAL_LINK_LEVEL_VALUE_INVALID",
+                21,
+            ),
+            (
+                "fractional-levels",
+                [row("manual-level-0001", 2.9)],
+                "ADDITIONAL_LINK_LEVEL_VALUE_INVALID",
+                21,
+            ),
+            (
+                "boolean-levels",
+                [row("manual-level-0001", True)],
+                "ADDITIONAL_LINK_LEVEL_VALUE_INVALID",
+                21,
+            ),
+            (
+                "catalog-empowered-with-raw",
+                [
+                    row(
+                        "empowered-bond",
+                        2,
+                        provenance="catalog-default",
+                        raw="Empowered Bond",
+                        label="Empowered Bond",
+                    )
+                ],
+                "ADDITIONAL_LINK_LEVEL_PROVENANCE_INVALID",
+                21,
+            ),
+            (
+                "catalog-empowered-with-digest",
+                [
+                    row(
+                        "empowered-bond",
+                        2,
+                        provenance="catalog-default",
+                        recognition=good_digest,
+                        label="Empowered Bond",
+                    )
+                ],
+                "ADDITIONAL_LINK_LEVEL_PROVENANCE_INVALID",
+                21,
+            ),
+        ]
+        for label, rows, code, base in negative_cases:
+            with self.subTest(label=label):
+                result = self._evaluate_with_levels(rows, base_level=base)
+                self._assert_unavailable(result, code=code, expected_effective=base + 1)
+
+        for label, base in (
+            ("string-base", "21"),
+            ("fractional-base", 21.0),
+            ("boolean-base", True),
+        ):
+            with self.subTest(label=label):
+                result = self._evaluate_with_levels(
+                    [row("manual-level-0001", 1, active="inactive")],
+                    base_level=base,
+                )
+                self.assertFalse(result.available)
+                self.assertTrue(
+                    any(
+                        reason["code"] == "FLAME_LINK_BASE_LEVEL_INVALID"
+                        for reason in result.reasons
+                    )
+                )
+                self.assertIsNone(result.effectiveFlameLinkLevel)
+
+        positive_cases: list[tuple[str, list[dict[str, Any]], int]] = [
+            (
+                "manual-generic-plus-1",
+                [row("manual-level-0001", 1)],
+                22,
+            ),
+            (
+                "manual-generic-minus-1",
+                [row("manual-level-0001", -1)],
+                20,
+            ),
+            (
+                "recognized-generic-plus-1-raw",
+                [
+                    row(
+                        "manual-level-0001",
+                        1,
+                        provenance="recognized-reviewed",
+                        raw="+1 to Level of all Link Skill Gems",
+                    )
+                ],
+                22,
+            ),
+            (
+                "recognized-generic-plus-1-digest",
+                [
+                    row(
+                        "manual-level-0001",
+                        1,
+                        provenance="recognized-reviewed",
+                        recognition=good_digest,
+                    )
+                ],
+                22,
+            ),
+            (
+                "empowered-catalog-2",
+                [
+                    row(
+                        "empowered-bond",
+                        2,
+                        provenance="catalog-default",
+                        label="Empowered Bond",
+                    )
+                ],
+                23,
+            ),
+            (
+                "empowered-manual-2",
+                [
+                    row(
+                        "empowered-bond",
+                        2,
+                        provenance="manual-reviewed",
+                        label="Empowered Bond",
+                    )
+                ],
+                23,
+            ),
+            (
+                "empowered-recognized-2",
+                [
+                    row(
+                        "empowered-bond",
+                        2,
+                        provenance="recognized-reviewed",
+                        raw="Empowered Bond",
+                        label="Empowered Bond",
+                    )
+                ],
+                23,
+            ),
+        ]
+        for label, rows, expected_level in positive_cases:
+            with self.subTest(label=label):
+                result = self._evaluate_with_levels(rows)
+                self.assertTrue(result.available, result.reasons)
+                self.assertEqual(result.effectiveFlameLinkLevel, expected_level)
+
 
 if __name__ == "__main__":
     unittest.main()

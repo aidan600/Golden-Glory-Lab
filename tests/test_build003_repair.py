@@ -424,7 +424,7 @@ class FlameLinkArithmeticRepairTests(unittest.TestCase):
         result = evaluate_flame_link(chain, self.table)
         self.assertFalse(result.available)
         self.assertIn(
-            "ADDITIONAL_LINK_LEVEL_UNREVIEWED",
+            "ADDITIONAL_LINK_LEVEL_PROVENANCE_INVALID",
             {reason["code"] for reason in result.reasons},
         )
 

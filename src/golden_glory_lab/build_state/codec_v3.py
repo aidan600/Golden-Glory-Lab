@@ -802,6 +802,19 @@ def _validate_flame_link_player_chain(value: Any) -> None:
                     "FLAME_LINK_PROVENANCE_INVARIANT",
                     f"{context}: catalog-default is only allowed for empowered-bond with levels 2",
                 )
+            if level_raw != "":
+                _fail(
+                    "FLAME_LINK_PROVENANCE_INVARIANT",
+                    f"{context}: catalog-default requires empty rawSourceText",
+                )
+            if (
+                level_recognition.get("kind") != "none"
+                or level_recognition.get("digest") is not None
+            ):
+                _fail(
+                    "FLAME_LINK_PROVENANCE_INVARIANT",
+                    f"{context}: catalog-default requires recognitionSource kind none with null digest",
+                )
         if level_provenance == "recognized-reviewed":
             has_raw = bool(level_raw.strip())
             has_digest = (

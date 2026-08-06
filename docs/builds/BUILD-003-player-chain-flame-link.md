@@ -72,11 +72,19 @@ semantics. The decoder additionally supports one explicit old-draft
 compatibility normalization: injection of a wholly absent `recognitionSource`
 property (`{kind:"none",digest:null}`), marked migrated/upgrade-pending.
 Present partial or malformed `recognitionSource` values are rejected, not
-repaired. Cross-record `contributionId` uniqueness remains a codec/decoder
-invariant because it is not represented as JSON Schema uniqueness by nested
-property. Scalar reviewed blocks disallow `catalog-default`; that provenance is
-reserved for the protected Powerful Bond, Inspiring Bond, and Empowered Bond
-templates.
+repaired. Cross-record `contributionId` uniqueness and strict decoded integer
+representation are codec/decoder invariants. Draft 2020-12 treats values such as
+`2.0` as mathematical integers, while the canonical codec requires actual JSON
+integer tokens. Scalar reviewed blocks disallow `catalog-default`; that
+provenance is reserved for the protected Powerful Bond, Inspiring Bond, and
+Empowered Bond templates.
+
+Empowered Bond identity is always `levels == 2` regardless of provenance.
+Powerful Bond and Inspiring Bond are never additional Link gem-level sources.
+`catalog-default` Empowered Bond rows require empty raw text and
+`recognitionSource` none/null. Direct domain evaluation fails closed for
+malformed level identity, provenance, source identity, and numeric
+representation.
 
 ## Desktop
 

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from dataclasses import dataclass
 from decimal import ROUND_HALF_UP, Decimal, localcontext
 from importlib import resources
@@ -876,13 +877,36 @@ def _resolve_conditionals(
     return active_values, details, reasons
 
 
+_DIGEST_RE = re.compile(r"^[0-9a-f]{64}$")
+_RECOGNITION_KINDS_WITH_DIGEST = frozenset(
+    {"advisory-text", "pob-import", "copied-text"}
+)
+
+
+def _has_valid_level_recognition_source(recognition_source: Any) -> bool:
+    if not isinstance(recognition_source, Mapping):
+        return False
+    if set(recognition_source.keys()) - {"kind", "digest"}:
+        return False
+    kind = recognition_source.get("kind")
+    digest = recognition_source.get("digest")
+    if kind not in _RECOGNITION_KINDS_WITH_DIGEST:
+        return False
+    return isinstance(digest, str) and bool(_DIGEST_RE.fullmatch(digest))
+
+
+def _has_level_source_identity(raw_source_text: Any, recognition_source: Any) -> bool:
+    if isinstance(raw_source_text, str) and bool(raw_source_text.strip()):
+        return True
+    return _has_valid_level_recognition_source(recognition_source)
+
+
 def _resolve_levels(
     level_block: Mapping[str, Any],
 ) -> tuple[int | None, int | None, int | None, dict[str, Any], list[dict[str, Any]]]:
     reasons: list[dict[str, Any]] = []
-    try:
-        base_level = int(level_block["baseLevel"])
-    except (KeyError, TypeError, ValueError):
+    raw_base = level_block.get("baseLevel")
+    if not isinstance(raw_base, int) or isinstance(raw_base, bool):
         return (
             None,
             None,
@@ -895,6 +919,7 @@ def _resolve_levels(
                 )
             ],
         )
+    base_level = raw_base
     additions = level_block.get("additionalLinkGemLevels", [])
     if not isinstance(additions, list):
         return (
@@ -923,9 +948,8 @@ def _resolve_levels(
         active_state = raw.get("activeState")
         provenance = raw.get("provenanceKind")
         contribution_id = raw.get("contributionId")
-        try:
-            levels = int(raw["levels"])
-        except (KeyError, TypeError, ValueError):
+        raw_levels = raw.get("levels")
+        if not isinstance(raw_levels, int) or isinstance(raw_levels, bool):
             reasons.append(
                 _reason(
                     "ADDITIONAL_LINK_LEVEL_VALUE_INVALID",
@@ -937,12 +961,13 @@ def _resolve_levels(
                 {
                     "contributionId": contribution_id,
                     "label": raw.get("label"),
-                    "levels": raw.get("levels"),
+                    "levels": raw_levels,
                     "activeState": active_state,
                     "counted": False,
                 }
             )
             continue
+        levels = raw_levels
         detail = {
             "contributionId": contribution_id,
             "label": raw.get("label"),
@@ -976,10 +1001,32 @@ def _resolve_levels(
             )
             addition_details.append(detail)
             continue
-        if provenance in {None, "unreviewed"} or provenance == "":
+        if contribution_id in {"powerful-bond", "inspiring-bond"}:
             reasons.append(
                 _reason(
-                    "ADDITIONAL_LINK_LEVEL_UNREVIEWED",
+                    "ADDITIONAL_LINK_LEVEL_CATALOG_INVALID",
+                    "Powerful Bond and Inspiring Bond cannot be additional Link gem level sources",
+                    contributionId=contribution_id,
+                    label=raw.get("label"),
+                )
+            )
+            addition_details.append(detail)
+            continue
+        if contribution_id == "empowered-bond" and levels != 2:
+            reasons.append(
+                _reason(
+                    "ADDITIONAL_LINK_LEVEL_CATALOG_INVALID",
+                    "Empowered Bond additional Link levels must be exactly 2",
+                    contributionId=contribution_id,
+                    label=raw.get("label"),
+                )
+            )
+            addition_details.append(detail)
+            continue
+        if provenance in {None, ""} or provenance == "unreviewed":
+            reasons.append(
+                _reason(
+                    "ADDITIONAL_LINK_LEVEL_PROVENANCE_INVALID",
                     "An active additional Link gem level contribution requires reviewed provenance",
                     contributionId=contribution_id,
                     label=raw.get("label"),
@@ -988,17 +1035,54 @@ def _resolve_levels(
             addition_details.append(detail)
             continue
         if provenance == "catalog-default":
-            if contribution_id != "empowered-bond" or levels != 2:
+            recognition = raw.get("recognitionSource")
+            raw_text = raw.get("rawSourceText", "")
+            catalog_ok = (
+                contribution_id == "empowered-bond"
+                and levels == 2
+                and raw_text == ""
+                and isinstance(recognition, Mapping)
+                and recognition.get("kind") == "none"
+                and recognition.get("digest") is None
+                and set(recognition.keys()) <= {"kind", "digest"}
+            )
+            if not catalog_ok:
                 reasons.append(
                     _reason(
-                        "ADDITIONAL_LINK_LEVEL_UNREVIEWED",
-                        "catalog-default additional Link levels are only valid for empowered-bond with levels 2",
+                        "ADDITIONAL_LINK_LEVEL_PROVENANCE_INVALID",
+                        "catalog-default additional Link levels require clean Empowered Bond +2 metadata",
                         contributionId=contribution_id,
                         label=raw.get("label"),
                     )
                 )
                 addition_details.append(detail)
                 continue
+        elif provenance == "recognized-reviewed":
+            if not _has_level_source_identity(
+                raw.get("rawSourceText", ""),
+                raw.get("recognitionSource"),
+            ):
+                reasons.append(
+                    _reason(
+                        "ADDITIONAL_LINK_LEVEL_PROVENANCE_INVALID",
+                        "Recognized-reviewed additional Link levels require source identity",
+                        contributionId=contribution_id,
+                        label=raw.get("label"),
+                    )
+                )
+                addition_details.append(detail)
+                continue
+        elif provenance != "manual-reviewed":
+            reasons.append(
+                _reason(
+                    "ADDITIONAL_LINK_LEVEL_PROVENANCE_INVALID",
+                    "Additional Link gem level provenance is not recognized",
+                    contributionId=contribution_id,
+                    label=raw.get("label"),
+                )
+            )
+            addition_details.append(detail)
+            continue
         detail["counted"] = True
         addition_details.append(detail)
         additional_total += levels

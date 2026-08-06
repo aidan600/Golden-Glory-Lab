@@ -244,6 +244,7 @@ class FlameLinkCalculationTests(unittest.TestCase):
                         "activeState": "active",
                         "provenanceKind": "catalog-default",
                         "rawSourceText": "",
+                        "recognitionSource": {"kind": "none", "digest": None},
                     }
                 ],
             }
