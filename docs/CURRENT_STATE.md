@@ -18,17 +18,38 @@ ordering, audit conclusions, or settled decisions:
 
 ## Status date
 
-2026-08-05
+2026-08-06
 
 ## Current main milestone
 
-Phase 3 — first usable desktop BUILD — is in progress after
-[BUILD-001](builds/BUILD-001-desktop-intake-mapping.md),
-[BUILD-002](builds/BUILD-002-copied-item-enmity.md), and
-[BUILD-003](builds/BUILD-003-player-chain-flame-link.md) (implemented on the
-task branch; pending merge).
+Phase 3 — first usable desktop BUILD — continues after
+[BUILD-004](builds/BUILD-004-manual-calculator-reset.md) resets the ordinary
+product shell to a manual calculator, and
+[BUILD-005](builds/BUILD-005-publication-readiness.md) prepares that
+calculator for its first public v0.1.0 release (task branch; pending merge).
+
+## Ordinary product now
+
+The default desktop application is the **Golden Glory Calculator**:
+
+- two top-level pages: Calculator and Light Radius Breakdown;
+- manual Luminary and Mercenary/Enmity inputs;
+- live Effective Link Skill Buff Effect, Link Effect Multiplier, Flame Link
+  Added Fire Damage, and Enmity Fire Penetration;
+- optional Light Radius breakdown that can copy a total into the Calculator;
+- no DPS reporting.
+
+PoB import, item mapping/review, save/open, provenance/evidence UI, and the
+diagnostic `GoldenGloryApp` remain in the repository as experimental
+infrastructure. They are not required to use the calculator.
 
 ## Merged outcomes
+
+The two entries below describe the diagnostic desktop intake and copied-item
+workflow. That workflow remains in the repository as experimental/internal
+infrastructure behind the BUILD-002/BUILD-003 domain evaluators; it is not the
+ordinary product surface. The manual two-page calculator (BUILD-004) is the
+ordinary product, and it does not require PoB import to produce results.
 
 - **BUILD-001 (merged):** desktop intake; PoB raw XML and share-code import;
   source-order review; explicit Player and Mercenary mapping; opaque manual
@@ -38,19 +59,23 @@ task branch; pending merge).
   Enmity contribution; Enmity-only target, gap, surplus, cap, and
   input-beyond-cap reporting.
 
-## Implemented on the active BUILD-003 path
+## Implemented on recent BUILD paths
 
 - **BUILD-003:** manual-first Flame Link player chain; advisory Light Radius /
   Link Buff Effect recognition until explicit apply; build-state v3 with
-  `flameLinkPlayerChain` and `recognitionSource`; schema/codec agreement on
-  schema-expressible record semantics (codec-only `contributionId` uniqueness
-  and strict JSON integer representation; one decode-only absent-
-  `recognitionSource` injection); Empowered Bond always +2; Powerful/Inspiring
-  Bond never level sources; provenance-preserving Apply; nonnegative Maximum
-  Life; zero multiplier → available `0–0`; packaged level table 1–40 with
-  packaging digest pin; modelled nearest-integer half-up granted Added Fire
-  Damage; Flame Link desktop tab with general contribution editors; Enmity
-  isolation unchanged.
+  `flameLinkPlayerChain` and `recognitionSource`; packaged level table 1–40;
+  modelled nearest-integer half-up granted Added Fire Damage.
+- **BUILD-004:** ordinary-user product reset to the two-page manual calculator;
+  narrow `manual_calculator` domain seam; shared Enmity overcap helper;
+  one-file `GoldenGloryCalculator.exe` builder; PoB-modelled fractional
+  Fire Resistance truncation; fixed non-resizable window sized for populated
+  content on both tabs.
+- **BUILD-005:** first-public-release readiness for that calculator —
+  user-first README, `docs/INSTALL.md`, `docs/RELEASE_CHECKLIST.md`, a Windows
+  Setup installer (Inno Setup), and a single-command release builder producing
+  `GoldenGloryCalculator.exe` and `GoldenGloryCalculator-Setup.exe`. Product
+  acceptance for v0.1.0 is based on those two executables, not on source
+  checkout.
 
 ## Current phase
 
@@ -86,14 +111,9 @@ recognition remain unresolved and do not block the labelled manual workflow.
 
 ## Implemented manual fallbacks
 
-BUILD-002’s manual isolated Enmity path and BUILD-003’s manual Flame Link player
-chain are the first-release calculation surfaces. Missing mechanics evidence
-blocks automatic derivation, not manual entry and not the entire product
-workflow.
-
-Manual inputs must be labelled manual or user-attested, retain provenance and
-context where needed, never be silently combined with uncertain derived
-components, and remain distinct from confirmed mechanics-derived values.
+The ordinary calculator and BUILD-002/BUILD-003 domain paths are the
+first-release calculation surfaces. Missing mechanics evidence blocks automatic
+derivation, not manual entry and not the entire product workflow.
 
 ## Nonblocking deferred automation
 
@@ -120,7 +140,9 @@ imported.
 
 ## Next two planned outcomes
 
-1. Merge and package BUILD-003; confirm ordinary first-release workflow usability.
+1. Owner-test the installed and portable calculator executables; merge
+   BUILD-004/BUILD-005 when accepted; owner creates and publishes GitHub
+   Release v0.1.0 per [docs/RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md).
 2. Optional later evidence work for live Flame Link rounding and conditional
    auto-activation; exhaustive recognition remains deferred.
 

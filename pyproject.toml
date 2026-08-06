@@ -31,3 +31,4 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 "golden_glory_lab.runtime_data" = ["*.json"]
+"golden_glory_lab.desktop.icons" = ["*.png"]
