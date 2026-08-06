@@ -486,19 +486,35 @@ def _unavailable(
     )
 
 
+def _has_meaningful_source_identity(
+    raw_source_text: Any,
+    recognition_source: Any,
+) -> bool:
+    if isinstance(raw_source_text, str) and bool(raw_source_text.strip()):
+        return True
+    if not isinstance(recognition_source, Mapping):
+        return False
+    kind = recognition_source.get("kind")
+    digest = recognition_source.get("digest")
+    return kind in {"advisory-text", "pob-import", "copied-text"} and isinstance(
+        digest, str
+    ) and bool(digest)
+
+
 def _resolve_golden_glory(
     golden: Mapping[str, Any],
 ) -> tuple[Decimal | None, str | None, dict[str, Any], list[dict[str, Any]]]:
     allocated = golden.get("allocatedState")
     target = golden.get("mercenaryTargetState")
     review_state = golden.get("reviewState")
+    provenance = golden.get("provenanceKind")
     parsed = _parsed_optional(golden.get("reviewedLightRadiusPct"))
     detail = {
         "allocatedState": allocated,
         "mercenaryTargetState": target,
         "reviewState": review_state,
         "reviewedLightRadiusPct": None if parsed is None else parsed.lexeme,
-        "provenanceKind": golden.get("provenanceKind"),
+        "provenanceKind": provenance,
         "rawSourceText": golden.get("rawSourceText", ""),
         "contributionPct": None,
         "counted": False,
@@ -536,11 +552,30 @@ def _resolve_golden_glory(
             )
         )
         return None, None, detail, reasons
-    if review_state != "reviewed" or parsed is None:
+    if provenance == "unreviewed" or review_state != "reviewed" or parsed is None:
         reasons.append(
             _reason(
                 "GOLDEN_GLORY_LIGHT_RADIUS_UNREVIEWED",
                 "Reviewed Light Radius percent is required when Golden Glory is allocated to an active permanent Mercenary",
+            )
+        )
+        return None, None, detail, reasons
+    if provenance not in {"manual-reviewed", "recognized-reviewed"}:
+        reasons.append(
+            _reason(
+                "GOLDEN_GLORY_PROVENANCE_INVALID",
+                "Golden Glory Light Radius provenance must be manual-reviewed or recognized-reviewed",
+            )
+        )
+        return None, None, detail, reasons
+    if provenance == "recognized-reviewed" and not _has_meaningful_source_identity(
+        golden.get("rawSourceText", ""),
+        golden.get("recognitionSource"),
+    ):
+        reasons.append(
+            _reason(
+                "GOLDEN_GLORY_PROVENANCE_INVALID",
+                "Recognized-reviewed Golden Glory Light Radius requires source identity",
             )
         )
         return None, None, detail, reasons
@@ -553,11 +588,12 @@ def _resolve_direct(
     direct: Mapping[str, Any],
 ) -> tuple[Decimal | None, str | None, dict[str, Any], list[dict[str, Any]]]:
     review_state = direct.get("reviewState")
+    provenance = direct.get("provenanceKind")
     parsed = _parsed_optional(direct.get("reviewedDirectPct"))
     detail = {
         "reviewState": review_state,
         "reviewedDirectPct": None if parsed is None else parsed.lexeme,
-        "provenanceKind": direct.get("provenanceKind"),
+        "provenanceKind": provenance,
         "rawSourceText": direct.get("rawSourceText", ""),
         "contributionPct": None,
         "counted": False,
@@ -571,9 +607,48 @@ def _resolve_direct(
             )
         )
         return None, None, detail, reasons
+    if provenance not in {"manual-reviewed", "recognized-reviewed"}:
+        reasons.append(
+            _reason(
+                "DIRECT_LINK_BUFF_EFFECT_PROVENANCE_INVALID",
+                "Direct Link Buff Effect provenance must be manual-reviewed or recognized-reviewed",
+            )
+        )
+        return None, None, detail, reasons
+    if provenance == "recognized-reviewed" and not _has_meaningful_source_identity(
+        direct.get("rawSourceText", ""),
+        direct.get("recognitionSource"),
+    ):
+        reasons.append(
+            _reason(
+                "DIRECT_LINK_BUFF_EFFECT_PROVENANCE_INVALID",
+                "Recognized-reviewed direct Link Buff Effect requires source identity",
+            )
+        )
+        return None, None, detail, reasons
     detail["contributionPct"] = parsed.lexeme
     detail["counted"] = True
     return parsed.value, parsed.lexeme, detail, reasons
+
+
+def _catalog_conditional_ok(raw: Mapping[str, Any]) -> bool:
+    contribution_id = raw.get("contributionId")
+    kind = raw.get("kind")
+    value_pct = raw.get("valuePct")
+    if contribution_id == "powerful-bond":
+        if kind != "powerful-bond" or value_pct != "20":
+            return False
+    elif contribution_id == "inspiring-bond":
+        if kind != "inspiring-bond" or value_pct != "20":
+            return False
+    else:
+        return False
+    if raw.get("rawSourceText", "") != "":
+        return False
+    recognition = raw.get("recognitionSource")
+    if not isinstance(recognition, Mapping):
+        return False
+    return recognition.get("kind") == "none" and recognition.get("digest") is None
 
 
 def _resolve_conditionals(
@@ -605,14 +680,17 @@ def _resolve_conditionals(
             )
             continue
         state = raw.get("conditionState")
+        provenance = raw.get("provenanceKind")
+        kind = raw.get("kind")
+        contribution_id = raw.get("contributionId")
         parsed = _parsed_optional(raw.get("valuePct"))
         detail = {
-            "contributionId": raw.get("contributionId"),
+            "contributionId": contribution_id,
             "label": raw.get("label"),
-            "kind": raw.get("kind"),
+            "kind": kind,
             "conditionState": state,
             "valuePct": None if parsed is None else parsed.lexeme,
-            "provenanceKind": raw.get("provenanceKind"),
+            "provenanceKind": provenance,
             "rawSourceText": raw.get("rawSourceText", ""),
             "contributionPct": None,
             "counted": False,
@@ -625,7 +703,7 @@ def _resolve_conditionals(
                 _reason(
                     "CONDITIONAL_CONTRIBUTION_UNKNOWN",
                     "An unknown conditional Link Buff Effect source blocks final resolution",
-                    contributionId=raw.get("contributionId"),
+                    contributionId=contribution_id,
                     label=raw.get("label"),
                 )
             )
@@ -636,7 +714,145 @@ def _resolve_conditionals(
                 _reason(
                     "CONDITIONAL_CONTRIBUTION_STATE_INVALID",
                     "Conditional contribution state is not recognized",
-                    contributionId=raw.get("contributionId"),
+                    contributionId=contribution_id,
+                )
+            )
+            details.append(detail)
+            continue
+        if provenance in {None, "unreviewed", ""}:
+            reasons.append(
+                _reason(
+                    "CONDITIONAL_CONTRIBUTION_PROVENANCE_INVALID",
+                    "An active conditional contribution requires reviewed provenance",
+                    contributionId=contribution_id,
+                    label=raw.get("label"),
+                )
+            )
+            details.append(detail)
+            continue
+        if provenance == "catalog-default":
+            if not _catalog_conditional_ok(raw):
+                reasons.append(
+                    _reason(
+                        "CONDITIONAL_CONTRIBUTION_PROVENANCE_INVALID",
+                        "catalog-default conditionals must be exact Powerful Bond or Inspiring Bond templates",
+                        contributionId=contribution_id,
+                        label=raw.get("label"),
+                    )
+                )
+                details.append(detail)
+                continue
+        elif provenance == "manual-reviewed":
+            if contribution_id not in {"powerful-bond", "inspiring-bond"} and kind != "manual":
+                reasons.append(
+                    _reason(
+                        "CONDITIONAL_CONTRIBUTION_PROVENANCE_INVALID",
+                        "Generic manual conditionals require kind manual",
+                        contributionId=contribution_id,
+                        label=raw.get("label"),
+                    )
+                )
+                details.append(detail)
+                continue
+            if parsed is None:
+                reasons.append(
+                    _reason(
+                        "CONDITIONAL_CONTRIBUTION_VALUE_MISSING",
+                        "An active conditional contribution requires a reviewed valuePct",
+                        contributionId=contribution_id,
+                    )
+                )
+                details.append(detail)
+                continue
+            if contribution_id == "powerful-bond" and (
+                kind != "powerful-bond" or raw.get("valuePct") != "20"
+            ):
+                reasons.append(
+                    _reason(
+                        "CONDITIONAL_CONTRIBUTION_PROVENANCE_INVALID",
+                        "powerful-bond must retain kind powerful-bond and valuePct 20",
+                        contributionId=contribution_id,
+                    )
+                )
+                details.append(detail)
+                continue
+            if contribution_id == "inspiring-bond" and (
+                kind != "inspiring-bond" or raw.get("valuePct") != "20"
+            ):
+                reasons.append(
+                    _reason(
+                        "CONDITIONAL_CONTRIBUTION_PROVENANCE_INVALID",
+                        "inspiring-bond must retain kind inspiring-bond and valuePct 20",
+                        contributionId=contribution_id,
+                    )
+                )
+                details.append(detail)
+                continue
+        elif provenance == "recognized-reviewed":
+            if parsed is None:
+                reasons.append(
+                    _reason(
+                        "CONDITIONAL_CONTRIBUTION_VALUE_MISSING",
+                        "An active conditional contribution requires a reviewed valuePct",
+                        contributionId=contribution_id,
+                    )
+                )
+                details.append(detail)
+                continue
+            if contribution_id == "powerful-bond" and (
+                kind != "powerful-bond" or raw.get("valuePct") != "20"
+            ):
+                reasons.append(
+                    _reason(
+                        "CONDITIONAL_CONTRIBUTION_PROVENANCE_INVALID",
+                        "powerful-bond must retain kind powerful-bond and valuePct 20",
+                        contributionId=contribution_id,
+                    )
+                )
+                details.append(detail)
+                continue
+            if contribution_id == "inspiring-bond" and (
+                kind != "inspiring-bond" or raw.get("valuePct") != "20"
+            ):
+                reasons.append(
+                    _reason(
+                        "CONDITIONAL_CONTRIBUTION_PROVENANCE_INVALID",
+                        "inspiring-bond must retain kind inspiring-bond and valuePct 20",
+                        contributionId=contribution_id,
+                    )
+                )
+                details.append(detail)
+                continue
+            if contribution_id not in {"powerful-bond", "inspiring-bond"} and kind != "manual":
+                reasons.append(
+                    _reason(
+                        "CONDITIONAL_CONTRIBUTION_PROVENANCE_INVALID",
+                        "Generic recognized conditionals require kind manual",
+                        contributionId=contribution_id,
+                    )
+                )
+                details.append(detail)
+                continue
+            if not _has_meaningful_source_identity(
+                raw.get("rawSourceText", ""),
+                raw.get("recognitionSource"),
+            ):
+                reasons.append(
+                    _reason(
+                        "CONDITIONAL_CONTRIBUTION_PROVENANCE_INVALID",
+                        "Recognized-reviewed conditionals require source identity",
+                        contributionId=contribution_id,
+                    )
+                )
+                details.append(detail)
+                continue
+        else:
+            reasons.append(
+                _reason(
+                    "CONDITIONAL_CONTRIBUTION_PROVENANCE_INVALID",
+                    "Conditional contribution provenance is not recognized",
+                    contributionId=contribution_id,
+                    label=raw.get("label"),
                 )
             )
             details.append(detail)
@@ -646,7 +862,7 @@ def _resolve_conditionals(
                 _reason(
                     "CONDITIONAL_CONTRIBUTION_VALUE_MISSING",
                     "An active conditional contribution requires a reviewed valuePct",
-                    contributionId=raw.get("contributionId"),
+                    contributionId=contribution_id,
                 )
             )
             details.append(detail)
@@ -838,6 +1054,7 @@ def evaluate_flame_link(
     )
 
     life_review = life_block.get("reviewState")
+    life_provenance = life_block.get("provenanceKind")
     life_parsed = _parsed_optional(life_block.get("reviewedLife"))
     life_lexeme = None if life_parsed is None else life_parsed.lexeme
     life_reasons: list[dict[str, Any]] = []
@@ -853,6 +1070,23 @@ def evaluate_flame_link(
             _reason(
                 "LUMINARY_MAXIMUM_LIFE_NEGATIVE",
                 "Reviewed Luminary Maximum Life must be nonnegative; zero is valid",
+            )
+        )
+    elif life_provenance not in {"manual-reviewed", "recognized-reviewed"}:
+        life_reasons.append(
+            _reason(
+                "LUMINARY_MAXIMUM_LIFE_PROVENANCE_INVALID",
+                "Luminary Maximum Life provenance must be manual-reviewed or recognized-reviewed",
+            )
+        )
+    elif life_provenance == "recognized-reviewed" and not _has_meaningful_source_identity(
+        life_block.get("rawSourceText", ""),
+        life_block.get("recognitionSource"),
+    ):
+        life_reasons.append(
+            _reason(
+                "LUMINARY_MAXIMUM_LIFE_PROVENANCE_INVALID",
+                "Recognized-reviewed Luminary Maximum Life requires source identity",
             )
         )
 

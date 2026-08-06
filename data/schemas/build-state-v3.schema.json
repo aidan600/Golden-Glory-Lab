@@ -274,11 +274,19 @@
     },
     "recognitionSource": {
       "type": "object",
-      "required": ["kind", "digest"],
+      "required": [
+        "kind",
+        "digest"
+      ],
       "additionalProperties": false,
       "properties": {
         "kind": {
-          "enum": ["none", "advisory-text", "pob-import", "copied-text"]
+          "enum": [
+            "none",
+            "advisory-text",
+            "pob-import",
+            "copied-text"
+          ]
         },
         "digest": {
           "oneOf": [
@@ -300,7 +308,9 @@
                 "const": "none"
               }
             },
-            "required": ["kind"]
+            "required": [
+              "kind"
+            ]
           },
           "then": {
             "properties": {
@@ -466,10 +476,18 @@
           "additionalProperties": false,
           "properties": {
             "allocatedState": {
-              "enum": ["unknown", "allocated", "not-allocated"]
+              "enum": [
+                "unknown",
+                "allocated",
+                "not-allocated"
+              ]
             },
             "mercenaryTargetState": {
-              "enum": ["unknown", "yes", "no"]
+              "enum": [
+                "unknown",
+                "yes",
+                "no"
+              ]
             },
             "reviewedLightRadiusPct": {
               "$ref": "#/$defs/nullableDecimalText"
@@ -478,12 +496,14 @@
               "enum": [
                 "manual-reviewed",
                 "recognized-reviewed",
-                "unreviewed",
-                "catalog-default"
+                "unreviewed"
               ]
             },
             "reviewState": {
-              "enum": ["unreviewed", "reviewed"]
+              "enum": [
+                "unreviewed",
+                "reviewed"
+              ]
             },
             "rawSourceText": {
               "type": "string",
@@ -501,7 +521,9 @@
                     "const": "unreviewed"
                   }
                 },
-                "required": ["provenanceKind"]
+                "required": [
+                  "provenanceKind"
+                ]
               },
               "then": {
                 "properties": {
@@ -518,7 +540,9 @@
                     "const": "manual-reviewed"
                   }
                 },
-                "required": ["provenanceKind"]
+                "required": [
+                  "provenanceKind"
+                ]
               },
               "then": {
                 "properties": {
@@ -538,7 +562,9 @@
                     "const": "recognized-reviewed"
                   }
                 },
-                "required": ["provenanceKind"]
+                "required": [
+                  "provenanceKind"
+                ]
               },
               "then": {
                 "properties": {
@@ -553,8 +579,7 @@
                   {
                     "properties": {
                       "rawSourceText": {
-                        "type": "string",
-                        "minLength": 1
+                        "$ref": "#/$defs/meaningfulSourceText"
                       }
                     }
                   },
@@ -564,7 +589,11 @@
                         "type": "object",
                         "properties": {
                           "kind": {
-                            "enum": ["advisory-text", "pob-import", "copied-text"]
+                            "enum": [
+                              "advisory-text",
+                              "pob-import",
+                              "copied-text"
+                            ]
                           },
                           "digest": {
                             "type": "string",
@@ -597,12 +626,14 @@
               "enum": [
                 "manual-reviewed",
                 "recognized-reviewed",
-                "unreviewed",
-                "catalog-default"
+                "unreviewed"
               ]
             },
             "reviewState": {
-              "enum": ["unreviewed", "reviewed"]
+              "enum": [
+                "unreviewed",
+                "reviewed"
+              ]
             },
             "rawSourceText": {
               "type": "string",
@@ -620,7 +651,9 @@
                     "const": "unreviewed"
                   }
                 },
-                "required": ["provenanceKind"]
+                "required": [
+                  "provenanceKind"
+                ]
               },
               "then": {
                 "properties": {
@@ -637,7 +670,9 @@
                     "const": "manual-reviewed"
                   }
                 },
-                "required": ["provenanceKind"]
+                "required": [
+                  "provenanceKind"
+                ]
               },
               "then": {
                 "properties": {
@@ -657,7 +692,9 @@
                     "const": "recognized-reviewed"
                   }
                 },
-                "required": ["provenanceKind"]
+                "required": [
+                  "provenanceKind"
+                ]
               },
               "then": {
                 "properties": {
@@ -672,8 +709,7 @@
                   {
                     "properties": {
                       "rawSourceText": {
-                        "type": "string",
-                        "minLength": 1
+                        "$ref": "#/$defs/meaningfulSourceText"
                       }
                     }
                   },
@@ -683,7 +719,11 @@
                         "type": "object",
                         "properties": {
                           "kind": {
-                            "enum": ["advisory-text", "pob-import", "copied-text"]
+                            "enum": [
+                              "advisory-text",
+                              "pob-import",
+                              "copied-text"
+                            ]
                           },
                           "digest": {
                             "type": "string",
@@ -729,10 +769,18 @@
                 "$ref": "#/$defs/nullableDecimalText"
               },
               "conditionState": {
-                "enum": ["active", "inactive", "unknown"]
+                "enum": [
+                  "active",
+                  "inactive",
+                  "unknown"
+                ]
               },
               "kind": {
-                "enum": ["powerful-bond", "inspiring-bond", "manual"]
+                "enum": [
+                  "powerful-bond",
+                  "inspiring-bond",
+                  "manual"
+                ]
               },
               "provenanceKind": {
                 "enum": [
@@ -757,7 +805,9 @@
                       "const": "manual-reviewed"
                     }
                   },
-                  "required": ["provenanceKind"]
+                  "required": [
+                    "provenanceKind"
+                  ]
                 },
                 "then": {
                   "properties": {
@@ -774,7 +824,9 @@
                       "const": "recognized-reviewed"
                     }
                   },
-                  "required": ["provenanceKind"]
+                  "required": [
+                    "provenanceKind"
+                  ]
                 },
                 "then": {
                   "properties": {
@@ -786,8 +838,7 @@
                     {
                       "properties": {
                         "rawSourceText": {
-                          "type": "string",
-                          "minLength": 1
+                          "$ref": "#/$defs/meaningfulSourceText"
                         }
                       }
                     },
@@ -797,7 +848,11 @@
                           "type": "object",
                           "properties": {
                             "kind": {
-                              "enum": ["advisory-text", "pob-import", "copied-text"]
+                              "enum": [
+                                "advisory-text",
+                                "pob-import",
+                                "copied-text"
+                              ]
                             },
                             "digest": {
                               "type": "string",
@@ -808,6 +863,153 @@
                       }
                     }
                   ]
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "contributionId": {
+                      "const": "powerful-bond"
+                    }
+                  },
+                  "required": [
+                    "contributionId"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "kind": {
+                      "const": "powerful-bond"
+                    },
+                    "valuePct": {
+                      "const": "20"
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "contributionId": {
+                      "const": "inspiring-bond"
+                    }
+                  },
+                  "required": [
+                    "contributionId"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "kind": {
+                      "const": "inspiring-bond"
+                    },
+                    "valuePct": {
+                      "const": "20"
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "kind": {
+                      "const": "powerful-bond"
+                    }
+                  },
+                  "required": [
+                    "kind"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "contributionId": {
+                      "const": "powerful-bond"
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "kind": {
+                      "const": "inspiring-bond"
+                    }
+                  },
+                  "required": [
+                    "kind"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "contributionId": {
+                      "const": "inspiring-bond"
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "contributionId": {
+                      "not": {
+                        "enum": [
+                          "powerful-bond",
+                          "inspiring-bond"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "contributionId"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "kind": {
+                      "const": "manual"
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "provenanceKind": {
+                      "const": "catalog-default"
+                    }
+                  },
+                  "required": [
+                    "provenanceKind"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "contributionId": {
+                      "enum": [
+                        "powerful-bond",
+                        "inspiring-bond"
+                      ]
+                    },
+                    "rawSourceText": {
+                      "const": ""
+                    },
+                    "recognitionSource": {
+                      "type": "object",
+                      "required": [
+                        "kind",
+                        "digest"
+                      ],
+                      "additionalProperties": false,
+                      "properties": {
+                        "kind": {
+                          "const": "none"
+                        },
+                        "digest": {
+                          "type": "null"
+                        }
+                      }
+                    }
+                  }
                 }
               }
             ]
@@ -853,7 +1055,10 @@
                     "minLength": 1,
                     "maxLength": 80,
                     "not": {
-                      "enum": ["powerful-bond", "inspiring-bond"]
+                      "enum": [
+                        "powerful-bond",
+                        "inspiring-bond"
+                      ]
                     }
                   },
                   "label": {
@@ -865,7 +1070,11 @@
                     "type": "integer"
                   },
                   "activeState": {
-                    "enum": ["unknown", "active", "inactive"]
+                    "enum": [
+                      "unknown",
+                      "active",
+                      "inactive"
+                    ]
                   },
                   "provenanceKind": {
                     "enum": [
@@ -893,7 +1102,10 @@
                           "const": "catalog-default"
                         }
                       },
-                      "required": ["contributionId", "provenanceKind"]
+                      "required": [
+                        "contributionId",
+                        "provenanceKind"
+                      ]
                     },
                     "then": {
                       "properties": {
@@ -910,7 +1122,9 @@
                           "const": "catalog-default"
                         }
                       },
-                      "required": ["provenanceKind"]
+                      "required": [
+                        "provenanceKind"
+                      ]
                     },
                     "then": {
                       "properties": {
@@ -930,10 +1144,14 @@
                           "const": "manual-reviewed"
                         }
                       },
-                      "required": ["provenanceKind"]
+                      "required": [
+                        "provenanceKind"
+                      ]
                     },
                     "then": {
-                      "required": ["levels"]
+                      "required": [
+                        "levels"
+                      ]
                     }
                   },
                   {
@@ -943,16 +1161,19 @@
                           "const": "recognized-reviewed"
                         }
                       },
-                      "required": ["provenanceKind"]
+                      "required": [
+                        "provenanceKind"
+                      ]
                     },
                     "then": {
-                      "required": ["levels"],
+                      "required": [
+                        "levels"
+                      ],
                       "anyOf": [
                         {
                           "properties": {
                             "rawSourceText": {
-                              "type": "string",
-                              "minLength": 1
+                              "$ref": "#/$defs/meaningfulSourceText"
                             }
                           }
                         },
@@ -962,7 +1183,11 @@
                               "type": "object",
                               "properties": {
                                 "kind": {
-                                  "enum": ["advisory-text", "pob-import", "copied-text"]
+                                  "enum": [
+                                    "advisory-text",
+                                    "pob-import",
+                                    "copied-text"
+                                  ]
                                 },
                                 "digest": {
                                   "type": "string",
@@ -987,7 +1212,9 @@
                     "const": "manual-benchmark-default"
                   }
                 },
-                "required": ["baseLevelProvenance"]
+                "required": [
+                  "baseLevelProvenance"
+                ]
               },
               "then": {
                 "properties": {
@@ -1017,12 +1244,14 @@
               "enum": [
                 "manual-reviewed",
                 "recognized-reviewed",
-                "unreviewed",
-                "catalog-default"
+                "unreviewed"
               ]
             },
             "reviewState": {
-              "enum": ["unreviewed", "reviewed"]
+              "enum": [
+                "unreviewed",
+                "reviewed"
+              ]
             },
             "rawSourceText": {
               "type": "string",
@@ -1040,7 +1269,9 @@
                     "const": "unreviewed"
                   }
                 },
-                "required": ["provenanceKind"]
+                "required": [
+                  "provenanceKind"
+                ]
               },
               "then": {
                 "properties": {
@@ -1057,7 +1288,9 @@
                     "const": "manual-reviewed"
                   }
                 },
-                "required": ["provenanceKind"]
+                "required": [
+                  "provenanceKind"
+                ]
               },
               "then": {
                 "properties": {
@@ -1077,7 +1310,9 @@
                     "const": "recognized-reviewed"
                   }
                 },
-                "required": ["provenanceKind"]
+                "required": [
+                  "provenanceKind"
+                ]
               },
               "then": {
                 "properties": {
@@ -1092,8 +1327,7 @@
                   {
                     "properties": {
                       "rawSourceText": {
-                        "type": "string",
-                        "minLength": 1
+                        "$ref": "#/$defs/meaningfulSourceText"
                       }
                     }
                   },
@@ -1103,7 +1337,11 @@
                         "type": "object",
                         "properties": {
                           "kind": {
-                            "enum": ["advisory-text", "pob-import", "copied-text"]
+                            "enum": [
+                              "advisory-text",
+                              "pob-import",
+                              "copied-text"
+                            ]
                           },
                           "digest": {
                             "type": "string",
@@ -1125,6 +1363,11 @@
           "const": "flame-link-player-chain-v1"
         }
       }
+    },
+    "meaningfulSourceText": {
+      "type": "string",
+      "pattern": "\\S",
+      "maxLength": 100000
     }
   }
 }

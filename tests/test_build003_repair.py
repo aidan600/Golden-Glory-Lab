@@ -295,7 +295,10 @@ class CodecRepairTests(unittest.TestCase):
         )
         with self.assertRaises(BuildStateError) as raised:
             validate_document(document)
-        self.assertEqual(raised.exception.code, "FLAME_LINK_PROVENANCE_INVARIANT")
+        self.assertIn(
+            raised.exception.code,
+            {"FLAME_LINK_PROVENANCE", "FLAME_LINK_PROVENANCE_INVARIANT"},
+        )
 
 
 class FlameLinkArithmeticRepairTests(unittest.TestCase):

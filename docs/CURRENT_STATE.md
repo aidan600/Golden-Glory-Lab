@@ -42,11 +42,13 @@ task branch; pending merge).
 
 - **BUILD-003:** manual-first Flame Link player chain; advisory Light Radius /
   Link Buff Effect recognition until explicit apply; build-state v3 with
-  `flameLinkPlayerChain` and `recognitionSource`; provenance-preserving Apply;
-  nonnegative Maximum Life; zero multiplier → available `0–0`; packaged level
-  table 1–40 with packaging digest pin; modelled nearest-integer half-up granted
-  Added Fire Damage; Flame Link desktop tab with general contribution editors;
-  Enmity isolation unchanged.
+  `flameLinkPlayerChain` and `recognitionSource`; schema/codec agreement on
+  schema-expressible record semantics (codec-only `contributionId` uniqueness;
+  one decode-only absent-`recognitionSource` injection); provenance-preserving
+  Apply; nonnegative Maximum Life; zero multiplier → available `0–0`; packaged
+  level table 1–40 with packaging digest pin; modelled nearest-integer half-up
+  granted Added Fire Damage; Flame Link desktop tab with general contribution
+  editors; Enmity isolation unchanged.
 
 ## Current phase
 

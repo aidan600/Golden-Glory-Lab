@@ -63,11 +63,20 @@ Canonical schema/application contract version is `3.0.0`. New field
 `recognitionSource` (`none` / `advisory-text` / `pob-import` / `copied-text`).
 codec_v2 remains intact; v2→v3 migration inserts catalog defaults (benchmark
 base level 21, Powerful/Inspiring Bond at unknown, Empowered Bond +2 at unknown)
-without fabricating recognized facts. Missing `recognitionSource` on older v3
-documents is defaulted to `{kind:"none",digest:null}` on decode. Semantic
-invariants reject contradictory provenance/review/catalog combinations.
-Benchmark provenance requires an explicit level-21 benchmark selection — typing
-`21` alone does not invent it.
+without fabricating recognized facts. Semantic invariants reject contradictory
+provenance/review/catalog combinations. Benchmark provenance requires an
+explicit level-21 benchmark selection — typing `21` alone does not invent it.
+
+JSON Schema and codec validation agree for schema-expressible canonical record
+semantics. The decoder additionally supports one explicit old-draft
+compatibility normalization: injection of a wholly absent `recognitionSource`
+property (`{kind:"none",digest:null}`), marked migrated/upgrade-pending.
+Present partial or malformed `recognitionSource` values are rejected, not
+repaired. Cross-record `contributionId` uniqueness remains a codec/decoder
+invariant because it is not represented as JSON Schema uniqueness by nested
+property. Scalar reviewed blocks disallow `catalog-default`; that provenance is
+reserved for the protected Powerful Bond, Inspiring Bond, and Empowered Bond
+templates.
 
 ## Desktop
 

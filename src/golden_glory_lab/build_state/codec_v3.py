@@ -46,6 +46,17 @@ PROVENANCE_KINDS = {
     "unreviewed",
     "catalog-default",
 }
+SCALAR_PROVENANCE_KINDS = {
+    "manual-reviewed",
+    "recognized-reviewed",
+    "unreviewed",
+}
+CONTRIBUTION_PROVENANCE_KINDS = {
+    "manual-reviewed",
+    "recognized-reviewed",
+    "catalog-default",
+}
+CATALOG_CONDITIONAL_IDS = frozenset({"powerful-bond", "inspiring-bond"})
 REVIEW_STATES = {"unreviewed", "reviewed"}
 CONDITION_STATES = {"active", "inactive", "unknown"}
 CONDITIONAL_KINDS = {"powerful-bond", "inspiring-bond", "manual"}
@@ -364,10 +375,15 @@ def _validate_optional_nonnegative_decimal(value: Any, context: str) -> None:
         )
 
 
-def _validate_provenance(value: Any, context: str) -> str:
+def _validate_provenance(
+    value: Any,
+    context: str,
+    *,
+    allowed: set[str] | frozenset[str] = PROVENANCE_KINDS,
+) -> str:
     provenance = _require_string(value, context)
     assert provenance is not None
-    if provenance not in PROVENANCE_KINDS:
+    if provenance not in allowed:
         _fail("FLAME_LINK_PROVENANCE", f"{context} is not recognized")
     return provenance
 
@@ -397,6 +413,11 @@ def _validate_recognition_source(value: Any, context: str) -> dict[str, Any]:
     if kind not in RECOGNITION_SOURCE_KINDS:
         _fail("FLAME_LINK_RECOGNITION_SOURCE", f"{context}.kind is not recognized")
     digest = source["digest"]
+    if kind == "none" and digest is not None:
+        _fail(
+            "FLAME_LINK_RECOGNITION_SOURCE",
+            f"{context}.digest must be null when kind is none",
+        )
     if digest is None:
         if kind != "none":
             _fail(
@@ -459,28 +480,16 @@ def _validate_reviewed_field_semantics(
 
 
 def _ensure_recognition_source(container: dict[str, Any]) -> bool:
-    """Inject missing recognitionSource defaults. Reject malformed present values.
+    """Inject recognitionSource only when the entire property is absent.
 
-    Returns True when any default was injected because a key was absent.
+    Present values—including partial objects—are left untouched for ordinary
+    validation to accept or reject exactly as supplied.
     """
 
     if "recognitionSource" not in container:
         container["recognitionSource"] = empty_recognition_source()
         return True
-    source = container["recognitionSource"]
-    if not isinstance(source, dict):
-        _fail(
-            "FLAME_LINK_RECOGNITION_SOURCE",
-            "recognitionSource must be an object when present",
-        )
-    injected = False
-    if "kind" not in source:
-        source["kind"] = "none"
-        injected = True
-    if "digest" not in source:
-        source["digest"] = None
-        injected = True
-    return injected
+    return False
 
 
 def inject_recognition_source_defaults(
@@ -488,8 +497,9 @@ def inject_recognition_source_defaults(
 ) -> tuple[dict[str, Any], bool]:
     """Inject recognitionSource defaults for pre-repair v3 documents.
 
-    Returns ``(updated_chain, did_inject)``. Present but malformed recognition
-    sources are left for validation to reject; only absent keys are filled.
+    Returns ``(updated_chain, did_inject)``. Only a wholly absent
+    ``recognitionSource`` property is filled; present partial or malformed
+    values are left for validation to reject.
     """
 
     updated = _safe_deepcopy(
@@ -539,7 +549,9 @@ def _validate_flame_link_player_chain(value: Any) -> None:
         "flameLinkPlayerChain.goldenGlory.reviewedLightRadiusPct",
     )
     golden_provenance = _validate_provenance(
-        golden["provenanceKind"], "flameLinkPlayerChain.goldenGlory.provenanceKind"
+        golden["provenanceKind"],
+        "flameLinkPlayerChain.goldenGlory.provenanceKind",
+        allowed=SCALAR_PROVENANCE_KINDS,
     )
     golden_review = _validate_review_state(
         golden["reviewState"], "flameLinkPlayerChain.goldenGlory.reviewState"
@@ -573,6 +585,7 @@ def _validate_flame_link_player_chain(value: Any) -> None:
     direct_provenance = _validate_provenance(
         direct["provenanceKind"],
         "flameLinkPlayerChain.directLinkBuffEffect.provenanceKind",
+        allowed=SCALAR_PROVENANCE_KINDS,
     )
     direct_review = _validate_review_state(
         direct["reviewState"], "flameLinkPlayerChain.directLinkBuffEffect.reviewState"
@@ -647,7 +660,16 @@ def _validate_flame_link_player_chain(value: Any) -> None:
                 "CONDITIONAL_CATALOG_INVARIANT",
                 f"{context}: catalog kinds require matching catalog contribution IDs",
             )
-        provenance = _validate_provenance(entry["provenanceKind"], f"{context}.provenanceKind")
+        elif kind != "manual":
+            _fail(
+                "CONDITIONAL_CATALOG_INVARIANT",
+                f"{context}: generic conditional contributions require kind manual",
+            )
+        provenance = _validate_provenance(
+            entry["provenanceKind"],
+            f"{context}.provenanceKind",
+            allowed=CONTRIBUTION_PROVENANCE_KINDS,
+        )
         raw_text = _validate_raw_source(entry["rawSourceText"], f"{context}.rawSourceText")
         recognition = _validate_recognition_source(
             entry["recognitionSource"], f"{context}.recognitionSource"
@@ -657,6 +679,22 @@ def _validate_flame_link_player_chain(value: Any) -> None:
                 "FLAME_LINK_PROVENANCE_INVARIANT",
                 f"{context}: conditional contributions do not use unreviewed provenance",
             )
+        if provenance == "catalog-default":
+            if contribution_id not in CATALOG_CONDITIONAL_IDS:
+                _fail(
+                    "FLAME_LINK_PROVENANCE_INVARIANT",
+                    f"{context}: catalog-default is only allowed for powerful-bond or inspiring-bond",
+                )
+            if raw_text != "":
+                _fail(
+                    "FLAME_LINK_PROVENANCE_INVARIANT",
+                    f"{context}: catalog-default requires empty rawSourceText",
+                )
+            if recognition.get("kind") != "none" or recognition.get("digest") is not None:
+                _fail(
+                    "FLAME_LINK_PROVENANCE_INVARIANT",
+                    f"{context}: catalog-default requires recognitionSource kind none with null digest",
+                )
         if provenance == "recognized-reviewed":
             has_raw = bool(raw_text.strip())
             has_digest = (
@@ -742,7 +780,9 @@ def _validate_flame_link_player_chain(value: Any) -> None:
         if active_state not in ACTIVE_STATES:
             _fail("ADDITIONAL_LINK_LEVEL_STATE", f"{context}.activeState is not recognized")
         level_provenance = _validate_provenance(
-            entry["provenanceKind"], f"{context}.provenanceKind"
+            entry["provenanceKind"],
+            f"{context}.provenanceKind",
+            allowed=CONTRIBUTION_PROVENANCE_KINDS,
         )
         level_raw = _validate_raw_source(entry["rawSourceText"], f"{context}.rawSourceText")
         level_recognition = _validate_recognition_source(
@@ -787,6 +827,7 @@ def _validate_flame_link_player_chain(value: Any) -> None:
     life_provenance = _validate_provenance(
         life["provenanceKind"],
         "flameLinkPlayerChain.luminaryMaximumLife.provenanceKind",
+        allowed=SCALAR_PROVENANCE_KINDS,
     )
     life_review = _validate_review_state(
         life["reviewState"], "flameLinkPlayerChain.luminaryMaximumLife.reviewState"
