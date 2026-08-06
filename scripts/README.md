@@ -96,7 +96,7 @@ existing output unless `--overwrite` is supplied. Do not commit the executable.
 Build both public release artifacts (portable EXE and Windows Setup EXE) with
 one command:
 
-    pwsh scripts/build_release.ps1
+    powershell -File scripts/build_release.ps1
 
 This verifies a clean git working tree, records the source git SHA, builds
 the portable executable above, launches it briefly as a smoke check, then

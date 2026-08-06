@@ -12,7 +12,7 @@ human decision by the project owner.
 - [ ] Merge the publication pull request into `main`.
 - [ ] `git checkout main && git pull origin main` on a clean local clone.
 - [ ] Run the full test suite: `py -3.13 -m unittest discover -s tests`.
-- [ ] Run `pwsh scripts/build_release.ps1` to build both release artifacts.
+- [ ] Run `powershell -File scripts/build_release.ps1` to build both release artifacts.
 - [ ] Manually launch the **installed** version (run the Setup EXE first):
   - [ ] Install via `GoldenGloryCalculator-Setup.exe`.
   - [ ] Launch **Golden Glory Calculator** from the Start Menu.

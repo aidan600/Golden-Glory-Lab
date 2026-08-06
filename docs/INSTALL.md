@@ -72,7 +72,7 @@ This installs `ISCC.exe` (the Inno Setup command-line compiler), typically at
 
 ### Building both release artifacts
 
-    pwsh scripts/build_release.ps1
+    powershell -File scripts/build_release.ps1
 
 This single command:
 
