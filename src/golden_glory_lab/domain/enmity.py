@@ -79,6 +79,18 @@ class EnmityResult:
         }
 
 
+def enmity_overcap_contribution(uncapped: int, maximum: int) -> tuple[int, int]:
+    """Return (overcap, contribution) for integral final U and maximum M.
+
+    overcap = max(0, U - M)
+    contribution = min(200, overcap)
+    """
+
+    overcap = max(0, uncapped - maximum)
+    contribution = min(ENMITY_CAP, overcap)
+    return overcap, contribution
+
+
 def _reason(code: str, message: str, **values: Any) -> dict[str, Any]:
     return {"code": code, "message": message, **values}
 
@@ -331,8 +343,7 @@ def evaluate_enmity(
     # not depend on the process-global Decimal context precision.
     u = int(parsed_u.value)
     m = int(parsed_m.value)
-    overcap = max(0, u - m)
-    contribution = min(ENMITY_CAP, overcap)
+    overcap, contribution = enmity_overcap_contribution(u, m)
     beyond_cap = max(0, overcap - ENMITY_CAP)
     target = _parsed_optional(manual_input.get("target"))
     return EnmityResult(
