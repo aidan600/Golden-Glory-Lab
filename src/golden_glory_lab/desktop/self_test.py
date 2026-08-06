@@ -1,4 +1,4 @@
-"""Noninteractive packaged BUILD-002 self-test."""
+"""Noninteractive packaged BUILD-003 self-test."""
 
 from __future__ import annotations
 
@@ -14,12 +14,12 @@ from typing import Any
 from xml.parsers import expat
 
 from golden_glory_lab.build_state import imported_result_digest, serialize
-from golden_glory_lab.domain import ENMITY_OUTPUT_LABEL
+from golden_glory_lab.domain import ENMITY_OUTPUT_LABEL, FLAME_LINK_OUTPUT_LABEL
 from golden_glory_lab.item_review import ReviewSourceLocator
 
 from .service import ApplicationService
 
-SELF_TEST_VERSION = "2.0.0"
+SELF_TEST_VERSION = "3.0.0"
 
 
 def _fixture_path(*parts: str) -> Path:
@@ -170,6 +170,49 @@ def build_self_test_result() -> dict[str, Any]:
     ):
         raise AssertionError(f"unexpected Enmity-only target result: {result.target}")
 
+    if service.flame_link_table_status()["state"] != "available":
+        raise AssertionError("Flame Link level table failed to load")
+    chain = service.state["flameLinkPlayerChain"]
+    for entry in chain["conditionalContributions"]:
+        entry["conditionState"] = "inactive"
+    chain["flameLinkLevel"]["additionalLinkGemLevels"][0]["activeState"] = "active"
+    service.set_flame_link_input(
+        golden_glory={
+            "allocatedState": "allocated",
+            "mercenaryTargetState": "yes",
+            "reviewedLightRadiusPct": "40",
+            "provenanceKind": "manual-reviewed",
+            "reviewState": "reviewed",
+            "rawSourceText": "40% increased Light Radius",
+            "recognitionSource": {"kind": "none", "digest": None},
+        },
+        direct_link_buff_effect={
+            "reviewedDirectPct": "0",
+            "provenanceKind": "manual-reviewed",
+            "reviewState": "reviewed",
+            "rawSourceText": "",
+            "recognitionSource": {"kind": "none", "digest": None},
+        },
+        conditional_contributions=chain["conditionalContributions"],
+        flame_link_level=chain["flameLinkLevel"],
+        luminary_maximum_life={
+            "reviewedLife": "5000",
+            "provenanceKind": "manual-reviewed",
+            "reviewState": "reviewed",
+            "rawSourceText": "",
+            "recognitionSource": {"kind": "none", "digest": None},
+        },
+    )
+    flame = service.flame_link_result()
+    if (
+        not flame.available
+        or flame.label != FLAME_LINK_OUTPUT_LABEL
+        or flame.effectiveFlameLinkLevel != 23
+        or "DPS" in flame.label
+        or "dps" in flame.label.lower()
+    ):
+        raise AssertionError(f"unexpected Flame Link result: {flame.to_dict()}")
+
     with tempfile.TemporaryDirectory(prefix="ggl-build-self-test-") as temporary:
         state_path = Path(temporary) / "state.ggl.json"
         first_bytes = service.save(state_path)
@@ -177,7 +220,7 @@ def build_self_test_result() -> dict[str, Any]:
         reopened.open(state_path)
         second_bytes = reopened.save()
         if first_bytes != second_bytes or second_bytes != serialize(reopened.state):
-            raise AssertionError("saved and reopened canonical v2 bytes differ")
+            raise AssertionError("saved and reopened canonical v3 bytes differ")
 
     state = reopened.state
     imported = state["importedResult"]
@@ -189,6 +232,8 @@ def build_self_test_result() -> dict[str, Any]:
         raise AssertionError("explicit Mercenary mapping did not survive")
     if state["manualMercenaryEquipment"][0]["reviewState"] != "unparsed-manual":
         raise AssertionError("manual entry review state did not survive")
+    if state["schemaVersion"] != "3.0.0":
+        raise AssertionError("canonical schema version is not 3.0.0")
     reopened_copied = reopened.review_for_locator(
         ReviewSourceLocator("copied-text", copied_id)
     )
@@ -197,13 +242,16 @@ def build_self_test_result() -> dict[str, Any]:
     reopened_result = reopened.enmity_result()
     if reopened_result.to_dict() != result.to_dict():
         raise AssertionError("recomputed Enmity result changed after reopen")
+    reopened_flame = reopened.flame_link_result()
+    if reopened_flame.to_dict() != flame.to_dict():
+        raise AssertionError("recomputed Flame Link result changed after reopen")
 
     mechanics = reopened.mechanics_status()
     expected_blocked = {
         "derived-permanent-mercenary-sheet-values",
-        "complete-light-radius-direct-link",
-        "golden-glory-arithmetic",
-        "definitive-flame-link-granted-damage",
+        "live-game-flame-link-rounding",
+        "powerful-bond-auto-activation",
+        "exhaustive-player-chain-recognition",
         "sheet-derived-or-aggregate-enmity",
         "total-penetration",
         "damage-and-dps",
@@ -226,6 +274,8 @@ def build_self_test_result() -> dict[str, Any]:
         "recognitionState",
         "reviewInstanceId",
         "targetComparison",
+        "modelledIntegerMin",
+        "exactPreRoundMin",
     }
     persisted_derived_keys = sorted(derived_output_keys.intersection(keys))
     prohibited_names = {
@@ -274,8 +324,11 @@ def build_self_test_result() -> dict[str, Any]:
             "enmityOwnContribution": reopened_result.value,
             "enmityInputBeyondCap": reopened_result.inputBeyondCap,
             "enmityTargetState": reopened_result.target.state,
+            "flameLinkEffectiveLevel": reopened_flame.effectiveFlameLinkLevel,
+            "flameLinkModelledMin": reopened_flame.modelledIntegerMin,
+            "flameLinkModelledMax": reopened_flame.modelledIntegerMax,
             "stateSha256": hashlib.sha256(second_bytes).hexdigest(),
-            "deterministicV2SaveReopen": True,
+            "deterministicV3SaveReopen": True,
             "importedResultDigestVerified": True,
             "prohibitedOutputsUnavailable": sorted(expected_blocked),
             "noOwnershipFieldInvented": True,

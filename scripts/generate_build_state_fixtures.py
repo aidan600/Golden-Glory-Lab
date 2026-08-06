@@ -1,4 +1,4 @@
-"""Generate deterministic BUILD-001 v1 and BUILD-002 v2 state fixtures.
+"""Generate deterministic BUILD-001/002/003 state fixtures.
 
 Inputs are permanent synthetic PoB proof and copied-item fixtures in this
 repository. The script performs no network access and reports every target.
@@ -23,8 +23,14 @@ from golden_glory_lab.build_state.codec import (  # noqa: E402
 )
 from golden_glory_lab.build_state.codec_v2 import (  # noqa: E402
     empty_document as empty_v2_document,
-    migrate_v1_document,
+    migrate_v1_document as migrate_v1_to_v2,
     serialize as serialize_v2,
+)
+from golden_glory_lab.build_state.codec_v3 import (  # noqa: E402
+    empty_document as empty_v3_document,
+    empty_flame_link_player_chain,
+    migrate_v2_document as migrate_v2_to_v3,
+    serialize as serialize_v3,
 )
 from golden_glory_lab.pob_import import importPobRawXml  # noqa: E402
 
@@ -117,18 +123,64 @@ def _copied_enmity_v2() -> dict[str, Any]:
     return document
 
 
+def _flame_link_v3() -> dict[str, Any]:
+    document = empty_v3_document()
+    chain = empty_flame_link_player_chain()
+    chain["goldenGlory"].update(
+        {
+            "allocatedState": "allocated",
+            "mercenaryTargetState": "yes",
+            "reviewedLightRadiusPct": "40",
+            "provenanceKind": "manual-reviewed",
+            "reviewState": "reviewed",
+            "rawSourceText": "40% increased Light Radius",
+        }
+    )
+    chain["directLinkBuffEffect"].update(
+        {
+            "reviewedDirectPct": "15",
+            "provenanceKind": "manual-reviewed",
+            "reviewState": "reviewed",
+            "rawSourceText": "15% increased Effect of your Link Skills",
+        }
+    )
+    for entry in chain["conditionalContributions"]:
+        if entry["contributionId"] in {"powerful-bond", "inspiring-bond"}:
+            entry["conditionState"] = "inactive"
+    chain["flameLinkLevel"]["additionalLinkGemLevels"][0]["activeState"] = "active"
+    chain["luminaryMaximumLife"].update(
+        {
+            "reviewedLife": "5000",
+            "provenanceKind": "manual-reviewed",
+            "reviewState": "reviewed",
+            "rawSourceText": "Maximum Life 5000",
+        }
+    )
+    document["flameLinkPlayerChain"] = chain
+    document["userNotes"] = "Synthetic BUILD-003 Flame Link player-chain fixture."
+    return document
+
+
 def _documents() -> dict[str, tuple[dict[str, Any], Any]]:
     v1 = _v1_documents()
     expected: dict[str, tuple[dict[str, Any], Any]] = {
         name: (document, serialize_v1) for name, document in v1.items()
     }
     expected["empty-migrated.build-state-v2.json"] = (
-        migrate_v1_document(v1["empty.build-state-v1.json"]),
+        migrate_v1_to_v2(v1["empty.build-state-v1.json"]),
         serialize_v2,
     )
     expected["copied-enmity.build-state-v2.json"] = (
         _copied_enmity_v2(),
         serialize_v2,
+    )
+    expected["empty-migrated.build-state-v3.json"] = (
+        migrate_v2_to_v3(migrate_v1_to_v2(v1["empty.build-state-v1.json"])),
+        serialize_v3,
+    )
+    expected["flame-link.build-state-v3.json"] = (
+        _flame_link_v3(),
+        serialize_v3,
     )
     return expected
 

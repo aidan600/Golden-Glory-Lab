@@ -37,6 +37,13 @@ common review, gates, calculations, comparisons, and session/UI state are not
 persisted. Valid v1 documents are validated and migrated in memory before a v2
 session can replace the current one.
 
+`build-state-v3.schema.json` is the closed BUILD-003 saved-state contract. It
+retains the v2 intake/copied/Enmity surface and adds only
+`flameLinkPlayerChain` with strict Golden Glory, direct Link Buff Effect,
+conditional, level, and life inputs. Derived Flame Link results, recognition
+candidates, and session/UI state are not persisted. Valid v1/v2 documents are
+migrated in memory to v3 defaults without fabricating recognized facts.
+
 `runtime-evidence-gate-v1.schema.json` is the deeply closed build-time contract
 for the packaged Enmity runtime gate manifest. It distinguishes ordinal
 positive-capability thresholds from explicit policy modes, fixes contract and

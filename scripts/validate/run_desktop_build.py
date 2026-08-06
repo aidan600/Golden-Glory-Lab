@@ -38,6 +38,9 @@ EXPECTED_RUNTIME_RESOURCE_SHA256 = {
     "enmity-reference-v1.json": (
         "949b75154049bb4d1fb0ea55c6f640a43d95f09da26fd4deabf5b51e2303ce19"
     ),
+    "flame-link-level-table-v1.json": (
+        "e2cf21212e0ae6e1c3a23cab5ea94e723b69bf0bae89bf0c6906740c71c4a70c"
+    ),
 }
 BLOCKED_NETWORK_IMPORTS = {
     "aiohttp",
@@ -344,6 +347,9 @@ def _bundle_inventory(bundle: Path) -> dict[str, Any]:
         "runtimeEnmityReference": (
             "_internal/golden_glory_lab/runtime_data/enmity-reference-v1.json"
         ),
+        "runtimeFlameLinkTable": (
+            "_internal/golden_glory_lab/runtime_data/flame-link-level-table-v1.json"
+        ),
     }
     missing_resources = {
         label: path for label, path in required_resources.items() if path not in relative
@@ -601,6 +607,11 @@ def main(argv: Sequence[str] | None = None) -> int:
                 "--add-data",
                 (
                     f"{site_packages / 'golden_glory_lab' / 'runtime_data' / 'enmity-reference-v1.json'}"
+                    f"{os.pathsep}golden_glory_lab/runtime_data"
+                ),
+                "--add-data",
+                (
+                    f"{site_packages / 'golden_glory_lab' / 'runtime_data' / 'flame-link-level-table-v1.json'}"
                     f"{os.pathsep}golden_glory_lab/runtime_data"
                 ),
                 str(launcher),

@@ -7,11 +7,16 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 from typing import Any
 
-from golden_glory_lab.build_state import BuildStateError, MEASUREMENT_CONTEXT_FIELDS
+from golden_glory_lab.build_state import (
+    BuildStateError,
+    MEASUREMENT_CONTEXT_FIELDS,
+    empty_recognition_source,
+)
+from golden_glory_lab.domain import DecimalInputError
 from golden_glory_lab.item_review import ReviewSourceLocator
 
 from .dialogs import CopiedItemDialog, ManualEntryDialog, ShareCodeDialog
-from .service import ApplicationService
+from .service import ApplicationService, _decimals_equal
 
 
 def _state_text(value: dict[str, Any]) -> str:
@@ -80,8 +85,22 @@ def _enmity_result_text(result: Any, observed_summary: Any = None) -> str:
     )
 
 
+def _flame_link_result_text(result: Any) -> str:
+    if result.available:
+        numeric_summary = (
+            f"MODELLED INTEGER RANGE: {result.modelledIntegerMin}-"
+            f"{result.modelledIntegerMax} ({result.roundingPolicyLabel})\n"
+            f"EXACT PRE-ROUND: {result.exactPreRoundMin}-{result.exactPreRoundMax}"
+        )
+    else:
+        numeric_summary = (
+            "NUMERIC VALUE: unavailable (null; never substituted with zero or DPS)"
+        )
+    return numeric_summary + "\n\n" + _json_text(result.to_dict())
+
+
 class GoldenGloryApp(tk.Tk):
-    """BUILD-002 review UI; canonical behavior remains in ApplicationService."""
+    """BUILD-003 review UI; canonical behavior remains in ApplicationService."""
 
     def __init__(self, service: ApplicationService | None = None) -> None:
         super().__init__()
@@ -201,6 +220,7 @@ class GoldenGloryApp(tk.Tk):
         copied = ttk.Frame(notebook, padding=8)
         manual = ttk.Frame(notebook, padding=8)
         enmity = ttk.Frame(notebook, padding=8)
+        flame = ttk.Frame(notebook, padding=8)
         evidence = ttk.Frame(notebook, padding=8)
         notes = ttk.Frame(notebook, padding=8)
         notebook.add(mapping, text="Mapping")
@@ -209,6 +229,7 @@ class GoldenGloryApp(tk.Tk):
         notebook.add(copied, text="Copied")
         notebook.add(manual, text="Manual gear")
         notebook.add(enmity, text="Enmity")
+        notebook.add(flame, text="Flame Link")
         notebook.add(evidence, text="Evidence")
         notebook.add(notes, text="Notes")
         self._build_mapping(mapping)
@@ -217,6 +238,7 @@ class GoldenGloryApp(tk.Tk):
         self._build_copied(copied)
         self._build_manual(manual)
         self._build_enmity(enmity)
+        self._build_flame_link(flame)
         self._build_evidence(evidence)
         self._build_notes(notes)
 
@@ -714,6 +736,262 @@ class GoldenGloryApp(tk.Tk):
             "(none)": None
         }
 
+    def _build_flame_link(self, parent: ttk.Frame) -> None:
+        parent.grid_rowconfigure(1, weight=1)
+        parent.grid_columnconfigure(0, weight=1)
+        ttk.Label(
+            parent,
+            text=(
+                "Manual-first Flame Link player chain — Added Fire Damage granted to "
+                "linked Mercenary. Never DPS. Quality does not affect damage. "
+                "Unknown conditionals and additional levels block resolution."
+            ),
+            wraplength=900,
+        ).grid(row=0, column=0, sticky="w", pady=(0, 6))
+
+        outer = ttk.Frame(parent)
+        outer.grid(row=1, column=0, sticky="nsew")
+        outer.grid_rowconfigure(0, weight=1)
+        outer.grid_columnconfigure(0, weight=1)
+
+        canvas = tk.Canvas(outer, highlightthickness=0)
+        scrollbar = ttk.Scrollbar(outer, orient="vertical", command=canvas.yview)
+        canvas.configure(yscrollcommand=scrollbar.set)
+        canvas.grid(row=0, column=0, sticky="nsew")
+        scrollbar.grid(row=0, column=1, sticky="ns")
+        form = ttk.Frame(canvas, padding=(0, 0, 8, 0))
+        form_window = canvas.create_window((0, 0), window=form, anchor="nw")
+
+        def _sync_scroll(_event: object | None = None) -> None:
+            canvas.configure(scrollregion=canvas.bbox("all"))
+            canvas.itemconfigure(form_window, width=canvas.winfo_width())
+
+        form.bind("<Configure>", _sync_scroll)
+        canvas.bind("<Configure>", _sync_scroll)
+
+        self.flame_gg_allocated_var = tk.StringVar()
+        self.flame_gg_target_var = tk.StringVar()
+        self.flame_gg_lr_var = tk.StringVar()
+        self.flame_direct_var = tk.StringVar()
+        self.flame_life_var = tk.StringVar()
+        self.flame_base_level_var = tk.StringVar()
+        self.flame_powerful_state_var = tk.StringVar()
+        self.flame_inspiring_state_var = tk.StringVar()
+        self.flame_empowered_state_var = tk.StringVar()
+        self.flame_recognize_var = tk.StringVar()
+        self._flame_recognition_candidates: list[Any] = []
+        self._flame_pending_benchmark = False
+
+        row = 0
+        gg = ttk.Labelframe(form, text="Golden Glory / Light Radius", padding=6)
+        gg.grid(row=row, column=0, sticky="ew", pady=(0, 6))
+        gg.grid_columnconfigure(1, weight=1)
+        ttk.Label(gg, text="Allocated").grid(row=0, column=0, sticky="w")
+        ttk.Combobox(
+            gg,
+            textvariable=self.flame_gg_allocated_var,
+            values=("unknown", "allocated", "not-allocated"),
+            state="readonly",
+            width=18,
+        ).grid(row=0, column=1, sticky="w", padx=(6, 0))
+        ttk.Label(gg, text="Mercenary target").grid(row=1, column=0, sticky="w")
+        ttk.Combobox(
+            gg,
+            textvariable=self.flame_gg_target_var,
+            values=("unknown", "yes", "no"),
+            state="readonly",
+            width=18,
+        ).grid(row=1, column=1, sticky="w", padx=(6, 0))
+        ttk.Label(gg, text="Reviewed Light Radius %").grid(row=2, column=0, sticky="w")
+        ttk.Entry(gg, textvariable=self.flame_gg_lr_var, width=18).grid(
+            row=2, column=1, sticky="w", padx=(6, 0)
+        )
+
+        row += 1
+        direct = ttk.Labelframe(form, text="Direct Link Skill Buff Effect", padding=6)
+        direct.grid(row=row, column=0, sticky="ew", pady=(0, 6))
+        direct.grid_columnconfigure(1, weight=1)
+        ttk.Label(direct, text="Reviewed direct %").grid(row=0, column=0, sticky="w")
+        ttk.Entry(direct, textvariable=self.flame_direct_var, width=18).grid(
+            row=0, column=1, sticky="w", padx=(6, 0)
+        )
+
+        row += 1
+        conditional = ttk.Labelframe(form, text="Conditional contributions", padding=6)
+        conditional.grid(row=row, column=0, sticky="ew", pady=(0, 6))
+        conditional.grid_columnconfigure(0, weight=1)
+        catalog = ttk.Frame(conditional)
+        catalog.grid(row=0, column=0, sticky="ew")
+        ttk.Label(catalog, text="Powerful Bond (20%)").grid(row=0, column=0, sticky="w")
+        ttk.Combobox(
+            catalog,
+            textvariable=self.flame_powerful_state_var,
+            values=("unknown", "active", "inactive"),
+            state="readonly",
+            width=18,
+        ).grid(row=0, column=1, sticky="w", padx=(6, 0))
+        ttk.Label(catalog, text="Inspiring Bond (20%)").grid(row=1, column=0, sticky="w")
+        ttk.Combobox(
+            catalog,
+            textvariable=self.flame_inspiring_state_var,
+            values=("unknown", "active", "inactive"),
+            state="readonly",
+            width=18,
+        ).grid(row=1, column=1, sticky="w", padx=(6, 0))
+        columns = ("id", "label", "value", "state", "kind", "provenance")
+        self.flame_conditional_tree = ttk.Treeview(
+            conditional, columns=columns, show="headings", height=5
+        )
+        for name, heading, width in (
+            ("id", "ID", 140),
+            ("label", "Label", 140),
+            ("value", "Value %", 70),
+            ("state", "State", 80),
+            ("kind", "Kind", 100),
+            ("provenance", "Provenance", 120),
+        ):
+            self.flame_conditional_tree.heading(name, text=heading)
+            self.flame_conditional_tree.column(name, width=width, minwidth=60)
+        self.flame_conditional_tree.grid(row=1, column=0, sticky="ew", pady=(6, 0))
+        conditional_buttons = ttk.Frame(conditional)
+        conditional_buttons.grid(row=2, column=0, sticky="w", pady=(4, 0))
+        ttk.Button(
+            conditional_buttons,
+            text="Add conditional",
+            command=self._add_flame_conditional,
+        ).pack(side="left")
+        ttk.Button(
+            conditional_buttons,
+            text="Edit selected",
+            command=self._edit_flame_conditional,
+        ).pack(side="left", padx=(6, 0))
+        ttk.Button(
+            conditional_buttons,
+            text="Delete selected",
+            command=self._delete_flame_conditional,
+        ).pack(side="left", padx=(6, 0))
+
+        row += 1
+        level = ttk.Labelframe(form, text="Flame Link level", padding=6)
+        level.grid(row=row, column=0, sticky="ew", pady=(0, 6))
+        level.grid_columnconfigure(0, weight=1)
+        level_top = ttk.Frame(level)
+        level_top.grid(row=0, column=0, sticky="ew")
+        ttk.Label(level_top, text="Base level").grid(row=0, column=0, sticky="w")
+        ttk.Entry(level_top, textvariable=self.flame_base_level_var, width=18).grid(
+            row=0, column=1, sticky="w", padx=(6, 0)
+        )
+        ttk.Button(
+            level_top,
+            text="Set level-21 benchmark",
+            command=self._set_flame_benchmark_level,
+        ).grid(row=0, column=2, sticky="w", padx=(6, 0))
+        ttk.Label(level_top, text="Empowered Bond (+2 levels)").grid(
+            row=1, column=0, sticky="w"
+        )
+        ttk.Combobox(
+            level_top,
+            textvariable=self.flame_empowered_state_var,
+            values=("unknown", "active", "inactive"),
+            state="readonly",
+            width=18,
+        ).grid(row=1, column=1, sticky="w", padx=(6, 0))
+        level_columns = ("id", "label", "levels", "state", "provenance")
+        self.flame_level_tree = ttk.Treeview(
+            level, columns=level_columns, show="headings", height=5
+        )
+        for name, heading, width in (
+            ("id", "ID", 140),
+            ("label", "Label", 160),
+            ("levels", "Levels", 70),
+            ("state", "State", 80),
+            ("provenance", "Provenance", 120),
+        ):
+            self.flame_level_tree.heading(name, text=heading)
+            self.flame_level_tree.column(name, width=width, minwidth=60)
+        self.flame_level_tree.grid(row=1, column=0, sticky="ew", pady=(6, 0))
+        level_buttons = ttk.Frame(level)
+        level_buttons.grid(row=2, column=0, sticky="w", pady=(4, 0))
+        ttk.Button(
+            level_buttons, text="Add level", command=self._add_flame_level
+        ).pack(side="left")
+        ttk.Button(
+            level_buttons, text="Edit selected", command=self._edit_flame_level
+        ).pack(side="left", padx=(6, 0))
+        ttk.Button(
+            level_buttons, text="Delete selected", command=self._delete_flame_level
+        ).pack(side="left", padx=(6, 0))
+
+        row += 1
+        life = ttk.Labelframe(form, text="Luminary Maximum Life", padding=6)
+        life.grid(row=row, column=0, sticky="ew", pady=(0, 6))
+        life.grid_columnconfigure(1, weight=1)
+        ttk.Label(life, text="Reviewed life").grid(row=0, column=0, sticky="w")
+        ttk.Entry(life, textvariable=self.flame_life_var, width=18).grid(
+            row=0, column=1, sticky="w", padx=(6, 0)
+        )
+
+        row += 1
+        recognize = ttk.Labelframe(
+            form, text="Advisory recognition (does not auto-apply)", padding=6
+        )
+        recognize.grid(row=row, column=0, sticky="ew", pady=(0, 6))
+        recognize.grid_columnconfigure(0, weight=1)
+        ttk.Entry(recognize, textvariable=self.flame_recognize_var).grid(
+            row=0, column=0, sticky="ew"
+        )
+        ttk.Button(
+            recognize,
+            text="Recognize text",
+            command=self._recognize_flame_link_text,
+        ).grid(row=0, column=1, padx=(6, 0))
+        self.flame_recognition_list = tk.Listbox(recognize, height=6, exportselection=False)
+        self.flame_recognition_list.grid(
+            row=1, column=0, columnspan=2, sticky="ew", pady=(6, 0)
+        )
+        recognition_buttons = ttk.Frame(recognize)
+        recognition_buttons.grid(row=2, column=0, columnspan=2, sticky="w", pady=(4, 0))
+        ttk.Button(
+            recognition_buttons,
+            text="Apply selected",
+            command=self._apply_selected_recognition,
+        ).pack(side="left")
+        ttk.Button(
+            recognition_buttons,
+            text="Dismiss",
+            command=self._dismiss_recognition_candidates,
+        ).pack(side="left", padx=(6, 0))
+        recognition_page = ttk.Frame(recognize)
+        recognition_page.grid(row=3, column=0, columnspan=2, sticky="ew", pady=(6, 0))
+        recognition_page.grid_rowconfigure(0, weight=1)
+        recognition_page.grid_columnconfigure(0, weight=1)
+        self.flame_recognition_detail = self._text_box(recognition_page)
+        self.flame_recognition_detail.grid(row=0, column=0, sticky="nsew")
+        self.flame_recognition_detail.configure(height=5)
+        self.flame_recognition_list.bind(
+            "<<ListboxSelect>>", self._show_recognition_candidate_detail
+        )
+
+        row += 1
+        ttk.Button(
+            form,
+            text="Apply Flame Link input",
+            command=self._apply_flame_link_input,
+        ).grid(row=row, column=0, sticky="w", pady=(0, 6))
+
+        row += 1
+        result_frame = ttk.Labelframe(form, text="Result", padding=6)
+        result_frame.grid(row=row, column=0, sticky="nsew")
+        result_frame.grid_rowconfigure(0, weight=1)
+        result_frame.grid_columnconfigure(0, weight=1)
+        result_page = ttk.Frame(result_frame)
+        result_page.grid(row=0, column=0, sticky="nsew")
+        result_page.grid_rowconfigure(0, weight=1)
+        result_page.grid_columnconfigure(0, weight=1)
+        self.flame_result_detail = self._text_box(result_page)
+        self.flame_result_detail.grid(row=0, column=0, sticky="nsew")
+        self.flame_result_detail.configure(height=16)
+
     def _build_evidence(self, parent: ttk.Frame) -> None:
         parent.grid_rowconfigure(1, weight=1)
         parent.grid_rowconfigure(2, weight=1)
@@ -721,9 +999,9 @@ class GoldenGloryApp(tk.Tk):
         ttk.Label(
             parent,
             text=(
-                "Unavailable mechanics are evidence states, never numeric zero. "
-                "Only the separately labelled isolated manual Enmity contribution "
-                "is available in BUILD-002; every output below remains unavailable."
+                "Unavailable or deferred mechanics are evidence states, never numeric zero. "
+                "Manual-first Flame Link granted damage and the isolated manual Enmity "
+                "contribution are available on their own tabs. Outputs below remain blocked."
             ),
             wraplength=850,
         ).grid(row=0, column=0, sticky="w", pady=(0, 8))
@@ -791,6 +1069,12 @@ class GoldenGloryApp(tk.Tk):
                 pass
             else:
                 self._refresh_enmity()
+            try:
+                object.__getattribute__(self, "flame_gg_allocated_var")
+            except AttributeError:
+                pass
+            else:
+                self._refresh_flame_link()
             self._refresh_title()
         finally:
             self._refreshing = was_refreshing
@@ -799,6 +1083,10 @@ class GoldenGloryApp(tk.Tk):
         try:
             action()
         except BuildStateError as error:
+            messagebox.showerror(error.code, error.message, parent=self)
+            self._restore_rejected_edit()
+            return False
+        except DecimalInputError as error:
             messagebox.showerror(error.code, error.message, parent=self)
             self._restore_rejected_edit()
             return False
@@ -1119,6 +1407,485 @@ class GoldenGloryApp(tk.Tk):
             )
         )
 
+    def _set_flame_benchmark_level(self) -> None:
+        self.flame_base_level_var.set("21")
+        self._flame_pending_benchmark = True
+
+    def _prompt_contribution_fields(
+        self,
+        *,
+        title: str,
+        fields: dict[str, str],
+        state_values: tuple[str, ...],
+        state_key: str,
+    ) -> dict[str, str] | None:
+        dialog = tk.Toplevel(self)
+        dialog.title(title)
+        dialog.transient(self)
+        dialog.grab_set()
+        result: dict[str, str] = {}
+        vars_by_key: dict[str, tk.StringVar] = {}
+        for index, (key, value) in enumerate(fields.items()):
+            ttk.Label(dialog, text=key).grid(row=index, column=0, sticky="w", padx=6, pady=3)
+            variable = tk.StringVar(value=value)
+            vars_by_key[key] = variable
+            if key == state_key:
+                ttk.Combobox(
+                    dialog,
+                    textvariable=variable,
+                    values=state_values,
+                    state="readonly",
+                    width=28,
+                ).grid(row=index, column=1, sticky="ew", padx=6, pady=3)
+            else:
+                ttk.Entry(dialog, textvariable=variable, width=30).grid(
+                    row=index, column=1, sticky="ew", padx=6, pady=3
+                )
+
+        def accept() -> None:
+            for key, variable in vars_by_key.items():
+                result[key] = variable.get().strip()
+            dialog.destroy()
+
+        def cancel() -> None:
+            result.clear()
+            dialog.destroy()
+
+        buttons = ttk.Frame(dialog)
+        buttons.grid(row=len(fields), column=0, columnspan=2, pady=8)
+        ttk.Button(buttons, text="OK", command=accept).pack(side="left", padx=4)
+        ttk.Button(buttons, text="Cancel", command=cancel).pack(side="left", padx=4)
+        dialog.wait_window()
+        return result or None
+
+    def _add_flame_conditional(self) -> None:
+        values = self._prompt_contribution_fields(
+            title="Add conditional contribution",
+            fields={
+                "label": "Manual conditional",
+                "valuePct": "0",
+                "conditionState": "unknown",
+            },
+            state_values=("unknown", "active", "inactive"),
+            state_key="conditionState",
+        )
+        if values is None:
+            return
+        contribution_id = self.service.next_manual_conditional_id()
+        chain = self.service.state["flameLinkPlayerChain"]
+        conditionals = [dict(entry) for entry in chain["conditionalContributions"]]
+        conditionals.append(
+            {
+                "contributionId": contribution_id,
+                "label": values["label"] or contribution_id,
+                "valuePct": values["valuePct"] or "0",
+                "conditionState": values["conditionState"],
+                "kind": "manual",
+                "provenanceKind": "manual-reviewed",
+                "rawSourceText": "",
+                "recognitionSource": empty_recognition_source(),
+            }
+        )
+        self._guard(
+            lambda: self.service.set_flame_link_input(
+                conditional_contributions=conditionals
+            )
+        )
+
+    def _edit_flame_conditional(self) -> None:
+        selected = self.flame_conditional_tree.selection()
+        if not selected:
+            return
+        contribution_id = selected[0]
+        chain = self.service.state["flameLinkPlayerChain"]
+        current = next(
+            (
+                entry
+                for entry in chain["conditionalContributions"]
+                if entry["contributionId"] == contribution_id
+            ),
+            None,
+        )
+        if current is None:
+            return
+        if contribution_id in {"powerful-bond", "inspiring-bond"}:
+            messagebox.showinfo(
+                "Catalog convenience",
+                "Use the Powerful/Inspiring Bond controls for catalog rows.",
+                parent=self,
+            )
+            return
+        values = self._prompt_contribution_fields(
+            title="Edit conditional contribution",
+            fields={
+                "label": current["label"],
+                "valuePct": current["valuePct"] or "",
+                "conditionState": current["conditionState"],
+            },
+            state_values=("unknown", "active", "inactive"),
+            state_key="conditionState",
+        )
+        if values is None:
+            return
+        conditionals = []
+        for entry in chain["conditionalContributions"]:
+            updated = dict(entry)
+            if entry["contributionId"] == contribution_id:
+                updated["label"] = values["label"] or entry["label"]
+                updated["valuePct"] = values["valuePct"] or "0"
+                updated["conditionState"] = values["conditionState"]
+                updated["provenanceKind"] = "manual-reviewed"
+                updated["rawSourceText"] = ""
+                updated["recognitionSource"] = empty_recognition_source()
+            conditionals.append(updated)
+        self._guard(
+            lambda: self.service.set_flame_link_input(
+                conditional_contributions=conditionals
+            )
+        )
+
+    def _delete_flame_conditional(self) -> None:
+        selected = self.flame_conditional_tree.selection()
+        if not selected:
+            return
+        contribution_id = selected[0]
+        if contribution_id in {"powerful-bond", "inspiring-bond"}:
+            messagebox.showerror(
+                "Catalog protected",
+                "Catalog Powerful/Inspiring Bond rows cannot be deleted.",
+                parent=self,
+            )
+            return
+        chain = self.service.state["flameLinkPlayerChain"]
+        conditionals = [
+            dict(entry)
+            for entry in chain["conditionalContributions"]
+            if entry["contributionId"] != contribution_id
+        ]
+        self._guard(
+            lambda: self.service.set_flame_link_input(
+                conditional_contributions=conditionals
+            )
+        )
+
+    def _add_flame_level(self) -> None:
+        values = self._prompt_contribution_fields(
+            title="Add additional Link gem levels",
+            fields={
+                "label": "Manual Link gem levels",
+                "levels": "1",
+                "activeState": "unknown",
+            },
+            state_values=("unknown", "active", "inactive"),
+            state_key="activeState",
+        )
+        if values is None:
+            return
+        try:
+            levels = int(values["levels"])
+        except ValueError:
+            messagebox.showerror(
+                "ADDITIONAL_LINK_LEVEL_VALUE",
+                "Levels must be an integer",
+                parent=self,
+            )
+            return
+        contribution_id = self.service.next_manual_level_id()
+        chain = self.service.state["flameLinkPlayerChain"]
+        level = dict(chain["flameLinkLevel"])
+        additions = [dict(entry) for entry in level["additionalLinkGemLevels"]]
+        additions.append(
+            {
+                "contributionId": contribution_id,
+                "label": values["label"] or contribution_id,
+                "levels": levels,
+                "activeState": values["activeState"],
+                "provenanceKind": "manual-reviewed",
+                "rawSourceText": "",
+                "recognitionSource": empty_recognition_source(),
+            }
+        )
+        level["additionalLinkGemLevels"] = additions
+        self._guard(lambda: self.service.set_flame_link_input(flame_link_level=level))
+
+    def _edit_flame_level(self) -> None:
+        selected = self.flame_level_tree.selection()
+        if not selected:
+            return
+        contribution_id = selected[0]
+        chain = self.service.state["flameLinkPlayerChain"]
+        current = next(
+            (
+                entry
+                for entry in chain["flameLinkLevel"]["additionalLinkGemLevels"]
+                if entry["contributionId"] == contribution_id
+            ),
+            None,
+        )
+        if current is None:
+            return
+        if contribution_id == "empowered-bond":
+            messagebox.showinfo(
+                "Catalog convenience",
+                "Use the Empowered Bond control for the catalog row.",
+                parent=self,
+            )
+            return
+        values = self._prompt_contribution_fields(
+            title="Edit additional Link gem levels",
+            fields={
+                "label": current["label"],
+                "levels": str(current["levels"]),
+                "activeState": current["activeState"],
+            },
+            state_values=("unknown", "active", "inactive"),
+            state_key="activeState",
+        )
+        if values is None:
+            return
+        try:
+            levels = int(values["levels"])
+        except ValueError:
+            messagebox.showerror(
+                "ADDITIONAL_LINK_LEVEL_VALUE",
+                "Levels must be an integer",
+                parent=self,
+            )
+            return
+        level = dict(chain["flameLinkLevel"])
+        additions = []
+        for entry in level["additionalLinkGemLevels"]:
+            updated = dict(entry)
+            if entry["contributionId"] == contribution_id:
+                updated["label"] = values["label"] or entry["label"]
+                updated["levels"] = levels
+                updated["activeState"] = values["activeState"]
+                updated["provenanceKind"] = "manual-reviewed"
+                updated["rawSourceText"] = ""
+                updated["recognitionSource"] = empty_recognition_source()
+            additions.append(updated)
+        level["additionalLinkGemLevels"] = additions
+        self._guard(lambda: self.service.set_flame_link_input(flame_link_level=level))
+
+    def _delete_flame_level(self) -> None:
+        selected = self.flame_level_tree.selection()
+        if not selected:
+            return
+        contribution_id = selected[0]
+        if contribution_id == "empowered-bond":
+            messagebox.showerror(
+                "Catalog protected",
+                "Catalog Empowered Bond row cannot be deleted.",
+                parent=self,
+            )
+            return
+        chain = self.service.state["flameLinkPlayerChain"]
+        level = dict(chain["flameLinkLevel"])
+        level["additionalLinkGemLevels"] = [
+            dict(entry)
+            for entry in level["additionalLinkGemLevels"]
+            if entry["contributionId"] != contribution_id
+        ]
+        self._guard(lambda: self.service.set_flame_link_input(flame_link_level=level))
+
+    def _merge_reviewed_decimal_field(
+        self,
+        *,
+        current: dict[str, Any],
+        value_key: str,
+        widget_text: str,
+        extra: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        updated = dict(current)
+        if extra:
+            updated.update(extra)
+        text = widget_text.strip()
+        new_value = text or None
+        if _decimals_equal(current.get(value_key), new_value):
+            updated[value_key] = current.get(value_key)
+            return updated
+        updated[value_key] = new_value
+        if new_value is None:
+            updated["provenanceKind"] = "unreviewed"
+            updated["reviewState"] = "unreviewed"
+            updated["rawSourceText"] = ""
+            updated["recognitionSource"] = empty_recognition_source()
+        else:
+            updated["provenanceKind"] = "manual-reviewed"
+            updated["reviewState"] = "reviewed"
+            updated["rawSourceText"] = ""
+            updated["recognitionSource"] = empty_recognition_source()
+        return updated
+
+    def _apply_flame_link_input(self) -> None:
+        chain = self.service.state["flameLinkPlayerChain"]
+        lr = self.flame_gg_lr_var.get()
+        direct = self.flame_direct_var.get()
+        life = self.flame_life_var.get()
+        try:
+            base_level = int(self.flame_base_level_var.get().strip())
+        except ValueError:
+            messagebox.showerror(
+                "FLAME_LINK_BASE_LEVEL",
+                "Base Flame Link level must be an integer",
+                parent=self,
+            )
+            return
+
+        def apply() -> None:
+            conditionals = []
+            for entry in chain["conditionalContributions"]:
+                updated = dict(entry)
+                if entry["contributionId"] == "powerful-bond":
+                    updated["conditionState"] = self.flame_powerful_state_var.get()
+                elif entry["contributionId"] == "inspiring-bond":
+                    updated["conditionState"] = self.flame_inspiring_state_var.get()
+                conditionals.append(updated)
+            additions = []
+            for entry in chain["flameLinkLevel"]["additionalLinkGemLevels"]:
+                updated = dict(entry)
+                if entry["contributionId"] == "empowered-bond":
+                    updated["activeState"] = self.flame_empowered_state_var.get()
+                additions.append(updated)
+            if self._flame_pending_benchmark and base_level == 21:
+                base_provenance = "manual-benchmark-default"
+            elif base_level == chain["flameLinkLevel"]["baseLevel"]:
+                base_provenance = chain["flameLinkLevel"]["baseLevelProvenance"]
+            else:
+                base_provenance = "manual-reviewed"
+            golden = self._merge_reviewed_decimal_field(
+                current=chain["goldenGlory"],
+                value_key="reviewedLightRadiusPct",
+                widget_text=lr,
+                extra={
+                    "allocatedState": self.flame_gg_allocated_var.get(),
+                    "mercenaryTargetState": self.flame_gg_target_var.get(),
+                },
+            )
+            direct_block = self._merge_reviewed_decimal_field(
+                current=chain["directLinkBuffEffect"],
+                value_key="reviewedDirectPct",
+                widget_text=direct,
+            )
+            life_block = self._merge_reviewed_decimal_field(
+                current=chain["luminaryMaximumLife"],
+                value_key="reviewedLife",
+                widget_text=life,
+            )
+            self.service.set_flame_link_input(
+                golden_glory=golden,
+                direct_link_buff_effect=direct_block,
+                conditional_contributions=conditionals,
+                flame_link_level={
+                    "baseLevel": base_level,
+                    "baseLevelProvenance": base_provenance,
+                    "additionalLinkGemLevels": additions,
+                },
+                luminary_maximum_life=life_block,
+            )
+            self._flame_pending_benchmark = False
+
+        self._guard(apply)
+
+    def _recognize_flame_link_text(self) -> None:
+        text = self.flame_recognize_var.get()
+        lines = self.service.recognize_player_chain_from_text(text)
+        self._flame_recognition_candidates = list(lines)
+        self.flame_recognition_list.delete(0, "end")
+        for line in lines:
+            label = line.label or line.kind
+            self.flame_recognition_list.insert(
+                "end",
+                f"{line.kind} | {line.signedValueLexeme} | {label} | {line.sourceLine}",
+            )
+        self._set_readonly_text(
+            self.flame_recognition_detail,
+            _json_text([line.to_dict() for line in lines])
+            if lines
+            else "No advisory player-chain lines recognized.",
+        )
+
+    def _show_recognition_candidate_detail(self, _event: tk.Event[Any] | None = None) -> None:
+        selection = self.flame_recognition_list.curselection()
+        if not selection:
+            return
+        index = selection[0]
+        if index >= len(self._flame_recognition_candidates):
+            return
+        candidate = self._flame_recognition_candidates[index]
+        self._set_readonly_text(
+            self.flame_recognition_detail,
+            _json_text(candidate.to_dict()),
+        )
+
+    def _dismiss_recognition_candidates(self) -> None:
+        self._flame_recognition_candidates = []
+        self.flame_recognition_list.delete(0, "end")
+        self._set_readonly_text(
+            self.flame_recognition_detail,
+            "Recognition candidates dismissed.",
+        )
+
+    def _apply_selected_recognition(self) -> None:
+        selection = self.flame_recognition_list.curselection()
+        if not selection:
+            messagebox.showinfo(
+                "Select a candidate",
+                "Select a recognition candidate before applying.",
+                parent=self,
+            )
+            return
+        candidate = self._flame_recognition_candidates[selection[0]]
+
+        def apply() -> None:
+            raw = candidate.sourceLine
+            kind = candidate.kind
+            value = candidate.signedValueLexeme or "0"
+            if kind == "light-radius":
+                self.service.apply_recognized_light_radius(
+                    value, raw_source_text=raw
+                )
+            elif kind == "direct-link-buff-effect":
+                self.service.apply_recognized_direct_link_buff_effect(
+                    value, raw_source_text=raw
+                )
+            elif kind == "empowered-bond-level":
+                self.service.apply_recognized_empowered_bond_level(
+                    raw_source_text=raw
+                )
+            elif kind == "generic-link-gem-level":
+                self.service.apply_recognized_generic_link_gem_level(
+                    int(value),
+                    raw_source_text=raw,
+                    label=candidate.label or "Additional Link Skill Gem levels",
+                )
+            elif kind == "powerful-bond-conditional":
+                self.service.apply_recognized_conditional(
+                    contribution_id="powerful-bond",
+                    label=candidate.label or "Powerful Bond",
+                    value_pct="20",
+                    kind="powerful-bond",
+                    raw_source_text=raw,
+                    condition_state="unknown",
+                )
+            elif kind == "inspiring-bond-conditional":
+                self.service.apply_recognized_conditional(
+                    contribution_id="inspiring-bond",
+                    label=candidate.label or "Inspiring Bond",
+                    value_pct="20",
+                    kind="inspiring-bond",
+                    raw_source_text=raw,
+                    condition_state="unknown",
+                )
+            else:
+                raise BuildStateError(
+                    "RECOGNITION_KIND_UNSUPPORTED",
+                    f"Recognition kind {kind} cannot be applied",
+                )
+
+        if self._guard(apply):
+            self._dismiss_recognition_candidates()
+
     def _notes_modified(self, _event: tk.Event[Any]) -> None:
         if self._refreshing:
             self.notes_text.edit_modified(False)
@@ -1151,6 +1918,7 @@ class GoldenGloryApp(tk.Tk):
             self._refresh_copied()
             self._refresh_manual()
             self._refresh_enmity()
+            self._refresh_flame_link()
             self._refresh_evidence()
             self._refresh_notes()
             self._refresh_title()
@@ -1166,10 +1934,11 @@ class GoldenGloryApp(tk.Tk):
                     f"Player mapping: {status['playerMapping']}",
                     f"Mercenary: {status['mercenarySourceMode']}",
                     f"File: {status['localFileState']}",
-                    f"Migration: {'upgrade pending' if status['migrationPending'] else 'current v2'}",
+                    f"Migration: {'upgrade pending' if status['migrationPending'] else 'current v3'}",
                     f"Importer warnings: {status['importerWarnings']}",
                     f"Runtime evidence: {status['runtimeEvidence']}",
                     f"Enmity output: {status['enmityOutput']}",
+                    f"Flame Link: {status['flameLinkOutput']}",
                     f"Mechanics: {status['mechanics']}",
                     f"Intake ready: {'yes' if status['intakeReady'] else 'no'}",
                 )
@@ -1424,6 +2193,79 @@ class GoldenGloryApp(tk.Tk):
         self._set_readonly_text(
             self.enmity_gate_detail,
             _json_text(self.service.runtime_evidence_status()),
+        )
+
+    def _refresh_flame_link(self) -> None:
+        chain = self.service.state["flameLinkPlayerChain"]
+        golden = chain["goldenGlory"]
+        self.flame_gg_allocated_var.set(golden["allocatedState"])
+        self.flame_gg_target_var.set(golden["mercenaryTargetState"])
+        self.flame_gg_lr_var.set(golden["reviewedLightRadiusPct"] or "")
+        self.flame_direct_var.set(
+            chain["directLinkBuffEffect"]["reviewedDirectPct"] or ""
+        )
+        self.flame_life_var.set(chain["luminaryMaximumLife"]["reviewedLife"] or "")
+        self.flame_base_level_var.set(str(chain["flameLinkLevel"]["baseLevel"]))
+        self._flame_pending_benchmark = False
+        powerful = next(
+            (
+                entry
+                for entry in chain["conditionalContributions"]
+                if entry["contributionId"] == "powerful-bond"
+            ),
+            {"conditionState": "unknown"},
+        )
+        inspiring = next(
+            (
+                entry
+                for entry in chain["conditionalContributions"]
+                if entry["contributionId"] == "inspiring-bond"
+            ),
+            {"conditionState": "unknown"},
+        )
+        empowered = next(
+            (
+                entry
+                for entry in chain["flameLinkLevel"]["additionalLinkGemLevels"]
+                if entry["contributionId"] == "empowered-bond"
+            ),
+            {"activeState": "unknown"},
+        )
+        self.flame_powerful_state_var.set(powerful["conditionState"])
+        self.flame_inspiring_state_var.set(inspiring["conditionState"])
+        self.flame_empowered_state_var.set(empowered["activeState"])
+        self.flame_conditional_tree.delete(*self.flame_conditional_tree.get_children())
+        for entry in chain["conditionalContributions"]:
+            self.flame_conditional_tree.insert(
+                "",
+                "end",
+                iid=entry["contributionId"],
+                values=(
+                    entry["contributionId"],
+                    entry["label"],
+                    entry["valuePct"] or "",
+                    entry["conditionState"],
+                    entry["kind"],
+                    entry["provenanceKind"],
+                ),
+            )
+        self.flame_level_tree.delete(*self.flame_level_tree.get_children())
+        for entry in chain["flameLinkLevel"]["additionalLinkGemLevels"]:
+            self.flame_level_tree.insert(
+                "",
+                "end",
+                iid=entry["contributionId"],
+                values=(
+                    entry["contributionId"],
+                    entry["label"],
+                    entry["levels"],
+                    entry["activeState"],
+                    entry["provenanceKind"],
+                ),
+            )
+        self._set_readonly_text(
+            self.flame_result_detail,
+            _flame_link_result_text(self.service.flame_link_result()),
         )
 
     def _refresh_evidence(self) -> None:

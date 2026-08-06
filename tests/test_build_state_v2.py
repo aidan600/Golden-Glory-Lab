@@ -16,27 +16,28 @@ from referencing import Registry, Resource
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from golden_glory_lab.build_state import (  # noqa: E402
-    MAX_CONTEXT_FIELD_CHARACTERS,
-    MAX_SAVED_STATE_FILE_BYTES,
-    MEASUREMENT_CONTEXT_FIELDS,
-    BuildStateError,
-    atomic_save,
-    decode,
-    deserialize,
-    empty_document,
-    imported_result_digest,
-    load_file,
-    load_file_result,
-    migrate_v1_document,
-    serialize,
-    validate_document,
-)
 from golden_glory_lab.build_state import codec as legacy_codec  # noqa: E402
+from golden_glory_lab.build_state import codec_v2 as build_state  # noqa: E402
+from golden_glory_lab.build_state import codec_v3 as build_state_v3  # noqa: E402
 from golden_glory_lab.domain import DECIMAL_DIGIT_LIMIT  # noqa: E402
 from golden_glory_lab.desktop.service import ApplicationService  # noqa: E402
 from golden_glory_lab.item_review import COPIED_ITEM_LIMITS, ReviewSourceLocator  # noqa: E402
 from golden_glory_lab.pob_import import importPobRawXml  # noqa: E402
+
+MAX_CONTEXT_FIELD_CHARACTERS = build_state.MAX_CONTEXT_FIELD_CHARACTERS
+MAX_SAVED_STATE_FILE_BYTES = build_state.MAX_SAVED_STATE_FILE_BYTES
+MEASUREMENT_CONTEXT_FIELDS = build_state.MEASUREMENT_CONTEXT_FIELDS
+BuildStateError = build_state.BuildStateError
+atomic_save = build_state.atomic_save
+decode = build_state.decode
+deserialize = build_state.deserialize
+empty_document = build_state.empty_document
+imported_result_digest = build_state.imported_result_digest
+load_file = build_state.load_file
+load_file_result = build_state.load_file_result
+migrate_v1_document = build_state.migrate_v1_document
+serialize = build_state.serialize
+validate_document = build_state.validate_document
 
 BUILD_FIXTURES = ROOT / "fixtures" / "build_state"
 POB_FIXTURES = ROOT / "fixtures" / "pob" / "proof"
@@ -167,7 +168,11 @@ class BuildStateV1MigrationTests(unittest.TestCase):
     def test_empty_v1_migration_matches_committed_expected_fixture(self) -> None:
         source = (BUILD_FIXTURES / "empty.build-state-v1.json").read_bytes()
         expected = (BUILD_FIXTURES / "empty-migrated.build-state-v2.json").read_bytes()
-        self.assertEqual(decode(source).canonicalV2Bytes, expected)
+        # Working-tree checkout may still present CRLF on Windows; compare LF bytes.
+        self.assertEqual(
+            decode(source).canonicalV2Bytes,
+            expected.replace(b"\r\n", b"\n"),
+        )
 
     def test_service_open_is_upgrade_pending_dirty_and_never_writes_until_save(self) -> None:
         source = (BUILD_FIXTURES / "mapped.build-state-v1.json").read_bytes()
@@ -180,7 +185,8 @@ class BuildStateV1MigrationTests(unittest.TestCase):
             self.assertTrue(service.migration_pending)
             self.assertTrue(service.dirty)
             self.assertEqual(service.file_state, "upgrade-pending")
-            self.assertEqual(service.state["schemaVersion"], "2.0.0")
+            self.assertEqual(service.state["schemaVersion"], "3.0.0")
+            self.assertIn("flameLinkPlayerChain", service.state)
             saved = service.save()
             self.assertEqual(path.read_bytes(), saved)
             self.assertFalse(service.migration_pending)
@@ -691,8 +697,12 @@ class TransactionalOpenBoundaryTests(unittest.TestCase):
                 self.assertEqual(self._snapshot(service), before)
                 self._assert_refreshable(service)
 
+            # Current ApplicationService opens through v3. Use a current-version
+            # document so the simulated deepcopy failure is OPEN_STATE_NESTING,
+            # not a migration-path MIGRATION_NESTING from the shared copy module.
             nesting_path = directory / "nesting.json"
-            nesting_path.write_bytes(serialize(copied_enmity_document()))
+            nesting_v3 = build_state_v3.migrate_v2_document(copied_enmity_document())
+            nesting_path.write_bytes(build_state_v3.serialize(nesting_v3))
             with (
                 patch(
                     "golden_glory_lab.desktop.service.copy.deepcopy",
@@ -711,7 +721,7 @@ class TransactionalOpenBoundaryTests(unittest.TestCase):
             )
             with (
                 patch(
-                    "golden_glory_lab.build_state.codec_v2.copy.deepcopy",
+                    "golden_glory_lab.build_state.codec_v3.copy.deepcopy",
                     side_effect=RecursionError("simulated migration"),
                 ),
                 self.assertRaises(BuildStateError) as raised,
@@ -722,7 +732,8 @@ class TransactionalOpenBoundaryTests(unittest.TestCase):
             self._assert_refreshable(service)
 
     def test_moderately_deep_retained_material_still_opens(self) -> None:
-        document = imported_v2()
+        # Persist as current v3 so open is not an upgrade-pending migration.
+        document = build_state_v3.migrate_v2_document(imported_v2())
         nested: dict = {"leaf": "retained"}
         current = nested
         for index in range(40):
@@ -737,11 +748,14 @@ class TransactionalOpenBoundaryTests(unittest.TestCase):
         )
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary) / "deep.json"
-            path.write_bytes(serialize(document))
+            path.write_bytes(build_state_v3.serialize(document))
             service = ApplicationService()
             service.open(path)
             self.assertFalse(service.dirty)
-            self.assertEqual(len(service.item_reviews()), len(document["importedResult"]["document"]["items"]))
+            self.assertEqual(
+                len(service.item_reviews()),
+                len(document["importedResult"]["document"]["items"]),
+            )
 
 
 if __name__ == "__main__":

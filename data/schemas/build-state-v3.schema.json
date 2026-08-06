@@ -1,0 +1,1388 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://goldenglorylab.local/schemas/build-state-v3.schema.json",
+  "title": "Golden Glory Lab build state v3",
+  "description": "Canonical BUILD-003 user-authored content. Recognition, reviews, gates, calculations, paths, dirty state, and migration state are derived and excluded.",
+  "type": "object",
+  "required": [
+    "documentType",
+    "schemaVersion",
+    "applicationDataContractVersion",
+    "importerContractVersion",
+    "importedResult",
+    "importedResultSha256",
+    "playerItemSetOccurrenceId",
+    "mercenarySourceMode",
+    "mercenaryItemSetOccurrenceId",
+    "manualMercenaryEquipment",
+    "copiedItemEntries",
+    "enmityManualInput",
+    "flameLinkPlayerChain",
+    "userNotes"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "documentType": {
+      "const": "golden-glory-lab-build-state"
+    },
+    "schemaVersion": {
+      "const": "3.0.0"
+    },
+    "applicationDataContractVersion": {
+      "const": "3.0.0"
+    },
+    "importerContractVersion": {
+      "const": "1.0.0"
+    },
+    "importedResult": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "pob-neutral-import-v1.schema.json"
+        }
+      ]
+    },
+    "importedResultSha256": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      ]
+    },
+    "playerItemSetOccurrenceId": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1
+    },
+    "mercenarySourceMode": {
+      "enum": [
+        "not-yet-selected",
+        "mapped-item-set",
+        "manual-equipment"
+      ]
+    },
+    "mercenaryItemSetOccurrenceId": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "minLength": 1
+    },
+    "manualMercenaryEquipment": {
+      "type": "array",
+      "maxItems": 64,
+      "items": {
+        "$ref": "#/$defs/manualEquipment"
+      }
+    },
+    "copiedItemEntries": {
+      "type": "array",
+      "maxItems": 64,
+      "items": {
+        "$ref": "#/$defs/copiedItem"
+      }
+    },
+    "enmityManualInput": {
+      "$ref": "#/$defs/enmityManualInput"
+    },
+    "flameLinkPlayerChain": {
+      "$ref": "#/$defs/flameLinkPlayerChain"
+    },
+    "userNotes": {
+      "type": "string",
+      "maxLength": 100000
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "importedResult": {
+            "type": "null"
+          }
+        },
+        "required": [
+          "importedResult"
+        ]
+      },
+      "then": {
+        "properties": {
+          "importedResultSha256": {
+            "type": "null"
+          },
+          "playerItemSetOccurrenceId": {
+            "type": "null"
+          },
+          "mercenaryItemSetOccurrenceId": {
+            "type": "null"
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "importedResultSha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "mercenarySourceMode": {
+            "const": "mapped-item-set"
+          }
+        },
+        "required": [
+          "mercenarySourceMode"
+        ]
+      },
+      "then": {
+        "properties": {
+          "mercenaryItemSetOccurrenceId": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "mercenaryItemSetOccurrenceId": {
+            "type": "null"
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "manualEquipment": {
+      "type": "object",
+      "required": [
+        "entryId",
+        "slotLabel",
+        "rawText",
+        "reviewState",
+        "note"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "entryId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "slotLabel": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "rawText": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100000
+        },
+        "reviewState": {
+          "const": "unparsed-manual"
+        },
+        "note": {
+          "type": "string",
+          "maxLength": 10000
+        }
+      }
+    },
+    "copiedItem": {
+      "type": "object",
+      "required": [
+        "entryId",
+        "rawText",
+        "role",
+        "slotLabel",
+        "userLabel",
+        "note"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "entryId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "rawText": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100000
+        },
+        "role": {
+          "enum": [
+            "player",
+            "mercenary",
+            "unassigned"
+          ]
+        },
+        "slotLabel": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "userLabel": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "note": {
+          "type": "string",
+          "maxLength": 10000
+        }
+      }
+    },
+    "decimalText": {
+      "type": "string",
+      "maxLength": 130,
+      "pattern": "^(?=.{1,130}$)-?(?=(?:[^0-9]*[0-9]){1,128}[^0-9]*$)[0-9]+(?:\\.[0-9]+)?$"
+    },
+    "nonnegativeDecimalText": {
+      "type": "string",
+      "maxLength": 130,
+      "pattern": "^(?=.{1,130}$)(?=(?:[^0-9]*[0-9]){1,128}[^0-9]*$)[0-9]+(?:\\.[0-9]+)?$"
+    },
+    "nullableDecimalText": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/decimalText"
+        }
+      ]
+    },
+    "nullableNonnegativeDecimalText": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/nonnegativeDecimalText"
+        }
+      ]
+    },
+    "recognitionSource": {
+      "type": "object",
+      "required": [
+        "kind",
+        "digest"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "none",
+            "advisory-text",
+            "pob-import",
+            "copied-text"
+          ]
+        },
+        "digest": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            }
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "none"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "digest": {
+                "type": "null"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "digest": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "measurementContext": {
+      "type": "object",
+      "required": [
+        "mercenaryIdentityLevel",
+        "activeStateSelection",
+        "zoneOrUiContext",
+        "relevantEffectsConditions",
+        "equipmentStateDescription",
+        "captureTimingDescription"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "mercenaryIdentityLevel": {
+          "type": "string",
+          "maxLength": 10000
+        },
+        "activeStateSelection": {
+          "type": "string",
+          "maxLength": 10000
+        },
+        "zoneOrUiContext": {
+          "type": "string",
+          "maxLength": 10000
+        },
+        "relevantEffectsConditions": {
+          "type": "string",
+          "maxLength": 10000
+        },
+        "equipmentStateDescription": {
+          "type": "string",
+          "maxLength": 10000
+        },
+        "captureTimingDescription": {
+          "type": "string",
+          "maxLength": 10000
+        }
+      }
+    },
+    "reviewSourceLocator": {
+      "type": "object",
+      "required": [
+        "provenanceKind",
+        "sourceId"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "provenanceKind": {
+          "enum": [
+            "pob-import",
+            "copied-text",
+            "manual-entry"
+          ]
+        },
+        "sourceId": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "enmityManualInput": {
+      "type": "object",
+      "required": [
+        "finalUncappedFireResistance",
+        "maximumFireResistance",
+        "equippedState",
+        "equipmentInclusionState",
+        "measurementContext",
+        "targetGameVersionAcknowledgement",
+        "observedItemReference",
+        "target"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "finalUncappedFireResistance": {
+          "$ref": "#/$defs/nullableDecimalText"
+        },
+        "maximumFireResistance": {
+          "$ref": "#/$defs/nullableDecimalText"
+        },
+        "equippedState": {
+          "enum": [
+            "equipped",
+            "not-equipped",
+            "unknown"
+          ]
+        },
+        "equipmentInclusionState": {
+          "enum": [
+            "unrecorded",
+            "included",
+            "excluded",
+            "unknown"
+          ]
+        },
+        "measurementContext": {
+          "$ref": "#/$defs/measurementContext"
+        },
+        "targetGameVersionAcknowledgement": {
+          "enum": [
+            "confirmed-3.29.1",
+            "other-version",
+            "unknown"
+          ]
+        },
+        "observedItemReference": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/reviewSourceLocator"
+            }
+          ]
+        },
+        "target": {
+          "$ref": "#/$defs/nullableDecimalText"
+        }
+      }
+    },
+    "flameLinkPlayerChain": {
+      "type": "object",
+      "required": [
+        "goldenGlory",
+        "directLinkBuffEffect",
+        "conditionalContributions",
+        "flameLinkLevel",
+        "luminaryMaximumLife",
+        "roundingPolicyId",
+        "formulaVersionId"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "goldenGlory": {
+          "type": "object",
+          "required": [
+            "allocatedState",
+            "mercenaryTargetState",
+            "reviewedLightRadiusPct",
+            "provenanceKind",
+            "reviewState",
+            "rawSourceText",
+            "recognitionSource"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "allocatedState": {
+              "enum": [
+                "unknown",
+                "allocated",
+                "not-allocated"
+              ]
+            },
+            "mercenaryTargetState": {
+              "enum": [
+                "unknown",
+                "yes",
+                "no"
+              ]
+            },
+            "reviewedLightRadiusPct": {
+              "$ref": "#/$defs/nullableDecimalText"
+            },
+            "provenanceKind": {
+              "enum": [
+                "manual-reviewed",
+                "recognized-reviewed",
+                "unreviewed"
+              ]
+            },
+            "reviewState": {
+              "enum": [
+                "unreviewed",
+                "reviewed"
+              ]
+            },
+            "rawSourceText": {
+              "type": "string",
+              "maxLength": 100000
+            },
+            "recognitionSource": {
+              "$ref": "#/$defs/recognitionSource"
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "provenanceKind": {
+                    "const": "unreviewed"
+                  }
+                },
+                "required": [
+                  "provenanceKind"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "reviewState": {
+                    "const": "unreviewed"
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "provenanceKind": {
+                    "const": "manual-reviewed"
+                  }
+                },
+                "required": [
+                  "provenanceKind"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "reviewState": {
+                    "const": "reviewed"
+                  },
+                  "reviewedLightRadiusPct": {
+                    "$ref": "#/$defs/decimalText"
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "provenanceKind": {
+                    "const": "recognized-reviewed"
+                  }
+                },
+                "required": [
+                  "provenanceKind"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "reviewState": {
+                    "const": "reviewed"
+                  },
+                  "reviewedLightRadiusPct": {
+                    "$ref": "#/$defs/decimalText"
+                  }
+                },
+                "anyOf": [
+                  {
+                    "properties": {
+                      "rawSourceText": {
+                        "$ref": "#/$defs/meaningfulSourceText"
+                      }
+                    }
+                  },
+                  {
+                    "properties": {
+                      "recognitionSource": {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "enum": [
+                              "advisory-text",
+                              "pob-import",
+                              "copied-text"
+                            ]
+                          },
+                          "digest": {
+                            "type": "string",
+                            "pattern": "^[0-9a-f]{64}$"
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "directLinkBuffEffect": {
+          "type": "object",
+          "required": [
+            "reviewedDirectPct",
+            "provenanceKind",
+            "reviewState",
+            "rawSourceText",
+            "recognitionSource"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "reviewedDirectPct": {
+              "$ref": "#/$defs/nullableDecimalText"
+            },
+            "provenanceKind": {
+              "enum": [
+                "manual-reviewed",
+                "recognized-reviewed",
+                "unreviewed"
+              ]
+            },
+            "reviewState": {
+              "enum": [
+                "unreviewed",
+                "reviewed"
+              ]
+            },
+            "rawSourceText": {
+              "type": "string",
+              "maxLength": 100000
+            },
+            "recognitionSource": {
+              "$ref": "#/$defs/recognitionSource"
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "provenanceKind": {
+                    "const": "unreviewed"
+                  }
+                },
+                "required": [
+                  "provenanceKind"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "reviewState": {
+                    "const": "unreviewed"
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "provenanceKind": {
+                    "const": "manual-reviewed"
+                  }
+                },
+                "required": [
+                  "provenanceKind"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "reviewState": {
+                    "const": "reviewed"
+                  },
+                  "reviewedDirectPct": {
+                    "$ref": "#/$defs/decimalText"
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "provenanceKind": {
+                    "const": "recognized-reviewed"
+                  }
+                },
+                "required": [
+                  "provenanceKind"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "reviewState": {
+                    "const": "reviewed"
+                  },
+                  "reviewedDirectPct": {
+                    "$ref": "#/$defs/decimalText"
+                  }
+                },
+                "anyOf": [
+                  {
+                    "properties": {
+                      "rawSourceText": {
+                        "$ref": "#/$defs/meaningfulSourceText"
+                      }
+                    }
+                  },
+                  {
+                    "properties": {
+                      "recognitionSource": {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "enum": [
+                              "advisory-text",
+                              "pob-import",
+                              "copied-text"
+                            ]
+                          },
+                          "digest": {
+                            "type": "string",
+                            "pattern": "^[0-9a-f]{64}$"
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "conditionalContributions": {
+          "type": "array",
+          "maxItems": 64,
+          "items": {
+            "type": "object",
+            "required": [
+              "contributionId",
+              "label",
+              "valuePct",
+              "conditionState",
+              "kind",
+              "provenanceKind",
+              "rawSourceText",
+              "recognitionSource"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "contributionId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 80
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 120
+              },
+              "valuePct": {
+                "$ref": "#/$defs/nullableDecimalText"
+              },
+              "conditionState": {
+                "enum": [
+                  "active",
+                  "inactive",
+                  "unknown"
+                ]
+              },
+              "kind": {
+                "enum": [
+                  "powerful-bond",
+                  "inspiring-bond",
+                  "manual"
+                ]
+              },
+              "provenanceKind": {
+                "enum": [
+                  "manual-reviewed",
+                  "recognized-reviewed",
+                  "catalog-default"
+                ]
+              },
+              "rawSourceText": {
+                "type": "string",
+                "maxLength": 100000
+              },
+              "recognitionSource": {
+                "$ref": "#/$defs/recognitionSource"
+              }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "provenanceKind": {
+                      "const": "manual-reviewed"
+                    }
+                  },
+                  "required": [
+                    "provenanceKind"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "valuePct": {
+                      "$ref": "#/$defs/decimalText"
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "provenanceKind": {
+                      "const": "recognized-reviewed"
+                    }
+                  },
+                  "required": [
+                    "provenanceKind"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "valuePct": {
+                      "$ref": "#/$defs/decimalText"
+                    }
+                  },
+                  "anyOf": [
+                    {
+                      "properties": {
+                        "rawSourceText": {
+                          "$ref": "#/$defs/meaningfulSourceText"
+                        }
+                      }
+                    },
+                    {
+                      "properties": {
+                        "recognitionSource": {
+                          "type": "object",
+                          "properties": {
+                            "kind": {
+                              "enum": [
+                                "advisory-text",
+                                "pob-import",
+                                "copied-text"
+                              ]
+                            },
+                            "digest": {
+                              "type": "string",
+                              "pattern": "^[0-9a-f]{64}$"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "contributionId": {
+                      "const": "powerful-bond"
+                    }
+                  },
+                  "required": [
+                    "contributionId"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "kind": {
+                      "const": "powerful-bond"
+                    },
+                    "valuePct": {
+                      "const": "20"
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "contributionId": {
+                      "const": "inspiring-bond"
+                    }
+                  },
+                  "required": [
+                    "contributionId"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "kind": {
+                      "const": "inspiring-bond"
+                    },
+                    "valuePct": {
+                      "const": "20"
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "kind": {
+                      "const": "powerful-bond"
+                    }
+                  },
+                  "required": [
+                    "kind"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "contributionId": {
+                      "const": "powerful-bond"
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "kind": {
+                      "const": "inspiring-bond"
+                    }
+                  },
+                  "required": [
+                    "kind"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "contributionId": {
+                      "const": "inspiring-bond"
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "contributionId": {
+                      "not": {
+                        "enum": [
+                          "powerful-bond",
+                          "inspiring-bond"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "contributionId"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "kind": {
+                      "const": "manual"
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "provenanceKind": {
+                      "const": "catalog-default"
+                    }
+                  },
+                  "required": [
+                    "provenanceKind"
+                  ]
+                },
+                "then": {
+                  "properties": {
+                    "contributionId": {
+                      "enum": [
+                        "powerful-bond",
+                        "inspiring-bond"
+                      ]
+                    },
+                    "rawSourceText": {
+                      "const": ""
+                    },
+                    "recognitionSource": {
+                      "type": "object",
+                      "required": [
+                        "kind",
+                        "digest"
+                      ],
+                      "additionalProperties": false,
+                      "properties": {
+                        "kind": {
+                          "const": "none"
+                        },
+                        "digest": {
+                          "type": "null"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "flameLinkLevel": {
+          "type": "object",
+          "required": [
+            "baseLevel",
+            "baseLevelProvenance",
+            "additionalLinkGemLevels"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "baseLevel": {
+              "type": "integer"
+            },
+            "baseLevelProvenance": {
+              "enum": [
+                "manual-benchmark-default",
+                "imported-recognized",
+                "manual-reviewed"
+              ]
+            },
+            "additionalLinkGemLevels": {
+              "type": "array",
+              "maxItems": 32,
+              "items": {
+                "type": "object",
+                "required": [
+                  "contributionId",
+                  "label",
+                  "levels",
+                  "activeState",
+                  "provenanceKind",
+                  "rawSourceText",
+                  "recognitionSource"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "contributionId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 80,
+                    "not": {
+                      "enum": [
+                        "powerful-bond",
+                        "inspiring-bond"
+                      ]
+                    }
+                  },
+                  "label": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "levels": {
+                    "type": "integer"
+                  },
+                  "activeState": {
+                    "enum": [
+                      "unknown",
+                      "active",
+                      "inactive"
+                    ]
+                  },
+                  "provenanceKind": {
+                    "enum": [
+                      "manual-reviewed",
+                      "recognized-reviewed",
+                      "catalog-default"
+                    ]
+                  },
+                  "rawSourceText": {
+                    "type": "string",
+                    "maxLength": 100000
+                  },
+                  "recognitionSource": {
+                    "$ref": "#/$defs/recognitionSource"
+                  }
+                },
+                "allOf": [
+                  {
+                    "if": {
+                      "properties": {
+                        "contributionId": {
+                          "const": "empowered-bond"
+                        }
+                      },
+                      "required": [
+                        "contributionId"
+                      ]
+                    },
+                    "then": {
+                      "properties": {
+                        "levels": {
+                          "const": 2
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "if": {
+                      "properties": {
+                        "provenanceKind": {
+                          "const": "catalog-default"
+                        }
+                      },
+                      "required": [
+                        "provenanceKind"
+                      ]
+                    },
+                    "then": {
+                      "properties": {
+                        "contributionId": {
+                          "const": "empowered-bond"
+                        },
+                        "levels": {
+                          "const": 2
+                        },
+                        "rawSourceText": {
+                          "const": ""
+                        },
+                        "recognitionSource": {
+                          "type": "object",
+                          "required": [
+                            "kind",
+                            "digest"
+                          ],
+                          "additionalProperties": false,
+                          "properties": {
+                            "kind": {
+                              "const": "none"
+                            },
+                            "digest": {
+                              "type": "null"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "if": {
+                      "properties": {
+                        "provenanceKind": {
+                          "const": "manual-reviewed"
+                        }
+                      },
+                      "required": [
+                        "provenanceKind"
+                      ]
+                    },
+                    "then": {
+                      "required": [
+                        "levels"
+                      ]
+                    }
+                  },
+                  {
+                    "if": {
+                      "properties": {
+                        "provenanceKind": {
+                          "const": "recognized-reviewed"
+                        }
+                      },
+                      "required": [
+                        "provenanceKind"
+                      ]
+                    },
+                    "then": {
+                      "required": [
+                        "levels"
+                      ],
+                      "anyOf": [
+                        {
+                          "properties": {
+                            "rawSourceText": {
+                              "$ref": "#/$defs/meaningfulSourceText"
+                            }
+                          }
+                        },
+                        {
+                          "properties": {
+                            "recognitionSource": {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "enum": [
+                                    "advisory-text",
+                                    "pob-import",
+                                    "copied-text"
+                                  ]
+                                },
+                                "digest": {
+                                  "type": "string",
+                                  "pattern": "^[0-9a-f]{64}$"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "baseLevelProvenance": {
+                    "const": "manual-benchmark-default"
+                  }
+                },
+                "required": [
+                  "baseLevelProvenance"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "baseLevel": {
+                    "const": 21
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "luminaryMaximumLife": {
+          "type": "object",
+          "required": [
+            "reviewedLife",
+            "provenanceKind",
+            "reviewState",
+            "rawSourceText",
+            "recognitionSource"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "reviewedLife": {
+              "$ref": "#/$defs/nullableNonnegativeDecimalText"
+            },
+            "provenanceKind": {
+              "enum": [
+                "manual-reviewed",
+                "recognized-reviewed",
+                "unreviewed"
+              ]
+            },
+            "reviewState": {
+              "enum": [
+                "unreviewed",
+                "reviewed"
+              ]
+            },
+            "rawSourceText": {
+              "type": "string",
+              "maxLength": 100000
+            },
+            "recognitionSource": {
+              "$ref": "#/$defs/recognitionSource"
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "provenanceKind": {
+                    "const": "unreviewed"
+                  }
+                },
+                "required": [
+                  "provenanceKind"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "reviewState": {
+                    "const": "unreviewed"
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "provenanceKind": {
+                    "const": "manual-reviewed"
+                  }
+                },
+                "required": [
+                  "provenanceKind"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "reviewState": {
+                    "const": "reviewed"
+                  },
+                  "reviewedLife": {
+                    "$ref": "#/$defs/nonnegativeDecimalText"
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "provenanceKind": {
+                    "const": "recognized-reviewed"
+                  }
+                },
+                "required": [
+                  "provenanceKind"
+                ]
+              },
+              "then": {
+                "properties": {
+                  "reviewState": {
+                    "const": "reviewed"
+                  },
+                  "reviewedLife": {
+                    "$ref": "#/$defs/nonnegativeDecimalText"
+                  }
+                },
+                "anyOf": [
+                  {
+                    "properties": {
+                      "rawSourceText": {
+                        "$ref": "#/$defs/meaningfulSourceText"
+                      }
+                    }
+                  },
+                  {
+                    "properties": {
+                      "recognitionSource": {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "enum": [
+                              "advisory-text",
+                              "pob-import",
+                              "copied-text"
+                            ]
+                          },
+                          "digest": {
+                            "type": "string",
+                            "pattern": "^[0-9a-f]{64}$"
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "roundingPolicyId": {
+          "const": "modelled-nearest-integer-half-up-v1"
+        },
+        "formulaVersionId": {
+          "const": "flame-link-player-chain-v1"
+        }
+      }
+    },
+    "meaningfulSourceText": {
+      "type": "string",
+      "pattern": "\\S",
+      "maxLength": 100000
+    }
+  }
+}

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run all Draft 2020-12 self-checks and BUILD-002 instance contracts."""
+"""Run all Draft 2020-12 self-checks and BUILD-003 instance contracts."""
 
 from __future__ import annotations
 
@@ -55,8 +55,10 @@ def run_isolated(root: Path, dependency_target: Path) -> int:
     import jsonschema
     from referencing import Registry, Resource
 
-    from golden_glory_lab.build_state.codec_v2 import deserialize as deserialize_v2
     from golden_glory_lab.build_state.codec import deserialize as deserialize_v1
+    from golden_glory_lab.build_state.codec_v2 import deserialize as deserialize_v2
+    from golden_glory_lab.build_state.codec_v3 import deserialize as deserialize_v3
+    from golden_glory_lab.domain import load_flame_link_level_table, table_sha256
     from golden_glory_lab.evidence_gate import (
         load_enmity_reference,
         load_gate_manifest,
@@ -85,21 +87,31 @@ def run_isolated(root: Path, dependency_target: Path) -> int:
 
     v1_validator = validator("build-state-v1.schema.json")
     v2_validator = validator("build-state-v2.schema.json")
+    v3_validator = validator("build-state-v3.schema.json")
     neutral_validator = validator("pob-neutral-import-v1.schema.json")
     gate_validator = validator("runtime-evidence-gate-v1.schema.json")
     registry_validator = validator("registry.schema.json")
 
     v1_paths = sorted((root / "fixtures" / "build_state").glob("*.build-state-v1.json"))
     v2_paths = sorted((root / "fixtures" / "build_state").glob("*.build-state-v2.json"))
+    v3_paths = sorted((root / "fixtures" / "build_state").glob("*.build-state-v3.json"))
     for path in v1_paths:
         raw = path.read_bytes()
         document = deserialize_v1(raw)
         _require_valid(v1_validator, document, str(path.relative_to(root)))
-        migrated = deserialize_v2(raw)
-        _require_valid(v2_validator, migrated, f"migrated {path.relative_to(root)}")
+        migrated_v2 = deserialize_v2(raw)
+        _require_valid(v2_validator, migrated_v2, f"migrated-v2 {path.relative_to(root)}")
+        migrated_v3 = deserialize_v3(raw)
+        _require_valid(v3_validator, migrated_v3, f"migrated-v3 {path.relative_to(root)}")
     for path in v2_paths:
-        document = deserialize_v2(path.read_bytes())
+        raw = path.read_bytes()
+        document = deserialize_v2(raw)
         _require_valid(v2_validator, document, str(path.relative_to(root)))
+        migrated = deserialize_v3(raw)
+        _require_valid(v3_validator, migrated, f"migrated-v3 {path.relative_to(root)}")
+    for path in v3_paths:
+        document = deserialize_v3(path.read_bytes())
+        _require_valid(v3_validator, document, str(path.relative_to(root)))
 
     neutral_paths = sorted((root / "fixtures" / "pob" / "golden").glob("*.json"))
     for path in neutral_paths:
@@ -118,23 +130,42 @@ def run_isolated(root: Path, dependency_target: Path) -> int:
     _require_valid(gate_validator, manifest_json, str(manifest_path.relative_to(root)))
     manifest = load_gate_manifest()
     reference = load_enmity_reference()
-    if manifest.manifestVersion != "1.0.0" or reference["resourceVersion"] != "1.0.0":
+    table = load_flame_link_level_table()
+    table_bytes = (
+        root
+        / "src"
+        / "golden_glory_lab"
+        / "runtime_data"
+        / "flame-link-level-table-v1.json"
+    ).read_bytes()
+    expected_table_sha = (
+        "e2cf21212e0ae6e1c3a23cab5ea94e723b69bf0bae89bf0c6906740c71c4a70c"
+    )
+    if table_sha256(table_bytes) != expected_table_sha:
+        raise RuntimeError("Flame Link level table SHA-256 does not match packaging pin")
+    if (
+        manifest.manifestVersion != "1.0.0"
+        or reference["resourceVersion"] != "1.0.0"
+        or table.minimumLevel != 1
+        or table.maximumLevel != 40
+        or table.artifactId != "flame-link-level-table-v1"
+        or len(table.rows) != 40
+    ):
         raise RuntimeError("typed runtime resource version validation failed")
 
     source_registry = _load(root / "data" / "sources" / "registry.json")
     _require_valid(registry_validator, source_registry, "data/sources/registry.json")
 
-    complete = _load(root / "fixtures" / "build_state" / "copied-enmity.build-state-v2.json")
+    complete = _load(root / "fixtures" / "build_state" / "flame-link.build-state-v3.json")
     decimal = copy.deepcopy(complete)
-    decimal["enmityManualInput"]["target"] = "1e2"
-    _require_invalid(v2_validator, decimal, "v2 exponent decimal")
-    locator = copy.deepcopy(complete)
-    locator["enmityManualInput"]["observedItemReference"]["treeRowId"] = "I001"
-    _require_invalid(v2_validator, locator, "v2 presentation locator")
-    policy_ordinal = copy.deepcopy(manifest_json)
-    policy_requirement = policy_ordinal["outputs"][0]["requirements"][2]
-    policy_requirement["minimumStatus"] = "supported"
-    _require_invalid(gate_validator, policy_ordinal, "policy with ordinal field")
+    decimal["flameLinkPlayerChain"]["directLinkBuffEffect"]["reviewedDirectPct"] = "1e2"
+    _require_invalid(v3_validator, decimal, "v3 exponent decimal")
+    unknown_field = copy.deepcopy(complete)
+    unknown_field["flameLinkPlayerChain"]["extra"] = True
+    _require_invalid(v3_validator, unknown_field, "v3 unknown flame-link field")
+    bad_state = copy.deepcopy(complete)
+    bad_state["flameLinkPlayerChain"]["goldenGlory"]["allocatedState"] = "maybe"
+    _require_invalid(v3_validator, bad_state, "v3 invalid allocated state")
 
     report = {
         "status": "PASS",
@@ -142,18 +173,21 @@ def run_isolated(root: Path, dependency_target: Path) -> int:
         "schemasSelfChecked": len(schema_paths),
         "v1Fixtures": len(v1_paths),
         "v1MigrationsValidatedAsV2": len(v1_paths),
+        "v1MigrationsValidatedAsV3": len(v1_paths),
         "v2Fixtures": len(v2_paths),
+        "v2MigrationsValidatedAsV3": len(v2_paths),
+        "v3Fixtures": len(v3_paths),
         "neutralFixtures": len(neutral_paths),
-        "runtimeResourcesTyped": 2,
+        "runtimeResourcesTyped": 3,
         "schemaNegativeMutations": 3,
     }
-    print("BUILD002_SCHEMA_SUMMARY=" + json.dumps(report, sort_keys=True))
+    print("BUILD003_SCHEMA_SUMMARY=" + json.dumps(report, sort_keys=True))
     return 0
 
 
 def run_parent(root: Path) -> int:
     requirements = root / "requirements" / "pob-import-proof.txt"
-    with tempfile.TemporaryDirectory(prefix="gll-build002-schema-") as temporary:
+    with tempfile.TemporaryDirectory(prefix="ggl-build003-schema-") as temporary:
         dependency_target = Path(temporary) / "site-packages"
         install = subprocess.run(
             [

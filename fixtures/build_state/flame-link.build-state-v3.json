@@ -1,0 +1,113 @@
+{
+  "documentType": "golden-glory-lab-build-state",
+  "schemaVersion": "3.0.0",
+  "applicationDataContractVersion": "3.0.0",
+  "importerContractVersion": "1.0.0",
+  "importedResult": null,
+  "importedResultSha256": null,
+  "playerItemSetOccurrenceId": null,
+  "mercenarySourceMode": "not-yet-selected",
+  "mercenaryItemSetOccurrenceId": null,
+  "manualMercenaryEquipment": [],
+  "copiedItemEntries": [],
+  "enmityManualInput": {
+    "finalUncappedFireResistance": null,
+    "maximumFireResistance": null,
+    "equippedState": "unknown",
+    "equipmentInclusionState": "unrecorded",
+    "measurementContext": {
+      "mercenaryIdentityLevel": "",
+      "activeStateSelection": "",
+      "zoneOrUiContext": "",
+      "relevantEffectsConditions": "",
+      "equipmentStateDescription": "",
+      "captureTimingDescription": ""
+    },
+    "targetGameVersionAcknowledgement": "unknown",
+    "observedItemReference": null,
+    "target": null
+  },
+  "flameLinkPlayerChain": {
+    "goldenGlory": {
+      "allocatedState": "allocated",
+      "mercenaryTargetState": "yes",
+      "reviewedLightRadiusPct": "40",
+      "provenanceKind": "manual-reviewed",
+      "reviewState": "reviewed",
+      "rawSourceText": "40% increased Light Radius",
+      "recognitionSource": {
+        "kind": "none",
+        "digest": null
+      }
+    },
+    "directLinkBuffEffect": {
+      "reviewedDirectPct": "15",
+      "provenanceKind": "manual-reviewed",
+      "reviewState": "reviewed",
+      "rawSourceText": "15% increased Effect of your Link Skills",
+      "recognitionSource": {
+        "kind": "none",
+        "digest": null
+      }
+    },
+    "conditionalContributions": [
+      {
+        "contributionId": "powerful-bond",
+        "label": "Powerful Bond",
+        "valuePct": "20",
+        "conditionState": "inactive",
+        "kind": "powerful-bond",
+        "provenanceKind": "catalog-default",
+        "rawSourceText": "",
+        "recognitionSource": {
+          "kind": "none",
+          "digest": null
+        }
+      },
+      {
+        "contributionId": "inspiring-bond",
+        "label": "Inspiring Bond",
+        "valuePct": "20",
+        "conditionState": "inactive",
+        "kind": "inspiring-bond",
+        "provenanceKind": "catalog-default",
+        "rawSourceText": "",
+        "recognitionSource": {
+          "kind": "none",
+          "digest": null
+        }
+      }
+    ],
+    "flameLinkLevel": {
+      "baseLevel": 21,
+      "baseLevelProvenance": "manual-benchmark-default",
+      "additionalLinkGemLevels": [
+        {
+          "contributionId": "empowered-bond",
+          "label": "Empowered Bond",
+          "levels": 2,
+          "activeState": "active",
+          "provenanceKind": "catalog-default",
+          "rawSourceText": "",
+          "recognitionSource": {
+            "kind": "none",
+            "digest": null
+          }
+        }
+      ]
+    },
+    "luminaryMaximumLife": {
+      "reviewedLife": "5000",
+      "provenanceKind": "manual-reviewed",
+      "reviewState": "reviewed",
+      "rawSourceText": "Maximum Life 5000",
+      "recognitionSource": {
+        "kind": "none",
+        "digest": null
+      }
+    },
+    "roundingPolicyId": "modelled-nearest-integer-half-up-v1",
+    "formulaVersionId": "flame-link-player-chain-v1"
+  },
+  "userNotes": "Synthetic BUILD-003 Flame Link player-chain fixture."
+}
