@@ -84,6 +84,28 @@ hashes/inventory/runtime versions, and removes disposable build material. Use
 `--copy-output` only with a nonexistent path outside the repository when a
 validated bundle is needed for manual inspection.
 
+Build the ordinary-user one-file calculator executable with:
+
+    py -3.13 scripts/build_calculator_exe.py --output "$env:USERPROFILE\Desktop\GoldenGloryCalculator.exe"
+
+The builder uses the same pinned packaging environment, freezes a windowed
+one-file `GoldenGloryCalculator.exe`, bundles the Flame Link level table, and
+prints path, size, SHA-256, and source git SHA. It refuses to overwrite an
+existing output unless `--overwrite` is supplied. Do not commit the executable.
+
+Build both public release artifacts (portable EXE and Windows Setup EXE) with
+one command:
+
+    pwsh scripts/build_release.ps1
+
+This verifies a clean git working tree, records the source git SHA, builds
+the portable executable above, launches it briefly as a smoke check, then
+compiles `installer/GoldenGloryCalculator.iss` with Inno Setup (`ISCC.exe`)
+into `GoldenGloryCalculator-Setup.exe`. It fails clearly, without downloading
+anything, if Inno Setup is not installed; see
+[docs/INSTALL.md](../docs/INSTALL.md). Both artifacts are written to the
+git-ignored `release/` directory and are never committed.
+
 Validate the exact tracked-source/runtime evidence manifest contract with:
 
     py scripts/validate/run_runtime_evidence_manifest.py

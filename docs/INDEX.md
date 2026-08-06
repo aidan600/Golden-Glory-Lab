@@ -35,6 +35,10 @@ chat summary.
 - [Build index](builds/INDEX.md) — implemented user-facing outcomes, including
   BUILD-002 copied-item recognition and isolated Enmity reporting, validation,
   limitations, and next slices.
+- [Install guide](INSTALL.md) — user setup/portable/uninstall instructions and
+  the developer build path for the portable EXE and Windows installer.
+- [Release checklist](RELEASE_CHECKLIST.md) — the owner's concrete checklist
+  for cutting a GitHub Release.
 - [Audit template](audits/TEMPLATE.md) — required evidence-aware audit record.
 - [Decision index](decisions/INDEX.md) — current decision records.
 - [Decision template](decisions/TEMPLATE.md) — format for a reviewed decision.
