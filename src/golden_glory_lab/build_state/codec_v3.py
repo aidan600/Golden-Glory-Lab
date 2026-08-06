@@ -458,44 +458,63 @@ def _validate_reviewed_field_semantics(
         return
 
 
-def _ensure_recognition_source(container: dict[str, Any]) -> None:
-    if "recognitionSource" not in container or not isinstance(
-        container.get("recognitionSource"), dict
-    ):
+def _ensure_recognition_source(container: dict[str, Any]) -> bool:
+    """Inject missing recognitionSource defaults. Reject malformed present values.
+
+    Returns True when any default was injected because a key was absent.
+    """
+
+    if "recognitionSource" not in container:
         container["recognitionSource"] = empty_recognition_source()
-        return
+        return True
     source = container["recognitionSource"]
+    if not isinstance(source, dict):
+        _fail(
+            "FLAME_LINK_RECOGNITION_SOURCE",
+            "recognitionSource must be an object when present",
+        )
+    injected = False
     if "kind" not in source:
         source["kind"] = "none"
+        injected = True
     if "digest" not in source:
         source["digest"] = None
+        injected = True
+    return injected
 
 
-def inject_recognition_source_defaults(chain: Mapping[str, Any]) -> dict[str, Any]:
-    """Inject recognitionSource defaults for pre-repair v3 documents."""
+def inject_recognition_source_defaults(
+    chain: Mapping[str, Any],
+) -> tuple[dict[str, Any], bool]:
+    """Inject recognitionSource defaults for pre-repair v3 documents.
+
+    Returns ``(updated_chain, did_inject)``. Present but malformed recognition
+    sources are left for validation to reject; only absent keys are filled.
+    """
 
     updated = _safe_deepcopy(
         chain,
         code="OPEN_STATE_NESTING",
         message="Flame Link migration exceeds safe copy nesting limits",
     )
+    injected = False
     for key in ("goldenGlory", "directLinkBuffEffect", "luminaryMaximumLife"):
         block = updated.get(key)
         if isinstance(block, dict):
-            _ensure_recognition_source(block)
+            injected = _ensure_recognition_source(block) or injected
     conditionals = updated.get("conditionalContributions")
     if isinstance(conditionals, list):
         for entry in conditionals:
             if isinstance(entry, dict):
-                _ensure_recognition_source(entry)
+                injected = _ensure_recognition_source(entry) or injected
     level = updated.get("flameLinkLevel")
     if isinstance(level, dict):
         additions = level.get("additionalLinkGemLevels")
         if isinstance(additions, list):
             for entry in additions:
                 if isinstance(entry, dict):
-                    _ensure_recognition_source(entry)
-    return updated
+                    injected = _ensure_recognition_source(entry) or injected
+    return updated, injected
 
 
 def _validate_flame_link_player_chain(value: Any) -> None:
@@ -729,6 +748,20 @@ def _validate_flame_link_player_chain(value: Any) -> None:
         level_recognition = _validate_recognition_source(
             entry["recognitionSource"], f"{context}.recognitionSource"
         )
+        if level_provenance == "unreviewed":
+            _fail(
+                "FLAME_LINK_PROVENANCE_INVARIANT",
+                f"{context}: additional Link levels do not use unreviewed provenance",
+            )
+        if level_provenance == "catalog-default":
+            if (
+                contribution_id != CATALOG_EMPOWERED_BOND_ID
+                or levels != CATALOG_EMPOWERED_LEVELS
+            ):
+                _fail(
+                    "FLAME_LINK_PROVENANCE_INVARIANT",
+                    f"{context}: catalog-default is only allowed for empowered-bond with levels 2",
+                )
         if level_provenance == "recognized-reviewed":
             has_raw = bool(level_raw.strip())
             has_digest = (
@@ -738,8 +771,11 @@ def _validate_flame_link_player_chain(value: Any) -> None:
             if not has_raw and not has_digest:
                 _fail(
                     "FLAME_LINK_PROVENANCE_INVARIANT",
-                    f"{context}: recognized-reviewed requires source identity",
+                    f"{context}: recognized-reviewed requires levels and source identity",
                 )
+        if level_provenance == "manual-reviewed":
+            # levels is already required as a strict integer above
+            pass
 
     life = _require_object(
         chain["luminaryMaximumLife"], "flameLinkPlayerChain.luminaryMaximumLife"
@@ -971,8 +1007,9 @@ def decode(data: bytes) -> DecodedBuildState:
     parsed = _decode_json(data)
     schema_version = parsed.get("schemaVersion")
     if schema_version == BUILD_STATE_SCHEMA_VERSION:
+        injected = False
         if isinstance(parsed.get("flameLinkPlayerChain"), dict):
-            parsed["flameLinkPlayerChain"] = inject_recognition_source_defaults(
+            parsed["flameLinkPlayerChain"], injected = inject_recognition_source_defaults(
                 parsed["flameLinkPlayerChain"]
             )
         validate_document(parsed)
@@ -981,7 +1018,9 @@ def decode(data: bytes) -> DecodedBuildState:
             code="OPEN_STATE_NESTING",
             message="Build-state document exceeds safe copy nesting limits",
         )
-        return DecodedBuildState(document, schema_version, False, serialize(document))
+        return DecodedBuildState(
+            document, schema_version, injected, serialize(document)
+        )
     if schema_version == V2_BUILD_STATE_SCHEMA_VERSION:
         v2_codec.validate_document(parsed)
         migrated = migrate_v2_document(parsed)

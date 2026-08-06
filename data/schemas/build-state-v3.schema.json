@@ -530,6 +530,52 @@
                   }
                 }
               }
+            },
+            {
+              "if": {
+                "properties": {
+                  "provenanceKind": {
+                    "const": "recognized-reviewed"
+                  }
+                },
+                "required": ["provenanceKind"]
+              },
+              "then": {
+                "properties": {
+                  "reviewState": {
+                    "const": "reviewed"
+                  },
+                  "reviewedLightRadiusPct": {
+                    "$ref": "#/$defs/decimalText"
+                  }
+                },
+                "anyOf": [
+                  {
+                    "properties": {
+                      "rawSourceText": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    }
+                  },
+                  {
+                    "properties": {
+                      "recognitionSource": {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "enum": ["advisory-text", "pob-import", "copied-text"]
+                          },
+                          "digest": {
+                            "type": "string",
+                            "pattern": "^[0-9a-f]{64}$"
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
             }
           ]
         },
@@ -565,7 +611,92 @@
             "recognitionSource": {
               "$ref": "#/$defs/recognitionSource"
             }
-          }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "provenanceKind": {
+                    "const": "unreviewed"
+                  }
+                },
+                "required": ["provenanceKind"]
+              },
+              "then": {
+                "properties": {
+                  "reviewState": {
+                    "const": "unreviewed"
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "provenanceKind": {
+                    "const": "manual-reviewed"
+                  }
+                },
+                "required": ["provenanceKind"]
+              },
+              "then": {
+                "properties": {
+                  "reviewState": {
+                    "const": "reviewed"
+                  },
+                  "reviewedDirectPct": {
+                    "$ref": "#/$defs/decimalText"
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "provenanceKind": {
+                    "const": "recognized-reviewed"
+                  }
+                },
+                "required": ["provenanceKind"]
+              },
+              "then": {
+                "properties": {
+                  "reviewState": {
+                    "const": "reviewed"
+                  },
+                  "reviewedDirectPct": {
+                    "$ref": "#/$defs/decimalText"
+                  }
+                },
+                "anyOf": [
+                  {
+                    "properties": {
+                      "rawSourceText": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    }
+                  },
+                  {
+                    "properties": {
+                      "recognitionSource": {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "enum": ["advisory-text", "pob-import", "copied-text"]
+                          },
+                          "digest": {
+                            "type": "string",
+                            "pattern": "^[0-9a-f]{64}$"
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          ]
         },
         "conditionalContributions": {
           "type": "array",
@@ -607,7 +738,6 @@
                 "enum": [
                   "manual-reviewed",
                   "recognized-reviewed",
-                  "unreviewed",
                   "catalog-default"
                 ]
               },
@@ -618,7 +748,69 @@
               "recognitionSource": {
                 "$ref": "#/$defs/recognitionSource"
               }
-            }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "provenanceKind": {
+                      "const": "manual-reviewed"
+                    }
+                  },
+                  "required": ["provenanceKind"]
+                },
+                "then": {
+                  "properties": {
+                    "valuePct": {
+                      "$ref": "#/$defs/decimalText"
+                    }
+                  }
+                }
+              },
+              {
+                "if": {
+                  "properties": {
+                    "provenanceKind": {
+                      "const": "recognized-reviewed"
+                    }
+                  },
+                  "required": ["provenanceKind"]
+                },
+                "then": {
+                  "properties": {
+                    "valuePct": {
+                      "$ref": "#/$defs/decimalText"
+                    }
+                  },
+                  "anyOf": [
+                    {
+                      "properties": {
+                        "rawSourceText": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      }
+                    },
+                    {
+                      "properties": {
+                        "recognitionSource": {
+                          "type": "object",
+                          "properties": {
+                            "kind": {
+                              "enum": ["advisory-text", "pob-import", "copied-text"]
+                            },
+                            "digest": {
+                              "type": "string",
+                              "pattern": "^[0-9a-f]{64}$"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
           }
         },
         "flameLinkLevel": {
@@ -659,7 +851,10 @@
                   "contributionId": {
                     "type": "string",
                     "minLength": 1,
-                    "maxLength": 80
+                    "maxLength": 80,
+                    "not": {
+                      "enum": ["powerful-bond", "inspiring-bond"]
+                    }
                   },
                   "label": {
                     "type": "string",
@@ -676,7 +871,6 @@
                     "enum": [
                       "manual-reviewed",
                       "recognized-reviewed",
-                      "unreviewed",
                       "catalog-default"
                     ]
                   },
@@ -687,7 +881,101 @@
                   "recognitionSource": {
                     "$ref": "#/$defs/recognitionSource"
                   }
-                }
+                },
+                "allOf": [
+                  {
+                    "if": {
+                      "properties": {
+                        "contributionId": {
+                          "const": "empowered-bond"
+                        },
+                        "provenanceKind": {
+                          "const": "catalog-default"
+                        }
+                      },
+                      "required": ["contributionId", "provenanceKind"]
+                    },
+                    "then": {
+                      "properties": {
+                        "levels": {
+                          "const": 2
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "if": {
+                      "properties": {
+                        "provenanceKind": {
+                          "const": "catalog-default"
+                        }
+                      },
+                      "required": ["provenanceKind"]
+                    },
+                    "then": {
+                      "properties": {
+                        "contributionId": {
+                          "const": "empowered-bond"
+                        },
+                        "levels": {
+                          "const": 2
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "if": {
+                      "properties": {
+                        "provenanceKind": {
+                          "const": "manual-reviewed"
+                        }
+                      },
+                      "required": ["provenanceKind"]
+                    },
+                    "then": {
+                      "required": ["levels"]
+                    }
+                  },
+                  {
+                    "if": {
+                      "properties": {
+                        "provenanceKind": {
+                          "const": "recognized-reviewed"
+                        }
+                      },
+                      "required": ["provenanceKind"]
+                    },
+                    "then": {
+                      "required": ["levels"],
+                      "anyOf": [
+                        {
+                          "properties": {
+                            "rawSourceText": {
+                              "type": "string",
+                              "minLength": 1
+                            }
+                          }
+                        },
+                        {
+                          "properties": {
+                            "recognitionSource": {
+                              "type": "object",
+                              "properties": {
+                                "kind": {
+                                  "enum": ["advisory-text", "pob-import", "copied-text"]
+                                },
+                                "digest": {
+                                  "type": "string",
+                                  "pattern": "^[0-9a-f]{64}$"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                ]
               }
             }
           },
@@ -743,7 +1031,92 @@
             "recognitionSource": {
               "$ref": "#/$defs/recognitionSource"
             }
-          }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "provenanceKind": {
+                    "const": "unreviewed"
+                  }
+                },
+                "required": ["provenanceKind"]
+              },
+              "then": {
+                "properties": {
+                  "reviewState": {
+                    "const": "unreviewed"
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "provenanceKind": {
+                    "const": "manual-reviewed"
+                  }
+                },
+                "required": ["provenanceKind"]
+              },
+              "then": {
+                "properties": {
+                  "reviewState": {
+                    "const": "reviewed"
+                  },
+                  "reviewedLife": {
+                    "$ref": "#/$defs/nonnegativeDecimalText"
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "provenanceKind": {
+                    "const": "recognized-reviewed"
+                  }
+                },
+                "required": ["provenanceKind"]
+              },
+              "then": {
+                "properties": {
+                  "reviewState": {
+                    "const": "reviewed"
+                  },
+                  "reviewedLife": {
+                    "$ref": "#/$defs/nonnegativeDecimalText"
+                  }
+                },
+                "anyOf": [
+                  {
+                    "properties": {
+                      "rawSourceText": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    }
+                  },
+                  {
+                    "properties": {
+                      "recognitionSource": {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "enum": ["advisory-text", "pob-import", "copied-text"]
+                          },
+                          "digest": {
+                            "type": "string",
+                            "pattern": "^[0-9a-f]{64}$"
+                          }
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          ]
         },
         "roundingPolicyId": {
           "const": "modelled-nearest-integer-half-up-v1"

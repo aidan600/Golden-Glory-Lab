@@ -71,7 +71,7 @@ def _signed_lexeme(value_text: str, direction: str) -> str | None:
         return None
     magnitude = parsed.value.copy_abs()
     if direction.lower() == "reduced":
-        signed = -magnitude
+        signed = magnitude.copy_negate()
     else:
         signed = magnitude
     text = format(signed, "f")

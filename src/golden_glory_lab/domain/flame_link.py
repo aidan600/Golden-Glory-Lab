@@ -31,6 +31,41 @@ EXPECTED_ROUNDING_POLICY_ID = ROUNDING_POLICY_ID
 EXPECTED_TARGET_GAME_VERSION = TARGET_GAME_VERSION
 EXPECTED_SOURCE_DATA_VERSION = SOURCE_DATA_VERSION
 
+_TABLE_ROOT_KEYS = frozenset(
+    {
+        "schemaVersion",
+        "artifactId",
+        "artifactType",
+        "formulaVersionId",
+        "roundingPolicyId",
+        "targetGameVersion",
+        "sourceDataVersion",
+        "versionState",
+        "verificationStatus",
+        "sourceIds",
+        "provenance",
+        "tableBounds",
+        "compactAnchors",
+        "rows",
+    }
+)
+_TABLE_BOUNDS_KEYS = frozenset({"minimumLevel", "maximumLevel", "rowCount"})
+_TABLE_ROW_KEYS = frozenset({"level", "requirementLevel", "flatMin", "flatMax"})
+_TABLE_PROVENANCE_KEYS = frozenset(
+    {
+        "derivation",
+        "sourceCommitSha",
+        "sourceCommitUrl",
+        "recordLocations",
+        "lifeComponentPercent",
+        "lifeComponentBasis",
+        "qualityAffectsGrantedDamage",
+        "notAuthorityForLiveRounding",
+        "retainedMaterial",
+    }
+)
+_TABLE_RECORD_LOCATION_KEYS = frozenset({"skill", "interpolation", "constants"})
+
 
 class FlameLinkTableError(RuntimeError):
     def __init__(self, code: str, message: str) -> None:
@@ -195,6 +230,19 @@ def _require_nonnegative_int(value: Any, context: str) -> int:
     return number
 
 
+def _reject_unknown_keys(
+    mapping: Mapping[str, Any],
+    allowed: frozenset[str],
+    context: str,
+) -> None:
+    unknown = sorted(set(mapping) - allowed)
+    if unknown:
+        raise FlameLinkTableError(
+            "FLAME_LINK_TABLE_UNKNOWN_FIELD",
+            f"{context} contains unknown field(s): {', '.join(unknown)}",
+        )
+
+
 def load_flame_link_level_table(
     package: str = _RESOURCE_PACKAGE,
     resource_name: str = LEVEL_TABLE_RESOURCE,
@@ -229,6 +277,7 @@ def parse_flame_link_level_table_bytes(data: bytes) -> FlameLinkLevelTable:
             "FLAME_LINK_TABLE_INVALID",
             "Flame Link level table root must be an object",
         )
+    _reject_unknown_keys(root, _TABLE_ROOT_KEYS, "Flame Link level table root")
     artifact_id = _require_exact_string(root, "artifactId", EXPECTED_ARTIFACT_ID)
     formula_version = _require_exact_string(
         root, "formulaVersionId", EXPECTED_FORMULA_VERSION_ID
@@ -241,6 +290,23 @@ def parse_flame_link_level_table_bytes(data: bytes) -> FlameLinkLevelTable:
     )
     _require_exact_string(root, "sourceDataVersion", EXPECTED_SOURCE_DATA_VERSION)
 
+    provenance = root.get("provenance")
+    if not isinstance(provenance, dict):
+        raise FlameLinkTableError(
+            "FLAME_LINK_TABLE_INVALID",
+            "Flame Link level table provenance must be an object",
+        )
+    _reject_unknown_keys(provenance, _TABLE_PROVENANCE_KEYS, "provenance")
+    record_locations = provenance.get("recordLocations")
+    if not isinstance(record_locations, dict):
+        raise FlameLinkTableError(
+            "FLAME_LINK_TABLE_INVALID",
+            "provenance.recordLocations must be an object",
+        )
+    _reject_unknown_keys(
+        record_locations, _TABLE_RECORD_LOCATION_KEYS, "provenance.recordLocations"
+    )
+
     bounds = root.get("tableBounds")
     rows_value = root.get("rows")
     if not isinstance(bounds, dict) or not isinstance(rows_value, list):
@@ -248,6 +314,7 @@ def parse_flame_link_level_table_bytes(data: bytes) -> FlameLinkLevelTable:
             "FLAME_LINK_TABLE_INVALID",
             "Flame Link level table is missing bounds or rows",
         )
+    _reject_unknown_keys(bounds, _TABLE_BOUNDS_KEYS, "tableBounds")
     minimum = _require_strict_int(bounds.get("minimumLevel"), "tableBounds.minimumLevel")
     maximum = _require_strict_int(bounds.get("maximumLevel"), "tableBounds.maximumLevel")
     row_count = _require_strict_int(bounds.get("rowCount"), "tableBounds.rowCount")
@@ -273,6 +340,7 @@ def parse_flame_link_level_table_bytes(data: bytes) -> FlameLinkLevelTable:
                 "FLAME_LINK_TABLE_INVALID",
                 f"Flame Link level row {index} must be an object",
             )
+        _reject_unknown_keys(raw, _TABLE_ROW_KEYS, f"rows[{index}]")
         try:
             level = _require_strict_int(raw["level"], f"rows[{index}].level")
             requirement = _require_strict_int(
@@ -316,12 +384,13 @@ def parse_flame_link_level_table_bytes(data: bytes) -> FlameLinkLevelTable:
             "FLAME_LINK_TABLE_ANCHORS",
             "Flame Link level table compactAnchors must be an array",
         )
-    for anchor in anchors:
+    for anchor_index, anchor in enumerate(anchors):
         if not isinstance(anchor, dict):
             raise FlameLinkTableError(
                 "FLAME_LINK_TABLE_ANCHORS",
                 "Flame Link compact anchor must be an object",
             )
+        _reject_unknown_keys(anchor, _TABLE_ROW_KEYS, f"compactAnchors[{anchor_index}]")
         level = _require_strict_int(anchor.get("level"), "compactAnchors.level")
         row = rows.get(level)
         if row is None:
@@ -509,10 +578,11 @@ def _resolve_direct(
 
 def _resolve_conditionals(
     contributions: Any,
-) -> tuple[Decimal | None, str | None, list[dict[str, Any]], list[dict[str, Any]]]:
+) -> tuple[list[Decimal] | None, list[dict[str, Any]], list[dict[str, Any]]]:
+    """Collect active conditional Decimals without summing under ambient context."""
+
     if not isinstance(contributions, list):
         return (
-            None,
             None,
             [],
             [
@@ -522,7 +592,7 @@ def _resolve_conditionals(
                 )
             ],
         )
-    total = Decimal(0)
+    active_values: list[Decimal] = []
     details: list[dict[str, Any]] = []
     reasons: list[dict[str, Any]] = []
     for index, raw in enumerate(contributions):
@@ -584,10 +654,10 @@ def _resolve_conditionals(
         detail["contributionPct"] = parsed.lexeme
         detail["counted"] = True
         details.append(detail)
-        total += parsed.value
+        active_values.append(parsed.value)
     if reasons:
-        return None, None, details, reasons
-    return total, _lexeme(total), details, reasons
+        return None, details, reasons
+    return active_values, details, reasons
 
 
 def _resolve_levels(
@@ -635,6 +705,8 @@ def _resolve_levels(
             )
             continue
         active_state = raw.get("activeState")
+        provenance = raw.get("provenanceKind")
+        contribution_id = raw.get("contributionId")
         try:
             levels = int(raw["levels"])
         except (KeyError, TypeError, ValueError):
@@ -642,12 +714,12 @@ def _resolve_levels(
                 _reason(
                     "ADDITIONAL_LINK_LEVEL_VALUE_INVALID",
                     "Additional Link gem level contribution must provide integer levels",
-                    contributionId=raw.get("contributionId"),
+                    contributionId=contribution_id,
                 )
             )
             addition_details.append(
                 {
-                    "contributionId": raw.get("contributionId"),
+                    "contributionId": contribution_id,
                     "label": raw.get("label"),
                     "levels": raw.get("levels"),
                     "activeState": active_state,
@@ -656,11 +728,11 @@ def _resolve_levels(
             )
             continue
         detail = {
-            "contributionId": raw.get("contributionId"),
+            "contributionId": contribution_id,
             "label": raw.get("label"),
             "levels": levels,
             "activeState": active_state,
-            "provenanceKind": raw.get("provenanceKind"),
+            "provenanceKind": provenance,
             "rawSourceText": raw.get("rawSourceText", ""),
             "counted": False,
         }
@@ -672,7 +744,7 @@ def _resolve_levels(
                 _reason(
                     "ADDITIONAL_LINK_LEVEL_UNKNOWN",
                     "An unknown additional Link gem level contribution blocks final resolution",
-                    contributionId=raw.get("contributionId"),
+                    contributionId=contribution_id,
                     label=raw.get("label"),
                 )
             )
@@ -683,11 +755,34 @@ def _resolve_levels(
                 _reason(
                     "ADDITIONAL_LINK_LEVEL_STATE_INVALID",
                     "Additional Link gem level active state is not recognized",
-                    contributionId=raw.get("contributionId"),
+                    contributionId=contribution_id,
                 )
             )
             addition_details.append(detail)
             continue
+        if provenance in {None, "unreviewed"} or provenance == "":
+            reasons.append(
+                _reason(
+                    "ADDITIONAL_LINK_LEVEL_UNREVIEWED",
+                    "An active additional Link gem level contribution requires reviewed provenance",
+                    contributionId=contribution_id,
+                    label=raw.get("label"),
+                )
+            )
+            addition_details.append(detail)
+            continue
+        if provenance == "catalog-default":
+            if contribution_id != "empowered-bond" or levels != 2:
+                reasons.append(
+                    _reason(
+                        "ADDITIONAL_LINK_LEVEL_UNREVIEWED",
+                        "catalog-default additional Link levels are only valid for empowered-bond with levels 2",
+                        contributionId=contribution_id,
+                        label=raw.get("label"),
+                    )
+                )
+                addition_details.append(detail)
+                continue
         detail["counted"] = True
         addition_details.append(detail)
         additional_total += levels
@@ -735,7 +830,7 @@ def evaluate_flame_link(
 
     gg_value, gg_lexeme, gg_detail, gg_reasons = _resolve_golden_glory(golden)
     direct_value, direct_lexeme, direct_detail, direct_reasons = _resolve_direct(direct)
-    conditional_value, conditional_lexeme, conditional_details, conditional_reasons = (
+    active_conditionals, conditional_details, conditional_reasons = (
         _resolve_conditionals(conditionals)
     )
     base_level, additional_levels, effective_level, level_breakdown, level_reasons = (
@@ -786,7 +881,7 @@ def evaluate_flame_link(
         )
 
     assert gg_value is not None and direct_value is not None
-    assert conditional_value is not None
+    assert active_conditionals is not None
     assert effective_level is not None and life_parsed is not None
     assert base_level is not None and additional_levels is not None
 
@@ -794,16 +889,18 @@ def evaluate_flame_link(
     operands = [
         gg_value,
         direct_value,
-        conditional_value,
         life_parsed.value,
         LIFE_COMPONENT_FRACTION,
         Decimal(100),
         Decimal(1),
+        *active_conditionals,
     ]
     if row_for_level is not None:
         operands.extend((row_for_level.flatMin, row_for_level.flatMax))
 
     with localcontext(numeric_context_for(*operands)):
+        conditional_value = sum(active_conditionals, start=Decimal(0))
+        conditional_lexeme = _lexeme(conditional_value)
         net = gg_value + direct_value + conditional_value
         multiplier = Decimal(1) + (net / Decimal(100))
         if multiplier < 0:

@@ -88,31 +88,36 @@ def _demote_recognized_field(block: dict[str, Any], *, value_key: str) -> None:
     block["recognitionSource"] = empty_recognition_source()
 
 
-def _demote_recognized_contribution(entry: dict[str, Any]) -> None:
+def _demote_recognized_contribution(entry: dict[str, Any]) -> bool:
+    """Demote a PoB-derived contribution. Return True when the entry must be removed."""
+
     source = entry.get("recognitionSource") or empty_recognition_source()
     if source.get("kind") != "pob-import":
-        return
-    if entry.get("provenanceKind") == "manual-reviewed":
-        return
-    if entry.get("provenanceKind") == "catalog-default":
-        entry["recognitionSource"] = empty_recognition_source()
-        return
-    entry["rawSourceText"] = ""
-    entry["recognitionSource"] = empty_recognition_source()
-    if "conditionState" in entry:
-        entry["conditionState"] = "unknown"
-    if "activeState" in entry:
-        entry["activeState"] = "unknown"
+        return False
+    provenance = entry.get("provenanceKind")
+    if provenance == "manual-reviewed":
+        return False
     contribution_id = entry.get("contributionId")
     if contribution_id in {"powerful-bond", "inspiring-bond"}:
         entry["provenanceKind"] = "catalog-default"
         entry["valuePct"] = "20"
         entry["kind"] = contribution_id
-    elif contribution_id == "empowered-bond":
+        entry["conditionState"] = "unknown"
+        entry["rawSourceText"] = ""
+        entry["recognitionSource"] = empty_recognition_source()
+        return False
+    if contribution_id == "empowered-bond":
         entry["provenanceKind"] = "catalog-default"
         entry["levels"] = 2
-    else:
-        entry["provenanceKind"] = "manual-reviewed"
+        entry["activeState"] = "unknown"
+        entry["rawSourceText"] = ""
+        entry["recognitionSource"] = empty_recognition_source()
+        return False
+    if provenance == "catalog-default":
+        entry["recognitionSource"] = empty_recognition_source()
+        return False
+    # Noncatalog PoB-derived rows (recognized-reviewed or other non-manual) are removed.
+    return True
 
 
 class ApplicationService:
@@ -303,12 +308,21 @@ class ApplicationService:
             _demote_recognized_field(
                 chain["luminaryMaximumLife"], value_key="reviewedLife"
             )
-            for entry in chain["conditionalContributions"]:
-                _demote_recognized_contribution(entry)
-            for entry in chain["flameLinkLevel"]["additionalLinkGemLevels"]:
-                _demote_recognized_contribution(entry)
+            chain["conditionalContributions"] = [
+                entry
+                for entry in chain["conditionalContributions"]
+                if not _demote_recognized_contribution(entry)
+            ]
+            chain["flameLinkLevel"]["additionalLinkGemLevels"] = [
+                entry
+                for entry in chain["flameLinkLevel"]["additionalLinkGemLevels"]
+                if not _demote_recognized_contribution(entry)
+            ]
             if chain["flameLinkLevel"]["baseLevelProvenance"] == "imported-recognized":
-                chain["flameLinkLevel"]["baseLevelProvenance"] = "manual-reviewed"
+                chain["flameLinkLevel"]["baseLevel"] = 21
+                chain["flameLinkLevel"]["baseLevelProvenance"] = "manual-benchmark-default"
+                chain["flameLinkLevel"].pop("baseLevelRawSourceText", None)
+                chain["flameLinkLevel"].pop("rawSourceText", None)
         candidate["importedResult"] = result
         candidate["importedResultSha256"] = imported_result_digest(result)
         candidate["playerItemSetOccurrenceId"] = None
@@ -912,7 +926,7 @@ class ApplicationService:
         *,
         raw_source_text: str = "",
         recognition_kind: str = "advisory-text",
-        active_state: str = "active",
+        active_state: str = "unknown",
     ) -> None:
         level = copy.deepcopy(self.state["flameLinkPlayerChain"]["flameLinkLevel"])
         recognition = empty_recognition_source()
@@ -953,7 +967,7 @@ class ApplicationService:
         label: str = "Additional Link Skill Gem levels",
         recognition_kind: str = "advisory-text",
         contribution_id: str | None = None,
-        active_state: str = "active",
+        active_state: str = "unknown",
     ) -> None:
         level = copy.deepcopy(self.state["flameLinkPlayerChain"]["flameLinkLevel"])
         recognition = empty_recognition_source()
