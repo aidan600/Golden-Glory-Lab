@@ -247,6 +247,11 @@
       "maxLength": 130,
       "pattern": "^(?=.{1,130}$)-?(?=(?:[^0-9]*[0-9]){1,128}[^0-9]*$)[0-9]+(?:\\.[0-9]+)?$"
     },
+    "nonnegativeDecimalText": {
+      "type": "string",
+      "maxLength": 130,
+      "pattern": "^(?=.{1,130}$)(?=(?:[^0-9]*[0-9]){1,128}[^0-9]*$)[0-9]+(?:\\.[0-9]+)?$"
+    },
     "nullableDecimalText": {
       "oneOf": [
         {
@@ -254,6 +259,64 @@
         },
         {
           "$ref": "#/$defs/decimalText"
+        }
+      ]
+    },
+    "nullableNonnegativeDecimalText": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/nonnegativeDecimalText"
+        }
+      ]
+    },
+    "recognitionSource": {
+      "type": "object",
+      "required": ["kind", "digest"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": ["none", "advisory-text", "pob-import", "copied-text"]
+        },
+        "digest": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            }
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "none"
+              }
+            },
+            "required": ["kind"]
+          },
+          "then": {
+            "properties": {
+              "digest": {
+                "type": "null"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "digest": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              }
+            }
+          }
         }
       ]
     },
@@ -397,7 +460,8 @@
             "reviewedLightRadiusPct",
             "provenanceKind",
             "reviewState",
-            "rawSourceText"
+            "rawSourceText",
+            "recognitionSource"
           ],
           "additionalProperties": false,
           "properties": {
@@ -424,8 +488,50 @@
             "rawSourceText": {
               "type": "string",
               "maxLength": 100000
+            },
+            "recognitionSource": {
+              "$ref": "#/$defs/recognitionSource"
             }
-          }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "provenanceKind": {
+                    "const": "unreviewed"
+                  }
+                },
+                "required": ["provenanceKind"]
+              },
+              "then": {
+                "properties": {
+                  "reviewState": {
+                    "const": "unreviewed"
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "provenanceKind": {
+                    "const": "manual-reviewed"
+                  }
+                },
+                "required": ["provenanceKind"]
+              },
+              "then": {
+                "properties": {
+                  "reviewState": {
+                    "const": "reviewed"
+                  },
+                  "reviewedLightRadiusPct": {
+                    "$ref": "#/$defs/decimalText"
+                  }
+                }
+              }
+            }
+          ]
         },
         "directLinkBuffEffect": {
           "type": "object",
@@ -433,7 +539,8 @@
             "reviewedDirectPct",
             "provenanceKind",
             "reviewState",
-            "rawSourceText"
+            "rawSourceText",
+            "recognitionSource"
           ],
           "additionalProperties": false,
           "properties": {
@@ -454,6 +561,9 @@
             "rawSourceText": {
               "type": "string",
               "maxLength": 100000
+            },
+            "recognitionSource": {
+              "$ref": "#/$defs/recognitionSource"
             }
           }
         },
@@ -469,7 +579,8 @@
               "conditionState",
               "kind",
               "provenanceKind",
-              "rawSourceText"
+              "rawSourceText",
+              "recognitionSource"
             ],
             "additionalProperties": false,
             "properties": {
@@ -503,6 +614,9 @@
               "rawSourceText": {
                 "type": "string",
                 "maxLength": 100000
+              },
+              "recognitionSource": {
+                "$ref": "#/$defs/recognitionSource"
               }
             }
           }
@@ -537,7 +651,8 @@
                   "levels",
                   "activeState",
                   "provenanceKind",
-                  "rawSourceText"
+                  "rawSourceText",
+                  "recognitionSource"
                 ],
                 "additionalProperties": false,
                 "properties": {
@@ -568,11 +683,33 @@
                   "rawSourceText": {
                     "type": "string",
                     "maxLength": 100000
+                  },
+                  "recognitionSource": {
+                    "$ref": "#/$defs/recognitionSource"
                   }
                 }
               }
             }
-          }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "baseLevelProvenance": {
+                    "const": "manual-benchmark-default"
+                  }
+                },
+                "required": ["baseLevelProvenance"]
+              },
+              "then": {
+                "properties": {
+                  "baseLevel": {
+                    "const": 21
+                  }
+                }
+              }
+            }
+          ]
         },
         "luminaryMaximumLife": {
           "type": "object",
@@ -580,12 +717,13 @@
             "reviewedLife",
             "provenanceKind",
             "reviewState",
-            "rawSourceText"
+            "rawSourceText",
+            "recognitionSource"
           ],
           "additionalProperties": false,
           "properties": {
             "reviewedLife": {
-              "$ref": "#/$defs/nullableDecimalText"
+              "$ref": "#/$defs/nullableNonnegativeDecimalText"
             },
             "provenanceKind": {
               "enum": [
@@ -601,6 +739,9 @@
             "rawSourceText": {
               "type": "string",
               "maxLength": 100000
+            },
+            "recognitionSource": {
+              "$ref": "#/$defs/recognitionSource"
             }
           }
         },

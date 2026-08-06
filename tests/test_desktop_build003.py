@@ -44,12 +44,14 @@ class DesktopBuild003ServiceTests(unittest.TestCase):
                 "provenanceKind": "manual-reviewed",
                 "reviewState": "reviewed",
                 "rawSourceText": "40% increased Light Radius",
+                "recognitionSource": {"kind": "none", "digest": None},
             },
             direct_link_buff_effect={
                 "reviewedDirectPct": "0",
                 "provenanceKind": "manual-reviewed",
                 "reviewState": "reviewed",
                 "rawSourceText": "",
+                "recognitionSource": {"kind": "none", "digest": None},
             },
             conditional_contributions=chain["conditionalContributions"],
             flame_link_level=chain["flameLinkLevel"],
@@ -58,6 +60,7 @@ class DesktopBuild003ServiceTests(unittest.TestCase):
                 "provenanceKind": "manual-reviewed",
                 "reviewState": "reviewed",
                 "rawSourceText": "",
+                "recognitionSource": {"kind": "none", "digest": None},
             },
         )
         flame = service.flame_link_result()
@@ -106,16 +109,11 @@ class DesktopBuild003ServiceTests(unittest.TestCase):
             light.signedValueLexeme or "0",
             raw_source_text=light.sourceLine,
         )
-        self.assertEqual(
-            service.state["flameLinkPlayerChain"]["goldenGlory"][
-                "reviewedLightRadiusPct"
-            ],
-            "25",
-        )
-        self.assertEqual(
-            service.state["flameLinkPlayerChain"]["goldenGlory"]["provenanceKind"],
-            "recognized-reviewed",
-        )
+        golden = service.state["flameLinkPlayerChain"]["goldenGlory"]
+        self.assertEqual(golden["reviewedLightRadiusPct"], "25")
+        self.assertEqual(golden["provenanceKind"], "recognized-reviewed")
+        self.assertEqual(golden["allocatedState"], "unknown")
+        self.assertEqual(golden["mercenaryTargetState"], "unknown")
 
     def test_status_summary_includes_flame_link(self) -> None:
         status = ApplicationService().status_summary()

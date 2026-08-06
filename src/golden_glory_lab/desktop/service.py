@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import re
 from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
@@ -12,6 +13,7 @@ from golden_glory_lab.build_state import (
     BuildStateError,
     atomic_save,
     empty_document,
+    empty_recognition_source,
     imported_result_digest,
     load_file_result,
     serialize,
@@ -20,6 +22,7 @@ from golden_glory_lab.build_state import (
 from golden_glory_lab.domain import (
     ENMITY_OUTPUT_ID,
     ENMITY_TARGET_OUTPUT_ID,
+    DecimalInputError,
     EnmityResult,
     FlameLinkLevelTable,
     FlameLinkResult,
@@ -28,6 +31,7 @@ from golden_glory_lab.domain import (
     evaluate_enmity,
     evaluate_flame_link,
     load_flame_link_level_table,
+    parse_decimal_text,
     recognize_player_chain_text,
 )
 from golden_glory_lab.evidence_gate import (
@@ -48,7 +52,67 @@ from .intake import DesktopIntakeError, import_raw_xml_file, import_share_code_t
 
 _MANUAL_ID_RE = re.compile(r"^manual-(\d{4,})$")
 _COPIED_ID_RE = re.compile(r"^copied-(\d{4,})$")
+_MANUAL_CONDITIONAL_ID_RE = re.compile(r"^manual-conditional-(\d{4,})$")
+_MANUAL_LEVEL_ID_RE = re.compile(r"^manual-level-(\d{4,})$")
 _UNSET = object()
+
+
+def _text_digest(value: str) -> str:
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+
+def _decimals_equal(left: str | None, right: str | None) -> bool:
+    if left is None and right is None:
+        return True
+    if left is None or right is None:
+        return False
+    try:
+        return parse_decimal_text(left).value == parse_decimal_text(right).value
+    except DecimalInputError:
+        return left == right
+
+
+def _demote_recognized_field(block: dict[str, Any], *, value_key: str) -> None:
+    source = block.get("recognitionSource") or empty_recognition_source()
+    if source.get("kind") != "pob-import":
+        return
+    if block.get("provenanceKind") == "manual-reviewed":
+        return
+    if block.get("provenanceKind") == "catalog-default":
+        return
+    block["reviewState"] = "unreviewed"
+    block["provenanceKind"] = "unreviewed"
+    if value_key in block:
+        block[value_key] = None
+    block["rawSourceText"] = ""
+    block["recognitionSource"] = empty_recognition_source()
+
+
+def _demote_recognized_contribution(entry: dict[str, Any]) -> None:
+    source = entry.get("recognitionSource") or empty_recognition_source()
+    if source.get("kind") != "pob-import":
+        return
+    if entry.get("provenanceKind") == "manual-reviewed":
+        return
+    if entry.get("provenanceKind") == "catalog-default":
+        entry["recognitionSource"] = empty_recognition_source()
+        return
+    entry["rawSourceText"] = ""
+    entry["recognitionSource"] = empty_recognition_source()
+    if "conditionState" in entry:
+        entry["conditionState"] = "unknown"
+    if "activeState" in entry:
+        entry["activeState"] = "unknown"
+    contribution_id = entry.get("contributionId")
+    if contribution_id in {"powerful-bond", "inspiring-bond"}:
+        entry["provenanceKind"] = "catalog-default"
+        entry["valuePct"] = "20"
+        entry["kind"] = contribution_id
+    elif contribution_id == "empowered-bond":
+        entry["provenanceKind"] = "catalog-default"
+        entry["levels"] = 2
+    else:
+        entry["provenanceKind"] = "manual-reviewed"
 
 
 class ApplicationService:
@@ -230,6 +294,21 @@ class ApplicationService:
                     "Replacing the PoB source requires confirmation to clear its observed-item reference",
                 )
             candidate["enmityManualInput"]["observedItemReference"] = None
+        if replacing:
+            chain = candidate["flameLinkPlayerChain"]
+            _demote_recognized_field(chain["goldenGlory"], value_key="reviewedLightRadiusPct")
+            _demote_recognized_field(
+                chain["directLinkBuffEffect"], value_key="reviewedDirectPct"
+            )
+            _demote_recognized_field(
+                chain["luminaryMaximumLife"], value_key="reviewedLife"
+            )
+            for entry in chain["conditionalContributions"]:
+                _demote_recognized_contribution(entry)
+            for entry in chain["flameLinkLevel"]["additionalLinkGemLevels"]:
+                _demote_recognized_contribution(entry)
+            if chain["flameLinkLevel"]["baseLevelProvenance"] == "imported-recognized":
+                chain["flameLinkLevel"]["baseLevelProvenance"] = "manual-reviewed"
         candidate["importedResult"] = result
         candidate["importedResultSha256"] = imported_result_digest(result)
         candidate["playerItemSetOccurrenceId"] = None
@@ -718,7 +797,47 @@ class ApplicationService:
             chain["flameLinkLevel"] = level
         if luminary_maximum_life is not _UNSET:
             chain["luminaryMaximumLife"] = dict(luminary_maximum_life)
+        try:
+            validate_document(candidate)
+        except BuildStateError:
+            raise
+        except DecimalInputError as error:
+            raise BuildStateError(error.code, error.message) from error
+        if self._flame_link_table is not None:
+            try:
+                evaluate_flame_link(chain, self._flame_link_table)
+            except (DecimalInputError, FlameLinkTableError, ValueError) as error:
+                code = getattr(error, "code", "FLAME_LINK_EVALUATION")
+                message = getattr(error, "message", str(error))
+                raise BuildStateError(str(code), str(message)) from error
         self._commit(candidate)
+
+    def next_manual_conditional_id(self) -> str:
+        return self._next_contribution_id(
+            self._state["flameLinkPlayerChain"]["conditionalContributions"],
+            _MANUAL_CONDITIONAL_ID_RE,
+            "manual-conditional",
+        )
+
+    def next_manual_level_id(self) -> str:
+        return self._next_contribution_id(
+            self._state["flameLinkPlayerChain"]["flameLinkLevel"][
+                "additionalLinkGemLevels"
+            ],
+            _MANUAL_LEVEL_ID_RE,
+            "manual-level",
+        )
+
+    @staticmethod
+    def _next_contribution_id(
+        entries: list[dict[str, Any]], pattern: re.Pattern[str], prefix: str
+    ) -> str:
+        maximum = 0
+        for entry in entries:
+            match = pattern.fullmatch(str(entry.get("contributionId", "")))
+            if match:
+                maximum = max(maximum, int(match.group(1)))
+        return f"{prefix}-{maximum + 1:04d}"
 
     def recognize_player_chain_from_text(
         self, raw_text: str
@@ -740,19 +859,26 @@ class ApplicationService:
         signed_value_lexeme: str,
         *,
         raw_source_text: str = "",
-        allocated_state: str = "allocated",
-        mercenary_target_state: str = "yes",
+        recognition_kind: str = "advisory-text",
     ) -> None:
-        """Apply a user-confirmed Light Radius recognition into reviewed GG input."""
+        """Apply a user-confirmed Light Radius value without changing eligibility."""
 
+        current = self.state["flameLinkPlayerChain"]["goldenGlory"]
+        recognition = empty_recognition_source()
+        if raw_source_text:
+            recognition = {
+                "kind": recognition_kind,
+                "digest": _text_digest(raw_source_text),
+            }
         self.set_flame_link_input(
             golden_glory={
-                "allocatedState": allocated_state,
-                "mercenaryTargetState": mercenary_target_state,
+                "allocatedState": current["allocatedState"],
+                "mercenaryTargetState": current["mercenaryTargetState"],
                 "reviewedLightRadiusPct": signed_value_lexeme,
                 "provenanceKind": "recognized-reviewed",
                 "reviewState": "reviewed",
                 "rawSourceText": raw_source_text,
+                "recognitionSource": recognition,
             }
         )
 
@@ -761,17 +887,142 @@ class ApplicationService:
         signed_value_lexeme: str,
         *,
         raw_source_text: str = "",
+        recognition_kind: str = "advisory-text",
     ) -> None:
         """Apply a user-confirmed direct Link Buff Effect recognition."""
 
+        recognition = empty_recognition_source()
+        if raw_source_text:
+            recognition = {
+                "kind": recognition_kind,
+                "digest": _text_digest(raw_source_text),
+            }
         self.set_flame_link_input(
             direct_link_buff_effect={
                 "reviewedDirectPct": signed_value_lexeme,
                 "provenanceKind": "recognized-reviewed",
                 "reviewState": "reviewed",
                 "rawSourceText": raw_source_text,
+                "recognitionSource": recognition,
             }
         )
+
+    def apply_recognized_empowered_bond_level(
+        self,
+        *,
+        raw_source_text: str = "",
+        recognition_kind: str = "advisory-text",
+        active_state: str = "active",
+    ) -> None:
+        level = copy.deepcopy(self.state["flameLinkPlayerChain"]["flameLinkLevel"])
+        recognition = empty_recognition_source()
+        if raw_source_text:
+            recognition = {
+                "kind": recognition_kind,
+                "digest": _text_digest(raw_source_text),
+            }
+        found = False
+        for entry in level["additionalLinkGemLevels"]:
+            if entry["contributionId"] == "empowered-bond":
+                entry["levels"] = 2
+                entry["activeState"] = active_state
+                entry["provenanceKind"] = "recognized-reviewed"
+                entry["rawSourceText"] = raw_source_text
+                entry["recognitionSource"] = recognition
+                found = True
+                break
+        if not found:
+            level["additionalLinkGemLevels"].append(
+                {
+                    "contributionId": "empowered-bond",
+                    "label": "Empowered Bond",
+                    "levels": 2,
+                    "activeState": active_state,
+                    "provenanceKind": "recognized-reviewed",
+                    "rawSourceText": raw_source_text,
+                    "recognitionSource": recognition,
+                }
+            )
+        self.set_flame_link_input(flame_link_level=level)
+
+    def apply_recognized_generic_link_gem_level(
+        self,
+        levels: int,
+        *,
+        raw_source_text: str = "",
+        label: str = "Additional Link Skill Gem levels",
+        recognition_kind: str = "advisory-text",
+        contribution_id: str | None = None,
+        active_state: str = "active",
+    ) -> None:
+        level = copy.deepcopy(self.state["flameLinkPlayerChain"]["flameLinkLevel"])
+        recognition = empty_recognition_source()
+        if raw_source_text:
+            recognition = {
+                "kind": recognition_kind,
+                "digest": _text_digest(raw_source_text),
+            }
+        entry_id = contribution_id or self.next_manual_level_id()
+        level["additionalLinkGemLevels"].append(
+            {
+                "contributionId": entry_id,
+                "label": label,
+                "levels": levels,
+                "activeState": active_state,
+                "provenanceKind": "recognized-reviewed",
+                "rawSourceText": raw_source_text,
+                "recognitionSource": recognition,
+            }
+        )
+        self.set_flame_link_input(flame_link_level=level)
+
+    def apply_recognized_conditional(
+        self,
+        *,
+        contribution_id: str,
+        label: str,
+        value_pct: str,
+        kind: str,
+        raw_source_text: str = "",
+        recognition_kind: str = "advisory-text",
+        condition_state: str = "unknown",
+    ) -> None:
+        conditionals = [
+            dict(entry)
+            for entry in self.state["flameLinkPlayerChain"]["conditionalContributions"]
+        ]
+        recognition = empty_recognition_source()
+        if raw_source_text:
+            recognition = {
+                "kind": recognition_kind,
+                "digest": _text_digest(raw_source_text),
+            }
+        updated = False
+        for entry in conditionals:
+            if entry["contributionId"] == contribution_id:
+                entry["label"] = label
+                entry["valuePct"] = value_pct
+                entry["kind"] = kind
+                entry["conditionState"] = condition_state
+                entry["provenanceKind"] = "recognized-reviewed"
+                entry["rawSourceText"] = raw_source_text
+                entry["recognitionSource"] = recognition
+                updated = True
+                break
+        if not updated:
+            conditionals.append(
+                {
+                    "contributionId": contribution_id,
+                    "label": label,
+                    "valuePct": value_pct,
+                    "conditionState": condition_state,
+                    "kind": kind,
+                    "provenanceKind": "recognized-reviewed",
+                    "rawSourceText": raw_source_text,
+                    "recognitionSource": recognition,
+                }
+            )
+        self.set_flame_link_input(conditional_contributions=conditionals)
 
     def flame_link_result(self) -> FlameLinkResult:
         if self._flame_link_table is None:

@@ -39,6 +39,11 @@ policy, without creating a separate AUD-006.
 - Output is Added Fire Damage granted to linked Mercenary, never DPS.
 - Quality does not affect damage.
 - Do not clamp unsupported multipliers or effective levels.
+- Exact zero multiplier is a resolved `0–0` granted range; negative multipliers
+  remain unsupported.
+- Reviewed Maximum Life must be nonnegative; zero is valid.
+- Recognition is advisory until reviewed; Apply must not fabricate Golden Glory
+  eligibility; benchmark provenance is explicit selection only.
 
 ## Consequences
 

@@ -184,12 +184,14 @@ def build_self_test_result() -> dict[str, Any]:
             "provenanceKind": "manual-reviewed",
             "reviewState": "reviewed",
             "rawSourceText": "40% increased Light Radius",
+            "recognitionSource": {"kind": "none", "digest": None},
         },
         direct_link_buff_effect={
             "reviewedDirectPct": "0",
             "provenanceKind": "manual-reviewed",
             "reviewState": "reviewed",
             "rawSourceText": "",
+            "recognitionSource": {"kind": "none", "digest": None},
         },
         conditional_contributions=chain["conditionalContributions"],
         flame_link_level=chain["flameLinkLevel"],
@@ -198,6 +200,7 @@ def build_self_test_result() -> dict[str, Any]:
             "provenanceKind": "manual-reviewed",
             "reviewState": "reviewed",
             "rawSourceText": "",
+            "recognitionSource": {"kind": "none", "digest": None},
         },
     )
     flame = service.flame_link_result()

@@ -5,6 +5,7 @@ from __future__ import annotations
 import copy
 import json
 import os
+import re
 import tempfile
 from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass
@@ -62,6 +63,13 @@ MAX_ADDITIONAL_LEVEL_CONTRIBUTIONS = 32
 MAX_RAW_SOURCE_TEXT_CHARACTERS = 100_000
 MAX_CONTRIBUTION_ID_CHARACTERS = 80
 MAX_CONTRIBUTION_LABEL_CHARACTERS = 120
+RECOGNITION_SOURCE_KINDS = {"none", "advisory-text", "pob-import", "copied-text"}
+CATALOG_POWERFUL_BOND_ID = "powerful-bond"
+CATALOG_INSPIRING_BOND_ID = "inspiring-bond"
+CATALOG_EMPOWERED_BOND_ID = "empowered-bond"
+CATALOG_BOND_VALUE_PCT = "20"
+CATALOG_EMPOWERED_LEVELS = 2
+_DIGEST_RE = re.compile(r"^[0-9a-f]{64}$")
 
 _JSON_ESCAPE_BYTES_PER_PYTHON_CHARACTER = 12
 _MAX_DECIMAL_LEXEME_CHARACTERS = DECIMAL_DIGIT_LIMIT + 2
@@ -121,12 +129,14 @@ _GOLDEN_GLORY_KEY_ORDER = (
     "provenanceKind",
     "reviewState",
     "rawSourceText",
+    "recognitionSource",
 )
 _DIRECT_KEY_ORDER = (
     "reviewedDirectPct",
     "provenanceKind",
     "reviewState",
     "rawSourceText",
+    "recognitionSource",
 )
 _CONDITIONAL_KEY_ORDER = (
     "contributionId",
@@ -136,6 +146,7 @@ _CONDITIONAL_KEY_ORDER = (
     "kind",
     "provenanceKind",
     "rawSourceText",
+    "recognitionSource",
 )
 _ADDITIONAL_LEVEL_KEY_ORDER = (
     "contributionId",
@@ -144,6 +155,7 @@ _ADDITIONAL_LEVEL_KEY_ORDER = (
     "activeState",
     "provenanceKind",
     "rawSourceText",
+    "recognitionSource",
 )
 _LEVEL_KEY_ORDER = (
     "baseLevel",
@@ -155,6 +167,11 @@ _LIFE_KEY_ORDER = (
     "provenanceKind",
     "reviewState",
     "rawSourceText",
+    "recognitionSource",
+)
+_RECOGNITION_SOURCE_KEY_ORDER = (
+    "kind",
+    "digest",
 )
 _FLAME_LINK_KEY_ORDER = (
     "goldenGlory",
@@ -237,6 +254,10 @@ def empty_enmity_manual_input() -> dict[str, Any]:
     return v2_codec.empty_enmity_manual_input()
 
 
+def empty_recognition_source() -> dict[str, Any]:
+    return {"kind": "none", "digest": None}
+
+
 def empty_flame_link_player_chain() -> dict[str, Any]:
     return {
         "goldenGlory": {
@@ -246,31 +267,35 @@ def empty_flame_link_player_chain() -> dict[str, Any]:
             "provenanceKind": "unreviewed",
             "reviewState": "unreviewed",
             "rawSourceText": "",
+            "recognitionSource": empty_recognition_source(),
         },
         "directLinkBuffEffect": {
             "reviewedDirectPct": None,
             "provenanceKind": "unreviewed",
             "reviewState": "unreviewed",
             "rawSourceText": "",
+            "recognitionSource": empty_recognition_source(),
         },
         "conditionalContributions": [
             {
-                "contributionId": "powerful-bond",
+                "contributionId": CATALOG_POWERFUL_BOND_ID,
                 "label": "Powerful Bond",
-                "valuePct": "20",
+                "valuePct": CATALOG_BOND_VALUE_PCT,
                 "conditionState": "unknown",
                 "kind": "powerful-bond",
                 "provenanceKind": "catalog-default",
                 "rawSourceText": "",
+                "recognitionSource": empty_recognition_source(),
             },
             {
-                "contributionId": "inspiring-bond",
+                "contributionId": CATALOG_INSPIRING_BOND_ID,
                 "label": "Inspiring Bond",
-                "valuePct": "20",
+                "valuePct": CATALOG_BOND_VALUE_PCT,
                 "conditionState": "unknown",
                 "kind": "inspiring-bond",
                 "provenanceKind": "catalog-default",
                 "rawSourceText": "",
+                "recognitionSource": empty_recognition_source(),
             },
         ],
         "flameLinkLevel": {
@@ -278,12 +303,13 @@ def empty_flame_link_player_chain() -> dict[str, Any]:
             "baseLevelProvenance": "manual-benchmark-default",
             "additionalLinkGemLevels": [
                 {
-                    "contributionId": "empowered-bond",
+                    "contributionId": CATALOG_EMPOWERED_BOND_ID,
                     "label": "Empowered Bond",
-                    "levels": 2,
+                    "levels": CATALOG_EMPOWERED_LEVELS,
                     "activeState": "unknown",
                     "provenanceKind": "catalog-default",
                     "rawSourceText": "",
+                    "recognitionSource": empty_recognition_source(),
                 }
             ],
         },
@@ -292,6 +318,7 @@ def empty_flame_link_player_chain() -> dict[str, Any]:
             "provenanceKind": "unreviewed",
             "reviewState": "unreviewed",
             "rawSourceText": "",
+            "recognitionSource": empty_recognition_source(),
         },
         "roundingPolicyId": ROUNDING_POLICY_ID,
         "formulaVersionId": FORMULA_VERSION_ID,
@@ -321,6 +348,22 @@ def _validate_optional_decimal(value: Any, context: str) -> None:
         _fail(error.code, f"{context}: {error.message}")
 
 
+def _validate_optional_nonnegative_decimal(value: Any, context: str) -> None:
+    if value is None:
+        return
+    text = _require_string(value, context)
+    assert text is not None
+    try:
+        parsed = parse_decimal_text(text)
+    except DecimalInputError as error:
+        _fail(error.code, f"{context}: {error.message}")
+    if parsed.value < 0:
+        _fail(
+            "LUMINARY_MAXIMUM_LIFE_NEGATIVE",
+            f"{context} must be nonnegative; zero is valid",
+        )
+
+
 def _validate_provenance(value: Any, context: str) -> str:
     provenance = _require_string(value, context)
     assert provenance is not None
@@ -346,6 +389,115 @@ def _validate_raw_source(value: Any, context: str) -> str:
     return text
 
 
+def _validate_recognition_source(value: Any, context: str) -> dict[str, Any]:
+    source = _require_object(value, context)
+    _require_exact_keys(source, set(_RECOGNITION_SOURCE_KEY_ORDER), context)
+    kind = _require_string(source["kind"], f"{context}.kind")
+    assert kind is not None
+    if kind not in RECOGNITION_SOURCE_KINDS:
+        _fail("FLAME_LINK_RECOGNITION_SOURCE", f"{context}.kind is not recognized")
+    digest = source["digest"]
+    if digest is None:
+        if kind != "none":
+            _fail(
+                "FLAME_LINK_RECOGNITION_SOURCE",
+                f"{context}.digest is required when kind is not none",
+            )
+        return source
+    digest_text = _require_string(digest, f"{context}.digest")
+    assert digest_text is not None
+    if not _DIGEST_RE.fullmatch(digest_text):
+        _fail(
+            "FLAME_LINK_RECOGNITION_SOURCE",
+            f"{context}.digest must be a 64-character lowercase hex digest",
+        )
+    return source
+
+
+def _validate_reviewed_field_semantics(
+    *,
+    context: str,
+    provenance: str,
+    review_state: str,
+    value: Any,
+    raw_source_text: str,
+    recognition_source: Mapping[str, Any],
+) -> None:
+    if provenance == "unreviewed":
+        if review_state != "unreviewed":
+            _fail(
+                "FLAME_LINK_PROVENANCE_INVARIANT",
+                f"{context}: unreviewed provenance requires unreviewed state",
+            )
+        return
+    if provenance == "recognized-reviewed":
+        if review_state != "reviewed" or value is None:
+            _fail(
+                "FLAME_LINK_PROVENANCE_INVARIANT",
+                f"{context}: recognized-reviewed requires reviewed value",
+            )
+        has_raw = isinstance(raw_source_text, str) and bool(raw_source_text.strip())
+        has_digest = (
+            recognition_source.get("kind") != "none"
+            and recognition_source.get("digest") is not None
+        )
+        if not has_raw and not has_digest:
+            _fail(
+                "FLAME_LINK_PROVENANCE_INVARIANT",
+                f"{context}: recognized-reviewed requires rawSourceText or recognitionSource digest",
+            )
+        return
+    if provenance == "manual-reviewed":
+        if review_state != "reviewed" or value is None:
+            _fail(
+                "FLAME_LINK_PROVENANCE_INVARIANT",
+                f"{context}: manual-reviewed requires reviewed value",
+            )
+        return
+    if provenance == "catalog-default":
+        return
+
+
+def _ensure_recognition_source(container: dict[str, Any]) -> None:
+    if "recognitionSource" not in container or not isinstance(
+        container.get("recognitionSource"), dict
+    ):
+        container["recognitionSource"] = empty_recognition_source()
+        return
+    source = container["recognitionSource"]
+    if "kind" not in source:
+        source["kind"] = "none"
+    if "digest" not in source:
+        source["digest"] = None
+
+
+def inject_recognition_source_defaults(chain: Mapping[str, Any]) -> dict[str, Any]:
+    """Inject recognitionSource defaults for pre-repair v3 documents."""
+
+    updated = _safe_deepcopy(
+        chain,
+        code="OPEN_STATE_NESTING",
+        message="Flame Link migration exceeds safe copy nesting limits",
+    )
+    for key in ("goldenGlory", "directLinkBuffEffect", "luminaryMaximumLife"):
+        block = updated.get(key)
+        if isinstance(block, dict):
+            _ensure_recognition_source(block)
+    conditionals = updated.get("conditionalContributions")
+    if isinstance(conditionals, list):
+        for entry in conditionals:
+            if isinstance(entry, dict):
+                _ensure_recognition_source(entry)
+    level = updated.get("flameLinkLevel")
+    if isinstance(level, dict):
+        additions = level.get("additionalLinkGemLevels")
+        if isinstance(additions, list):
+            for entry in additions:
+                if isinstance(entry, dict):
+                    _ensure_recognition_source(entry)
+    return updated
+
+
 def _validate_flame_link_player_chain(value: Any) -> None:
     chain = _require_object(value, "flameLinkPlayerChain")
     _require_exact_keys(chain, set(_FLAME_LINK_KEY_ORDER), "flameLinkPlayerChain")
@@ -367,14 +519,26 @@ def _validate_flame_link_player_chain(value: Any) -> None:
         golden["reviewedLightRadiusPct"],
         "flameLinkPlayerChain.goldenGlory.reviewedLightRadiusPct",
     )
-    _validate_provenance(
+    golden_provenance = _validate_provenance(
         golden["provenanceKind"], "flameLinkPlayerChain.goldenGlory.provenanceKind"
     )
-    _validate_review_state(
+    golden_review = _validate_review_state(
         golden["reviewState"], "flameLinkPlayerChain.goldenGlory.reviewState"
     )
-    _validate_raw_source(
+    golden_raw = _validate_raw_source(
         golden["rawSourceText"], "flameLinkPlayerChain.goldenGlory.rawSourceText"
+    )
+    golden_recognition = _validate_recognition_source(
+        golden["recognitionSource"],
+        "flameLinkPlayerChain.goldenGlory.recognitionSource",
+    )
+    _validate_reviewed_field_semantics(
+        context="flameLinkPlayerChain.goldenGlory",
+        provenance=golden_provenance,
+        review_state=golden_review,
+        value=golden["reviewedLightRadiusPct"],
+        raw_source_text=golden_raw,
+        recognition_source=golden_recognition,
     )
 
     direct = _require_object(
@@ -387,16 +551,28 @@ def _validate_flame_link_player_chain(value: Any) -> None:
         direct["reviewedDirectPct"],
         "flameLinkPlayerChain.directLinkBuffEffect.reviewedDirectPct",
     )
-    _validate_provenance(
+    direct_provenance = _validate_provenance(
         direct["provenanceKind"],
         "flameLinkPlayerChain.directLinkBuffEffect.provenanceKind",
     )
-    _validate_review_state(
+    direct_review = _validate_review_state(
         direct["reviewState"], "flameLinkPlayerChain.directLinkBuffEffect.reviewState"
     )
-    _validate_raw_source(
+    direct_raw = _validate_raw_source(
         direct["rawSourceText"],
         "flameLinkPlayerChain.directLinkBuffEffect.rawSourceText",
+    )
+    direct_recognition = _validate_recognition_source(
+        direct["recognitionSource"],
+        "flameLinkPlayerChain.directLinkBuffEffect.recognitionSource",
+    )
+    _validate_reviewed_field_semantics(
+        context="flameLinkPlayerChain.directLinkBuffEffect",
+        provenance=direct_provenance,
+        review_state=direct_review,
+        value=direct["reviewedDirectPct"],
+        raw_source_text=direct_raw,
+        recognition_source=direct_recognition,
     )
 
     conditionals = _require_list(
@@ -435,8 +611,48 @@ def _validate_flame_link_player_chain(value: Any) -> None:
         kind = _require_string(entry["kind"], f"{context}.kind")
         if kind not in CONDITIONAL_KINDS:
             _fail("CONDITIONAL_KIND", f"{context}.kind is not recognized")
-        _validate_provenance(entry["provenanceKind"], f"{context}.provenanceKind")
-        _validate_raw_source(entry["rawSourceText"], f"{context}.rawSourceText")
+        if contribution_id == CATALOG_POWERFUL_BOND_ID:
+            if kind != "powerful-bond" or entry["valuePct"] != CATALOG_BOND_VALUE_PCT:
+                _fail(
+                    "CONDITIONAL_CATALOG_INVARIANT",
+                    "powerful-bond catalog contribution must use kind powerful-bond and valuePct 20",
+                )
+        elif contribution_id == CATALOG_INSPIRING_BOND_ID:
+            if kind != "inspiring-bond" or entry["valuePct"] != CATALOG_BOND_VALUE_PCT:
+                _fail(
+                    "CONDITIONAL_CATALOG_INVARIANT",
+                    "inspiring-bond catalog contribution must use kind inspiring-bond and valuePct 20",
+                )
+        elif kind in {"powerful-bond", "inspiring-bond"}:
+            _fail(
+                "CONDITIONAL_CATALOG_INVARIANT",
+                f"{context}: catalog kinds require matching catalog contribution IDs",
+            )
+        provenance = _validate_provenance(entry["provenanceKind"], f"{context}.provenanceKind")
+        raw_text = _validate_raw_source(entry["rawSourceText"], f"{context}.rawSourceText")
+        recognition = _validate_recognition_source(
+            entry["recognitionSource"], f"{context}.recognitionSource"
+        )
+        if provenance == "unreviewed":
+            _fail(
+                "FLAME_LINK_PROVENANCE_INVARIANT",
+                f"{context}: conditional contributions do not use unreviewed provenance",
+            )
+        if provenance == "recognized-reviewed":
+            has_raw = bool(raw_text.strip())
+            has_digest = (
+                recognition.get("kind") != "none" and recognition.get("digest") is not None
+            )
+            if entry["valuePct"] is None or (not has_raw and not has_digest):
+                _fail(
+                    "FLAME_LINK_PROVENANCE_INVARIANT",
+                    f"{context}: recognized-reviewed requires value and source identity",
+                )
+        if provenance == "manual-reviewed" and entry["valuePct"] is None:
+            _fail(
+                "FLAME_LINK_PROVENANCE_INVARIANT",
+                f"{context}: manual-reviewed requires valuePct",
+            )
 
     level = _require_object(chain["flameLinkLevel"], "flameLinkPlayerChain.flameLinkLevel")
     _require_exact_keys(level, set(_LEVEL_KEY_ORDER), "flameLinkPlayerChain.flameLinkLevel")
@@ -452,6 +668,12 @@ def _validate_flame_link_player_chain(value: Any) -> None:
             "FLAME_LINK_BASE_LEVEL_PROVENANCE",
             "Base Flame Link level provenance is not recognized",
         )
+    if provenance == "manual-benchmark-default":
+        if base_level != DEFAULT_BASE_FLAME_LINK_LEVEL:
+            _fail(
+                "FLAME_LINK_BASE_LEVEL_PROVENANCE",
+                "manual-benchmark-default requires baseLevel 21",
+            )
     additions = _require_list(
         level["additionalLinkGemLevels"],
         "flameLinkPlayerChain.flameLinkLevel.additionalLinkGemLevels",
@@ -486,29 +708,68 @@ def _validate_flame_link_player_chain(value: Any) -> None:
         levels = entry["levels"]
         if not isinstance(levels, int) or isinstance(levels, bool):
             _fail("ADDITIONAL_LINK_LEVEL_VALUE", f"{context}.levels must be an integer")
+        if contribution_id == CATALOG_EMPOWERED_BOND_ID:
+            if levels != CATALOG_EMPOWERED_LEVELS:
+                _fail(
+                    "ADDITIONAL_LINK_LEVEL_CATALOG",
+                    "empowered-bond catalog contribution must use levels 2",
+                )
+        if contribution_id in {CATALOG_POWERFUL_BOND_ID, CATALOG_INSPIRING_BOND_ID}:
+            _fail(
+                "ADDITIONAL_LINK_LEVEL_CATALOG",
+                "Powerful/Inspiring Bond catalog IDs cannot be additional level contributions",
+            )
         active_state = _require_string(entry["activeState"], f"{context}.activeState")
         if active_state not in ACTIVE_STATES:
             _fail("ADDITIONAL_LINK_LEVEL_STATE", f"{context}.activeState is not recognized")
-        _validate_provenance(entry["provenanceKind"], f"{context}.provenanceKind")
-        _validate_raw_source(entry["rawSourceText"], f"{context}.rawSourceText")
+        level_provenance = _validate_provenance(
+            entry["provenanceKind"], f"{context}.provenanceKind"
+        )
+        level_raw = _validate_raw_source(entry["rawSourceText"], f"{context}.rawSourceText")
+        level_recognition = _validate_recognition_source(
+            entry["recognitionSource"], f"{context}.recognitionSource"
+        )
+        if level_provenance == "recognized-reviewed":
+            has_raw = bool(level_raw.strip())
+            has_digest = (
+                level_recognition.get("kind") != "none"
+                and level_recognition.get("digest") is not None
+            )
+            if not has_raw and not has_digest:
+                _fail(
+                    "FLAME_LINK_PROVENANCE_INVARIANT",
+                    f"{context}: recognized-reviewed requires source identity",
+                )
 
     life = _require_object(
         chain["luminaryMaximumLife"], "flameLinkPlayerChain.luminaryMaximumLife"
     )
     _require_exact_keys(life, set(_LIFE_KEY_ORDER), "flameLinkPlayerChain.luminaryMaximumLife")
-    _validate_optional_decimal(
+    _validate_optional_nonnegative_decimal(
         life["reviewedLife"], "flameLinkPlayerChain.luminaryMaximumLife.reviewedLife"
     )
-    _validate_provenance(
+    life_provenance = _validate_provenance(
         life["provenanceKind"],
         "flameLinkPlayerChain.luminaryMaximumLife.provenanceKind",
     )
-    _validate_review_state(
+    life_review = _validate_review_state(
         life["reviewState"], "flameLinkPlayerChain.luminaryMaximumLife.reviewState"
     )
-    _validate_raw_source(
+    life_raw = _validate_raw_source(
         life["rawSourceText"],
         "flameLinkPlayerChain.luminaryMaximumLife.rawSourceText",
+    )
+    life_recognition = _validate_recognition_source(
+        life["recognitionSource"],
+        "flameLinkPlayerChain.luminaryMaximumLife.recognitionSource",
+    )
+    _validate_reviewed_field_semantics(
+        context="flameLinkPlayerChain.luminaryMaximumLife",
+        provenance=life_provenance,
+        review_state=life_review,
+        value=life["reviewedLife"],
+        raw_source_text=life_raw,
+        recognition_source=life_recognition,
     )
 
     rounding = _require_string(
@@ -561,22 +822,40 @@ def _ordered_flame_link(chain: Mapping[str, Any]) -> dict[str, Any]:
     ordered["goldenGlory"] = {
         key: chain["goldenGlory"][key] for key in _GOLDEN_GLORY_KEY_ORDER
     }
+    ordered["goldenGlory"]["recognitionSource"] = {
+        key: chain["goldenGlory"]["recognitionSource"][key]
+        for key in _RECOGNITION_SOURCE_KEY_ORDER
+    }
     ordered["directLinkBuffEffect"] = {
         key: chain["directLinkBuffEffect"][key] for key in _DIRECT_KEY_ORDER
     }
-    ordered["conditionalContributions"] = [
-        {key: entry[key] for key in _CONDITIONAL_KEY_ORDER}
-        for entry in chain["conditionalContributions"]
-    ]
+    ordered["directLinkBuffEffect"]["recognitionSource"] = {
+        key: chain["directLinkBuffEffect"]["recognitionSource"][key]
+        for key in _RECOGNITION_SOURCE_KEY_ORDER
+    }
+    ordered["conditionalContributions"] = []
+    for entry in chain["conditionalContributions"]:
+        ordered_entry = {key: entry[key] for key in _CONDITIONAL_KEY_ORDER}
+        ordered_entry["recognitionSource"] = {
+            key: entry["recognitionSource"][key] for key in _RECOGNITION_SOURCE_KEY_ORDER
+        }
+        ordered["conditionalContributions"].append(ordered_entry)
     level = chain["flameLinkLevel"]
     ordered_level = {key: level[key] for key in _LEVEL_KEY_ORDER}
-    ordered_level["additionalLinkGemLevels"] = [
-        {key: entry[key] for key in _ADDITIONAL_LEVEL_KEY_ORDER}
-        for entry in level["additionalLinkGemLevels"]
-    ]
+    ordered_level["additionalLinkGemLevels"] = []
+    for entry in level["additionalLinkGemLevels"]:
+        ordered_entry = {key: entry[key] for key in _ADDITIONAL_LEVEL_KEY_ORDER}
+        ordered_entry["recognitionSource"] = {
+            key: entry["recognitionSource"][key] for key in _RECOGNITION_SOURCE_KEY_ORDER
+        }
+        ordered_level["additionalLinkGemLevels"].append(ordered_entry)
     ordered["flameLinkLevel"] = ordered_level
     ordered["luminaryMaximumLife"] = {
         key: chain["luminaryMaximumLife"][key] for key in _LIFE_KEY_ORDER
+    }
+    ordered["luminaryMaximumLife"]["recognitionSource"] = {
+        key: chain["luminaryMaximumLife"]["recognitionSource"][key]
+        for key in _RECOGNITION_SOURCE_KEY_ORDER
     }
     return ordered
 
@@ -692,6 +971,10 @@ def decode(data: bytes) -> DecodedBuildState:
     parsed = _decode_json(data)
     schema_version = parsed.get("schemaVersion")
     if schema_version == BUILD_STATE_SCHEMA_VERSION:
+        if isinstance(parsed.get("flameLinkPlayerChain"), dict):
+            parsed["flameLinkPlayerChain"] = inject_recognition_source_defaults(
+                parsed["flameLinkPlayerChain"]
+            )
         validate_document(parsed)
         document = _safe_deepcopy(
             parsed,

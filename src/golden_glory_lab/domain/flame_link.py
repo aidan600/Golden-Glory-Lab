@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 from dataclasses import dataclass
-from decimal import ROUND_HALF_UP, Decimal
+from decimal import ROUND_HALF_UP, Decimal, localcontext
 from importlib import resources
 from typing import Any, Mapping
 
-from .decimal_input import ParsedDecimal, parse_decimal_text
+from .decimal_input import ParsedDecimal, numeric_context_for, parse_decimal_text
 
 OUTPUT_ID = "flame-link-added-fire-damage-granted-v1"
 OUTPUT_LABEL = "Added Fire Damage granted to linked Mercenary"
@@ -16,11 +17,19 @@ FORMULA_VERSION_ID = "flame-link-player-chain-v1"
 ROUNDING_POLICY_ID = "modelled-nearest-integer-half-up-v1"
 ROUNDING_POLICY_LABEL = "Modelled nearest-integer result"
 TARGET_GAME_VERSION = "Path of Exile 1 3.29.1"
+SOURCE_DATA_VERSION = "Path of Exile 1 3.29.0"
+ARTIFACT_ID = "flame-link-level-table-v1"
 LIFE_COMPONENT_FRACTION = Decimal("0.05")
 LEVEL_TABLE_RESOURCE = "flame-link-level-table-v1.json"
 _RESOURCE_PACKAGE = "golden_glory_lab.runtime_data"
 MINIMUM_EFFECTIVE_LEVEL = 1
 MAXIMUM_EFFECTIVE_LEVEL = 40
+EXPECTED_TABLE_ROW_COUNT = 40
+EXPECTED_ARTIFACT_ID = ARTIFACT_ID
+EXPECTED_FORMULA_VERSION_ID = FORMULA_VERSION_ID
+EXPECTED_ROUNDING_POLICY_ID = ROUNDING_POLICY_ID
+EXPECTED_TARGET_GAME_VERSION = TARGET_GAME_VERSION
+EXPECTED_SOURCE_DATA_VERSION = SOURCE_DATA_VERSION
 
 
 class FlameLinkTableError(RuntimeError):
@@ -126,6 +135,12 @@ def round_half_up(value: Decimal) -> int:
     return int(value.quantize(Decimal("1"), rounding=ROUND_HALF_UP))
 
 
+def table_sha256(data: bytes) -> str:
+    """Return the lowercase hex SHA-256 digest of packaged table bytes."""
+
+    return hashlib.sha256(data).hexdigest()
+
+
 def _reason(code: str, message: str, **values: Any) -> dict[str, Any]:
     return {"code": code, "message": message, **values}
 
@@ -139,6 +154,45 @@ def _lexeme(value: Decimal) -> str:
 
 def _parsed_optional(value: Any) -> ParsedDecimal | None:
     return None if value is None else parse_decimal_text(value)
+
+
+def _require_exact_string(root: Mapping[str, Any], key: str, expected: str) -> str:
+    if key not in root:
+        raise FlameLinkTableError(
+            "FLAME_LINK_TABLE_METADATA",
+            f"Flame Link level table is missing required metadata field {key}",
+        )
+    value = root[key]
+    if not isinstance(value, str) or value != expected:
+        raise FlameLinkTableError(
+            "FLAME_LINK_TABLE_METADATA",
+            f"Flame Link level table {key} must be exactly {expected!r}",
+        )
+    return value
+
+
+def _require_strict_int(value: Any, context: str, *, positive: bool = False) -> int:
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise FlameLinkTableError(
+            "FLAME_LINK_TABLE_INVALID",
+            f"{context} must be a strict JSON integer",
+        )
+    if positive and value <= 0:
+        raise FlameLinkTableError(
+            "FLAME_LINK_TABLE_INVALID",
+            f"{context} must be a positive integer",
+        )
+    return value
+
+
+def _require_nonnegative_int(value: Any, context: str) -> int:
+    number = _require_strict_int(value, context)
+    if number < 0:
+        raise FlameLinkTableError(
+            "FLAME_LINK_TABLE_INVALID",
+            f"{context} must be a nonnegative integer",
+        )
+    return number
 
 
 def load_flame_link_level_table(
@@ -157,17 +211,36 @@ def load_flame_link_level_table(
 
 def parse_flame_link_level_table_bytes(data: bytes) -> FlameLinkLevelTable:
     try:
-        root = json.loads(data.decode("utf-8"))
+        root = json.loads(data.decode("utf-8"), parse_constant=_reject_json_constant)
     except (UnicodeDecodeError, json.JSONDecodeError) as error:
         raise FlameLinkTableError(
             "FLAME_LINK_TABLE_INVALID",
             f"Flame Link level table is not valid JSON: {error}",
+        ) from error
+    except FlameLinkTableError:
+        raise
+    except ValueError as error:
+        raise FlameLinkTableError(
+            "FLAME_LINK_TABLE_NONFINITE",
+            f"Flame Link level table contains a non-finite JSON constant: {error}",
         ) from error
     if not isinstance(root, dict):
         raise FlameLinkTableError(
             "FLAME_LINK_TABLE_INVALID",
             "Flame Link level table root must be an object",
         )
+    artifact_id = _require_exact_string(root, "artifactId", EXPECTED_ARTIFACT_ID)
+    formula_version = _require_exact_string(
+        root, "formulaVersionId", EXPECTED_FORMULA_VERSION_ID
+    )
+    rounding_policy = _require_exact_string(
+        root, "roundingPolicyId", EXPECTED_ROUNDING_POLICY_ID
+    )
+    target_version = _require_exact_string(
+        root, "targetGameVersion", EXPECTED_TARGET_GAME_VERSION
+    )
+    _require_exact_string(root, "sourceDataVersion", EXPECTED_SOURCE_DATA_VERSION)
+
     bounds = root.get("tableBounds")
     rows_value = root.get("rows")
     if not isinstance(bounds, dict) or not isinstance(rows_value, list):
@@ -175,13 +248,24 @@ def parse_flame_link_level_table_bytes(data: bytes) -> FlameLinkLevelTable:
             "FLAME_LINK_TABLE_INVALID",
             "Flame Link level table is missing bounds or rows",
         )
-    minimum = bounds.get("minimumLevel")
-    maximum = bounds.get("maximumLevel")
-    if minimum != MINIMUM_EFFECTIVE_LEVEL or maximum != MAXIMUM_EFFECTIVE_LEVEL:
+    minimum = _require_strict_int(bounds.get("minimumLevel"), "tableBounds.minimumLevel")
+    maximum = _require_strict_int(bounds.get("maximumLevel"), "tableBounds.maximumLevel")
+    row_count = _require_strict_int(bounds.get("rowCount"), "tableBounds.rowCount")
+    if (
+        minimum != MINIMUM_EFFECTIVE_LEVEL
+        or maximum != MAXIMUM_EFFECTIVE_LEVEL
+        or row_count != EXPECTED_TABLE_ROW_COUNT
+    ):
         raise FlameLinkTableError(
             "FLAME_LINK_TABLE_BOUNDS",
-            "Flame Link level table bounds must be levels 1-40",
+            "Flame Link level table bounds must be min=1 max=40 rowCount=40",
         )
+    if len(rows_value) != EXPECTED_TABLE_ROW_COUNT:
+        raise FlameLinkTableError(
+            "FLAME_LINK_TABLE_BOUNDS",
+            "Flame Link level table rowCount must match the rows array length",
+        )
+
     rows: dict[int, FlameLinkLevelRow] = {}
     for index, raw in enumerate(rows_value):
         if not isinstance(raw, dict):
@@ -190,35 +274,102 @@ def parse_flame_link_level_table_bytes(data: bytes) -> FlameLinkLevelTable:
                 f"Flame Link level row {index} must be an object",
             )
         try:
-            level = int(raw["level"])
-            requirement = int(raw["requirementLevel"])
-            flat_min = Decimal(str(raw["flatMin"]))
-            flat_max = Decimal(str(raw["flatMax"]))
-        except (KeyError, TypeError, ValueError) as error:
+            level = _require_strict_int(raw["level"], f"rows[{index}].level")
+            requirement = _require_strict_int(
+                raw["requirementLevel"],
+                f"rows[{index}].requirementLevel",
+                positive=True,
+            )
+            flat_min = _require_nonnegative_int(raw["flatMin"], f"rows[{index}].flatMin")
+            flat_max = _require_nonnegative_int(raw["flatMax"], f"rows[{index}].flatMax")
+        except KeyError as error:
             raise FlameLinkTableError(
                 "FLAME_LINK_TABLE_INVALID",
-                f"Flame Link level row {index} is malformed: {error}",
+                f"Flame Link level row {index} is missing field {error}",
             ) from error
+        if flat_min > flat_max:
+            raise FlameLinkTableError(
+                "FLAME_LINK_TABLE_INVALID",
+                f"Flame Link level row {index} flatMin must be <= flatMax",
+            )
         if level in rows:
             raise FlameLinkTableError(
                 "FLAME_LINK_TABLE_DUPLICATE_LEVEL",
                 f"Duplicate Flame Link level {level}",
             )
-        rows[level] = FlameLinkLevelRow(level, requirement, flat_min, flat_max)
+        rows[level] = FlameLinkLevelRow(
+            level,
+            requirement,
+            Decimal(flat_min),
+            Decimal(flat_max),
+        )
     expected = set(range(MINIMUM_EFFECTIVE_LEVEL, MAXIMUM_EFFECTIVE_LEVEL + 1))
     if set(rows) != expected:
         raise FlameLinkTableError(
             "FLAME_LINK_TABLE_INCOMPLETE",
-            "Flame Link level table must contain exactly levels 1-40",
+            "Flame Link level table must contain exactly levels 1-40 once each",
         )
+
+    anchors = root.get("compactAnchors")
+    if not isinstance(anchors, list):
+        raise FlameLinkTableError(
+            "FLAME_LINK_TABLE_ANCHORS",
+            "Flame Link level table compactAnchors must be an array",
+        )
+    for anchor in anchors:
+        if not isinstance(anchor, dict):
+            raise FlameLinkTableError(
+                "FLAME_LINK_TABLE_ANCHORS",
+                "Flame Link compact anchor must be an object",
+            )
+        level = _require_strict_int(anchor.get("level"), "compactAnchors.level")
+        row = rows.get(level)
+        if row is None:
+            raise FlameLinkTableError(
+                "FLAME_LINK_TABLE_ANCHORS",
+                f"compactAnchors level {level} is missing from rows",
+            )
+        requirement = _require_strict_int(
+            anchor.get("requirementLevel"),
+            "compactAnchors.requirementLevel",
+            positive=True,
+        )
+        flat_min = _require_nonnegative_int(anchor.get("flatMin"), "compactAnchors.flatMin")
+        flat_max = _require_nonnegative_int(anchor.get("flatMax"), "compactAnchors.flatMax")
+        if (
+            requirement != row.requirementLevel
+            or Decimal(flat_min) != row.flatMin
+            or Decimal(flat_max) != row.flatMax
+        ):
+            raise FlameLinkTableError(
+                "FLAME_LINK_TABLE_ANCHORS",
+                f"compactAnchors for level {level} do not match rows",
+            )
+    for required_level in (1, 20):
+        if not any(
+            isinstance(anchor, dict) and anchor.get("level") == required_level
+            for anchor in anchors
+        ):
+            raise FlameLinkTableError(
+                "FLAME_LINK_TABLE_ANCHORS",
+                f"compactAnchors must include level {required_level}",
+            )
+
     return FlameLinkLevelTable(
-        artifactId=str(root.get("artifactId", "")),
-        formulaVersionId=str(root.get("formulaVersionId", FORMULA_VERSION_ID)),
-        roundingPolicyId=str(root.get("roundingPolicyId", ROUNDING_POLICY_ID)),
-        targetGameVersion=str(root.get("targetGameVersion", TARGET_GAME_VERSION)),
+        artifactId=artifact_id,
+        formulaVersionId=formula_version,
+        roundingPolicyId=rounding_policy,
+        targetGameVersion=target_version,
         minimumLevel=MINIMUM_EFFECTIVE_LEVEL,
         maximumLevel=MAXIMUM_EFFECTIVE_LEVEL,
         rows=rows,
+    )
+
+
+def _reject_json_constant(value: str) -> None:
+    raise FlameLinkTableError(
+        "FLAME_LINK_TABLE_NONFINITE",
+        f"Flame Link level table rejects JSON constant {value}",
     )
 
 
@@ -602,6 +753,13 @@ def evaluate_flame_link(
                 "Reviewed Luminary Maximum Life is required",
             )
         )
+    elif life_parsed.value < 0:
+        life_reasons.append(
+            _reason(
+                "LUMINARY_MAXIMUM_LIFE_NEGATIVE",
+                "Reviewed Luminary Maximum Life must be nonnegative; zero is valid",
+            )
+        )
 
     contribution_breakdown = {
         "goldenGlory": gg_detail,
@@ -632,113 +790,131 @@ def evaluate_flame_link(
     assert effective_level is not None and life_parsed is not None
     assert base_level is not None and additional_levels is not None
 
-    net = gg_value + direct_value + conditional_value
-    multiplier = Decimal(1) + (net / Decimal(100))
-    if multiplier <= 0:
-        return _unavailable(
-            state="unsupported-effect-multiplier",
-            reasons=(
-                _reason(
-                    "UNSUPPORTED_EFFECT_MULTIPLIER",
-                    "Link effect multiplier must be greater than zero; negative or zero multipliers are not clamped",
-                    netLinkSkillBuffEffectPct=_lexeme(net),
-                    linkEffectMultiplier=_lexeme(multiplier),
+    row_for_level = level_table.row_for(effective_level)
+    operands = [
+        gg_value,
+        direct_value,
+        conditional_value,
+        life_parsed.value,
+        LIFE_COMPONENT_FRACTION,
+        Decimal(100),
+        Decimal(1),
+    ]
+    if row_for_level is not None:
+        operands.extend((row_for_level.flatMin, row_for_level.flatMax))
+
+    with localcontext(numeric_context_for(*operands)):
+        net = gg_value + direct_value + conditional_value
+        multiplier = Decimal(1) + (net / Decimal(100))
+        if multiplier < 0:
+            return _unavailable(
+                state="unsupported-effect-multiplier",
+                reasons=(
+                    _reason(
+                        "UNSUPPORTED_EFFECT_MULTIPLIER",
+                        "Link effect multiplier must be nonnegative; negative multipliers are not clamped",
+                        netLinkSkillBuffEffectPct=_lexeme(net),
+                        linkEffectMultiplier=_lexeme(multiplier),
+                    ),
                 ),
-            ),
-            contribution_breakdown={
+                contribution_breakdown={
+                    **contribution_breakdown,
+                    "netLinkSkillBuffEffectPct": _lexeme(net),
+                    "linkEffectMultiplier": _lexeme(multiplier),
+                },
+                level_breakdown=level_breakdown,
+                base_level=base_level,
+                additional_levels=additional_levels,
+                effective_level=effective_level,
+                life_lexeme=life_lexeme,
+            )
+
+        if (
+            effective_level < level_table.minimumLevel
+            or effective_level > level_table.maximumLevel
+        ):
+            return _unavailable(
+                state="unsupported-effective-level",
+                reasons=(
+                    _reason(
+                        "UNSUPPORTED_EFFECTIVE_LEVEL",
+                        "Effective Flame Link level is outside the supported 1-40 table; values are not clamped or extrapolated",
+                        effectiveFlameLinkLevel=effective_level,
+                    ),
+                ),
+                contribution_breakdown={
+                    **contribution_breakdown,
+                    "netLinkSkillBuffEffectPct": _lexeme(net),
+                    "linkEffectMultiplier": _lexeme(multiplier),
+                },
+                level_breakdown=level_breakdown,
+                base_level=base_level,
+                additional_levels=additional_levels,
+                effective_level=effective_level,
+                life_lexeme=life_lexeme,
+            )
+
+        row = level_table.row_for(effective_level)
+        if row is None:  # pragma: no cover - guarded by table completeness
+            return _unavailable(
+                state="unavailable",
+                reasons=(
+                    _reason(
+                        "FLAME_LINK_LEVEL_ROW_MISSING",
+                        f"Flame Link level table has no row for effective level {effective_level}",
+                    ),
+                ),
+                level_breakdown=level_breakdown,
+                base_level=base_level,
+                additional_levels=additional_levels,
+                effective_level=effective_level,
+                life_lexeme=life_lexeme,
+            )
+
+        life_component = life_parsed.value * LIFE_COMPONENT_FRACTION
+        unscaled_min = row.flatMin + life_component
+        unscaled_max = row.flatMax + life_component
+        exact_min = unscaled_min * multiplier
+        exact_max = unscaled_max * multiplier
+        if multiplier == 0:
+            modelled_min = 0
+            modelled_max = 0
+        else:
+            modelled_min = round_half_up(exact_min)
+            modelled_max = round_half_up(exact_max)
+
+        return FlameLinkResult(
+            outputId=OUTPUT_ID,
+            label=OUTPUT_LABEL,
+            targetGameVersion=TARGET_GAME_VERSION,
+            formulaVersionId=FORMULA_VERSION_ID,
+            roundingPolicyId=ROUNDING_POLICY_ID,
+            roundingPolicyLabel=ROUNDING_POLICY_LABEL,
+            state="available",
+            available=True,
+            goldenGloryContributionPct=gg_lexeme,
+            directLinkContributionPct=direct_lexeme,
+            conditionalContributionPct=conditional_lexeme,
+            netLinkSkillBuffEffectPct=_lexeme(net),
+            linkEffectMultiplier=_lexeme(multiplier),
+            baseFlameLinkLevel=base_level,
+            additionalLinkGemLevels=additional_levels,
+            effectiveFlameLinkLevel=effective_level,
+            luminaryMaximumLife=life_lexeme,
+            lifeComponent=_lexeme(life_component),
+            levelFlatMin=_lexeme(row.flatMin),
+            levelFlatMax=_lexeme(row.flatMax),
+            unscaledMin=_lexeme(unscaled_min),
+            unscaledMax=_lexeme(unscaled_max),
+            exactPreRoundMin=_lexeme(exact_min),
+            exactPreRoundMax=_lexeme(exact_max),
+            modelledIntegerMin=modelled_min,
+            modelledIntegerMax=modelled_max,
+            contributionBreakdown={
                 **contribution_breakdown,
                 "netLinkSkillBuffEffectPct": _lexeme(net),
                 "linkEffectMultiplier": _lexeme(multiplier),
             },
-            level_breakdown=level_breakdown,
-            base_level=base_level,
-            additional_levels=additional_levels,
-            effective_level=effective_level,
-            life_lexeme=life_lexeme,
+            levelBreakdown=level_breakdown,
+            reasons=(),
         )
-
-    if (
-        effective_level < level_table.minimumLevel
-        or effective_level > level_table.maximumLevel
-    ):
-        return _unavailable(
-            state="unsupported-effective-level",
-            reasons=(
-                _reason(
-                    "UNSUPPORTED_EFFECTIVE_LEVEL",
-                    "Effective Flame Link level is outside the supported 1-40 table; values are not clamped or extrapolated",
-                    effectiveFlameLinkLevel=effective_level,
-                ),
-            ),
-            contribution_breakdown={
-                **contribution_breakdown,
-                "netLinkSkillBuffEffectPct": _lexeme(net),
-                "linkEffectMultiplier": _lexeme(multiplier),
-            },
-            level_breakdown=level_breakdown,
-            base_level=base_level,
-            additional_levels=additional_levels,
-            effective_level=effective_level,
-            life_lexeme=life_lexeme,
-        )
-
-    row = level_table.row_for(effective_level)
-    if row is None:  # pragma: no cover - guarded by table completeness
-        return _unavailable(
-            state="unavailable",
-            reasons=(
-                _reason(
-                    "FLAME_LINK_LEVEL_ROW_MISSING",
-                    f"Flame Link level table has no row for effective level {effective_level}",
-                ),
-            ),
-            level_breakdown=level_breakdown,
-            base_level=base_level,
-            additional_levels=additional_levels,
-            effective_level=effective_level,
-            life_lexeme=life_lexeme,
-        )
-
-    life_component = life_parsed.value * LIFE_COMPONENT_FRACTION
-    unscaled_min = row.flatMin + life_component
-    unscaled_max = row.flatMax + life_component
-    exact_min = unscaled_min * multiplier
-    exact_max = unscaled_max * multiplier
-    modelled_min = round_half_up(exact_min)
-    modelled_max = round_half_up(exact_max)
-
-    return FlameLinkResult(
-        outputId=OUTPUT_ID,
-        label=OUTPUT_LABEL,
-        targetGameVersion=TARGET_GAME_VERSION,
-        formulaVersionId=FORMULA_VERSION_ID,
-        roundingPolicyId=ROUNDING_POLICY_ID,
-        roundingPolicyLabel=ROUNDING_POLICY_LABEL,
-        state="available",
-        available=True,
-        goldenGloryContributionPct=gg_lexeme,
-        directLinkContributionPct=direct_lexeme,
-        conditionalContributionPct=conditional_lexeme,
-        netLinkSkillBuffEffectPct=_lexeme(net),
-        linkEffectMultiplier=_lexeme(multiplier),
-        baseFlameLinkLevel=base_level,
-        additionalLinkGemLevels=additional_levels,
-        effectiveFlameLinkLevel=effective_level,
-        luminaryMaximumLife=life_lexeme,
-        lifeComponent=_lexeme(life_component),
-        levelFlatMin=_lexeme(row.flatMin),
-        levelFlatMax=_lexeme(row.flatMax),
-        unscaledMin=_lexeme(unscaled_min),
-        unscaledMax=_lexeme(unscaled_max),
-        exactPreRoundMin=_lexeme(exact_min),
-        exactPreRoundMax=_lexeme(exact_max),
-        modelledIntegerMin=modelled_min,
-        modelledIntegerMax=modelled_max,
-        contributionBreakdown={
-            **contribution_breakdown,
-            "netLinkSkillBuffEffectPct": _lexeme(net),
-            "linkEffectMultiplier": _lexeme(multiplier),
-        },
-        levelBreakdown=level_breakdown,
-        reasons=(),
-    )

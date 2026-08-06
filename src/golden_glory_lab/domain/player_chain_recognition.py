@@ -30,10 +30,14 @@ _LINK_BUFF_EFFECT_PATTERNS = (
         re.IGNORECASE,
     ),
 )
-_EMPOWERED_BOND_RE = re.compile(
-    r"\bEmpowered\s+Bond\b|"
-    r"(?P<value>[0-9]+)\s+(?:additional\s+)?levels?\s+to\s+(?:your\s+)?Link\s+(?:Skill\s+)?Gems?\b|"
-    r"Link\s+(?:Skill\s+)?Gems?\s+(?:have|gain)\s+\+?(?P<value2>[0-9]+)\s+(?:to\s+)?levels?\b",
+# Identity evidence only — never treat Powerful Bond or generic level text as Empowered.
+_EMPOWERED_BOND_IDENTITY_RE = re.compile(r"\bEmpowered\s+Bond\b", re.IGNORECASE)
+_GENERIC_LINK_GEM_LEVEL_RE = re.compile(
+    r"(?P<sign>[+-])?(?P<value>[0-9]+)\s+to\s+Level\s+of\s+all\s+Link\s+Skill\s+Gems?\b|"
+    r"(?P<sign2>[+-])?(?P<value2>[0-9]+)\s+(?:additional\s+)?levels?\s+to\s+"
+    r"(?:your\s+)?Link\s+(?:Skill\s+)?Gems?\b|"
+    r"Link\s+(?:Skill\s+)?Gems?\s+(?:have|gain)\s+(?P<sign3>[+-])?(?P<value3>[0-9]+)\s+"
+    r"(?:to\s+)?levels?\b",
     re.IGNORECASE,
 )
 _POWERFUL_BOND_RE = re.compile(r"\bPowerful\s+Bond\b", re.IGNORECASE)
@@ -47,11 +51,13 @@ class RecognizedPlayerChainLine:
     rawSourceText: str
     sourceLine: str
     notes: tuple[str, ...]
+    label: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
             "kind": self.kind,
             "signedValueLexeme": self.signedValueLexeme,
+            "label": self.label,
             "rawSourceText": self.rawSourceText,
             "sourceLine": self.sourceLine,
             "notes": list(self.notes),
@@ -72,6 +78,22 @@ def _signed_lexeme(value_text: str, direction: str) -> str | None:
     if "." in text:
         text = text.rstrip("0").rstrip(".")
     return text if text else "0"
+
+
+def _generic_level_lexeme(match: re.Match[str]) -> str | None:
+    for value_key, sign_key in (
+        ("value", "sign"),
+        ("value2", "sign2"),
+        ("value3", "sign3"),
+    ):
+        value = match.group(value_key)
+        if value is None:
+            continue
+        sign = match.group(sign_key) or "+"
+        if sign == "-":
+            return f"-{value}" if not value.startswith("-") else value
+        return value
+    return None
 
 
 def _iter_lines(raw_text: str) -> Iterable[str]:
@@ -101,6 +123,7 @@ def recognize_player_chain_text(raw_text: str) -> tuple[RecognizedPlayerChainLin
                     RecognizedPlayerChainLine(
                         kind="light-radius",
                         signedValueLexeme=lexeme,
+                        label="Light Radius",
                         rawSourceText=raw_text,
                         sourceLine=line,
                         notes=("advisory-only", "does-not-infer-ownership-or-target"),
@@ -117,30 +140,49 @@ def recognize_player_chain_text(raw_text: str) -> tuple[RecognizedPlayerChainLin
                 RecognizedPlayerChainLine(
                     kind="direct-link-buff-effect",
                     signedValueLexeme=lexeme,
+                    label="Direct Link Skill Buff Effect",
                     rawSourceText=raw_text,
                     sourceLine=line,
                     notes=("advisory-only", "does-not-infer-ownership-or-target"),
                 )
             )
             break
-        if _EMPOWERED_BOND_RE.search(line):
-            notes = ["advisory-only", "empowered-bond-level-candidate"]
-            if _POWERFUL_BOND_RE.search(line):
-                notes.append("powerful-bond-must-not-receive-plus-two-levels")
+        if _EMPOWERED_BOND_IDENTITY_RE.search(line):
             found.append(
                 RecognizedPlayerChainLine(
                     kind="empowered-bond-level",
                     signedValueLexeme="2",
+                    label="Empowered Bond",
                     rawSourceText=raw_text,
                     sourceLine=line,
-                    notes=tuple(notes),
+                    notes=("advisory-only", "empowered-bond-level-candidate"),
                 )
             )
-        elif _POWERFUL_BOND_RE.search(line):
+        else:
+            generic = _GENERIC_LINK_GEM_LEVEL_RE.search(line)
+            if generic is not None and not _POWERFUL_BOND_RE.search(line):
+                lexeme = _generic_level_lexeme(generic)
+                if lexeme is not None:
+                    found.append(
+                        RecognizedPlayerChainLine(
+                            kind="generic-link-gem-level",
+                            signedValueLexeme=lexeme,
+                            label="Additional Link Skill Gem levels",
+                            rawSourceText=raw_text,
+                            sourceLine=line,
+                            notes=(
+                                "advisory-only",
+                                "generic-link-gem-level-candidate",
+                                "does-not-infer-empowered-bond",
+                            ),
+                        )
+                    )
+        if _POWERFUL_BOND_RE.search(line):
             found.append(
                 RecognizedPlayerChainLine(
                     kind="powerful-bond-conditional",
                     signedValueLexeme="20",
+                    label="Powerful Bond",
                     rawSourceText=raw_text,
                     sourceLine=line,
                     notes=(
@@ -155,6 +197,7 @@ def recognize_player_chain_text(raw_text: str) -> tuple[RecognizedPlayerChainLin
                 RecognizedPlayerChainLine(
                     kind="inspiring-bond-conditional",
                     signedValueLexeme="20",
+                    label="Inspiring Bond",
                     rawSourceText=raw_text,
                     sourceLine=line,
                     notes=(

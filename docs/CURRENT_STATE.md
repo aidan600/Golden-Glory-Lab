@@ -41,9 +41,12 @@ task branch; pending merge).
 ## Implemented on the active BUILD-003 path
 
 - **BUILD-003:** manual-first Flame Link player chain; advisory Light Radius /
-  Link Buff Effect recognition; build-state v3 with `flameLinkPlayerChain`;
-  packaged level table 1–40; modelled nearest-integer half-up granted Added
-  Fire Damage; Flame Link desktop tab; Enmity isolation unchanged.
+  Link Buff Effect recognition until explicit apply; build-state v3 with
+  `flameLinkPlayerChain` and `recognitionSource`; provenance-preserving Apply;
+  nonnegative Maximum Life; zero multiplier → available `0–0`; packaged level
+  table 1–40 with packaging digest pin; modelled nearest-integer half-up granted
+  Added Fire Damage; Flame Link desktop tab with general contribution editors;
+  Enmity isolation unchanged.
 
 ## Current phase
 

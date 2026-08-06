@@ -126,30 +126,36 @@ def _copied_enmity_v2() -> dict[str, Any]:
 def _flame_link_v3() -> dict[str, Any]:
     document = empty_v3_document()
     chain = empty_flame_link_player_chain()
-    chain["goldenGlory"] = {
-        "allocatedState": "allocated",
-        "mercenaryTargetState": "yes",
-        "reviewedLightRadiusPct": "40",
-        "provenanceKind": "manual-reviewed",
-        "reviewState": "reviewed",
-        "rawSourceText": "40% increased Light Radius",
-    }
-    chain["directLinkBuffEffect"] = {
-        "reviewedDirectPct": "15",
-        "provenanceKind": "manual-reviewed",
-        "reviewState": "reviewed",
-        "rawSourceText": "15% increased Effect of your Link Skills",
-    }
+    chain["goldenGlory"].update(
+        {
+            "allocatedState": "allocated",
+            "mercenaryTargetState": "yes",
+            "reviewedLightRadiusPct": "40",
+            "provenanceKind": "manual-reviewed",
+            "reviewState": "reviewed",
+            "rawSourceText": "40% increased Light Radius",
+        }
+    )
+    chain["directLinkBuffEffect"].update(
+        {
+            "reviewedDirectPct": "15",
+            "provenanceKind": "manual-reviewed",
+            "reviewState": "reviewed",
+            "rawSourceText": "15% increased Effect of your Link Skills",
+        }
+    )
     for entry in chain["conditionalContributions"]:
         if entry["contributionId"] in {"powerful-bond", "inspiring-bond"}:
             entry["conditionState"] = "inactive"
     chain["flameLinkLevel"]["additionalLinkGemLevels"][0]["activeState"] = "active"
-    chain["luminaryMaximumLife"] = {
-        "reviewedLife": "5000",
-        "provenanceKind": "manual-reviewed",
-        "reviewState": "reviewed",
-        "rawSourceText": "Maximum Life 5000",
-    }
+    chain["luminaryMaximumLife"].update(
+        {
+            "reviewedLife": "5000",
+            "provenanceKind": "manual-reviewed",
+            "reviewState": "reviewed",
+            "rawSourceText": "Maximum Life 5000",
+        }
+    )
     document["flameLinkPlayerChain"] = chain
     document["userNotes"] = "Synthetic BUILD-003 Flame Link player-chain fixture."
     return document

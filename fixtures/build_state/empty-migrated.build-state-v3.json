@@ -34,13 +34,21 @@
       "reviewedLightRadiusPct": null,
       "provenanceKind": "unreviewed",
       "reviewState": "unreviewed",
-      "rawSourceText": ""
+      "rawSourceText": "",
+      "recognitionSource": {
+        "kind": "none",
+        "digest": null
+      }
     },
     "directLinkBuffEffect": {
       "reviewedDirectPct": null,
       "provenanceKind": "unreviewed",
       "reviewState": "unreviewed",
-      "rawSourceText": ""
+      "rawSourceText": "",
+      "recognitionSource": {
+        "kind": "none",
+        "digest": null
+      }
     },
     "conditionalContributions": [
       {
@@ -50,7 +58,11 @@
         "conditionState": "unknown",
         "kind": "powerful-bond",
         "provenanceKind": "catalog-default",
-        "rawSourceText": ""
+        "rawSourceText": "",
+        "recognitionSource": {
+          "kind": "none",
+          "digest": null
+        }
       },
       {
         "contributionId": "inspiring-bond",
@@ -59,7 +71,11 @@
         "conditionState": "unknown",
         "kind": "inspiring-bond",
         "provenanceKind": "catalog-default",
-        "rawSourceText": ""
+        "rawSourceText": "",
+        "recognitionSource": {
+          "kind": "none",
+          "digest": null
+        }
       }
     ],
     "flameLinkLevel": {
@@ -72,7 +88,11 @@
           "levels": 2,
           "activeState": "unknown",
           "provenanceKind": "catalog-default",
-          "rawSourceText": ""
+          "rawSourceText": "",
+          "recognitionSource": {
+            "kind": "none",
+            "digest": null
+          }
         }
       ]
     },
@@ -80,7 +100,11 @@
       "reviewedLife": null,
       "provenanceKind": "unreviewed",
       "reviewState": "unreviewed",
-      "rawSourceText": ""
+      "rawSourceText": "",
+      "recognitionSource": {
+        "kind": "none",
+        "digest": null
+      }
     },
     "roundingPolicyId": "modelled-nearest-integer-half-up-v1",
     "formulaVersionId": "flame-link-player-chain-v1"

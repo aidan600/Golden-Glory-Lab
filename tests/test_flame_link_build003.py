@@ -27,12 +27,14 @@ def complete_chain(**overrides: object) -> dict:
         "provenanceKind": "manual-reviewed",
         "reviewState": "reviewed",
         "rawSourceText": "",
+        "recognitionSource": {"kind": "none", "digest": None},
     }
     chain["directLinkBuffEffect"] = {
         "reviewedDirectPct": "0",
         "provenanceKind": "manual-reviewed",
         "reviewState": "reviewed",
         "rawSourceText": "",
+        "recognitionSource": {"kind": "none", "digest": None},
     }
     for entry in chain["conditionalContributions"]:
         entry["conditionState"] = "inactive"
@@ -42,6 +44,7 @@ def complete_chain(**overrides: object) -> dict:
         "provenanceKind": "manual-reviewed",
         "reviewState": "reviewed",
         "rawSourceText": "",
+        "recognitionSource": {"kind": "none", "digest": None},
     }
     for key, value in overrides.items():
         if key == "goldenGlory" and isinstance(value, dict):
@@ -257,6 +260,26 @@ class FlameLinkCalculationTests(unittest.TestCase):
                 "provenanceKind": "manual-reviewed",
                 "reviewState": "reviewed",
                 "rawSourceText": "",
+                "recognitionSource": {"kind": "none", "digest": None},
+            }
+        )
+        result = evaluate_flame_link(chain, self.table)
+        self.assertTrue(result.available)
+        self.assertEqual(result.state, "available")
+        self.assertEqual(result.linkEffectMultiplier, "0")
+        self.assertEqual(result.modelledIntegerMin, 0)
+        self.assertEqual(result.modelledIntegerMax, 0)
+        self.assertEqual(result.exactPreRoundMin, "0")
+        self.assertEqual(result.exactPreRoundMax, "0")
+
+    def test_negative_effect_multiplier_unavailable(self) -> None:
+        chain = complete_chain(
+            directLinkBuffEffect={
+                "reviewedDirectPct": "-150",
+                "provenanceKind": "manual-reviewed",
+                "reviewState": "reviewed",
+                "rawSourceText": "",
+                "recognitionSource": {"kind": "none", "digest": None},
             }
         )
         result = evaluate_flame_link(chain, self.table)
@@ -331,6 +354,14 @@ class PlayerChainRecognitionTests(unittest.TestCase):
         found = recognize_player_chain_text("Empowered Bond")
         self.assertEqual(found[0].kind, "empowered-bond-level")
         self.assertEqual(found[0].signedValueLexeme, "2")
+
+    def test_generic_link_gem_level_preserves_signed_value(self) -> None:
+        plus_one = recognize_player_chain_text("+1 to Level of all Link Skill Gems")
+        plus_three = recognize_player_chain_text("+3 to Level of all Link Skill Gems")
+        self.assertEqual(plus_one[0].kind, "generic-link-gem-level")
+        self.assertEqual(plus_one[0].signedValueLexeme, "1")
+        self.assertEqual(plus_three[0].signedValueLexeme, "3")
+        self.assertNotEqual(plus_one[0].kind, "empowered-bond-level")
 
     def test_does_not_infer_ownership(self) -> None:
         found = recognize_player_chain_text("40% increased Light Radius")

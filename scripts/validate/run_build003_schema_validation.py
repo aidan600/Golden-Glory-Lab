@@ -58,7 +58,7 @@ def run_isolated(root: Path, dependency_target: Path) -> int:
     from golden_glory_lab.build_state.codec import deserialize as deserialize_v1
     from golden_glory_lab.build_state.codec_v2 import deserialize as deserialize_v2
     from golden_glory_lab.build_state.codec_v3 import deserialize as deserialize_v3
-    from golden_glory_lab.domain import load_flame_link_level_table
+    from golden_glory_lab.domain import load_flame_link_level_table, table_sha256
     from golden_glory_lab.evidence_gate import (
         load_enmity_reference,
         load_gate_manifest,
@@ -131,11 +131,25 @@ def run_isolated(root: Path, dependency_target: Path) -> int:
     manifest = load_gate_manifest()
     reference = load_enmity_reference()
     table = load_flame_link_level_table()
+    table_bytes = (
+        root
+        / "src"
+        / "golden_glory_lab"
+        / "runtime_data"
+        / "flame-link-level-table-v1.json"
+    ).read_bytes()
+    expected_table_sha = (
+        "e2cf21212e0ae6e1c3a23cab5ea94e723b69bf0bae89bf0c6906740c71c4a70c"
+    )
+    if table_sha256(table_bytes) != expected_table_sha:
+        raise RuntimeError("Flame Link level table SHA-256 does not match packaging pin")
     if (
         manifest.manifestVersion != "1.0.0"
         or reference["resourceVersion"] != "1.0.0"
         or table.minimumLevel != 1
         or table.maximumLevel != 40
+        or table.artifactId != "flame-link-level-table-v1"
+        or len(table.rows) != 40
     ):
         raise RuntimeError("typed runtime resource version validation failed")
 
