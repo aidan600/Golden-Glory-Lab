@@ -1,6 +1,6 @@
 # Golden Glory Calculator
 
-Golden Glory Calculator is a small Windows planning calculator for Path of
+Golden Glory Calculator is a small planning calculator for Path of
 Exile 1 Luminary/Mercenary setups. It helps you manually estimate:
 
 - **Effective Link Skill Buff Effect** from Golden Glory, Light Radius, other
@@ -17,7 +17,22 @@ This is a planning calculator, not a DPS calculator. It does not connect to
 your Path of Exile account, does not read or modify Path of Building, and is
 an independent community project with no affiliation to Grinding Gear Games.
 
-## Download
+The browser and Windows builds implement the **same manual calculator**. No
+server receives the values you enter. No account is required.
+
+## Use it
+
+### Online
+
+Open the calculator in your browser:
+
+https://aidan600.github.io/Golden-Glory-Lab/
+
+- Runs directly in your browser.
+- No account required.
+- Calculator values stay in the browser.
+
+### Windows
 
 **Recommended: `GoldenGloryCalculator-Setup.exe`**
 

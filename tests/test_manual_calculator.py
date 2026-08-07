@@ -107,6 +107,25 @@ class ManualCalculatorDomainTests(unittest.TestCase):
         self.assertEqual(result.enmity_penetration, 5)
         self.assertIsNone(result.enmity_error)
 
+    def test_blank_other_link_buff_effect_treated_as_zero(self) -> None:
+        blanked = evaluate_manual_calculator(
+            manual_input(other_link_skill_buff_effect_pct=""),
+            level_table=self.table,
+        )
+        explicit = evaluate_manual_calculator(
+            manual_input(other_link_skill_buff_effect_pct="0"),
+            level_table=self.table,
+        )
+        self.assertIsNone(blanked.flame_link_error)
+        self.assertEqual(blanked.net_link_skill_buff_effect_pct, explicit.net_link_skill_buff_effect_pct)
+        self.assertEqual(blanked.link_effect_multiplier, explicit.link_effect_multiplier)
+        self.assertEqual(blanked.flame_link_min, explicit.flame_link_min)
+        self.assertEqual(blanked.flame_link_max, explicit.flame_link_max)
+        self.assertEqual(blanked.net_link_skill_buff_effect_pct, "40")
+        self.assertEqual(blanked.link_effect_multiplier, "1.40")
+        self.assertEqual(blanked.flame_link_min, 671)
+        self.assertEqual(blanked.flame_link_max, 830)
+
     def test_enmity_truncates_fractional_final_uncapped_like_pob(self) -> None:
         """633 * 0.39 = 246.87 truncates to 246 before the overcap subtraction."""
 
