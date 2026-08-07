@@ -1,0 +1,630 @@
+/* Golden Glory Calculator — static browser shell
+   Visual identity aligned with the accepted desktop calculator. */
+
+:root {
+  --bg: #f7f4ee;
+  --panel: #ffffff;
+  --border: #e4ddce;
+  --rule: #efebe3;
+  --tab-idle: #f3efe7;
+  --text: #23262b;
+  --muted: #6b7078;
+  --gold: #b0862e;
+  --gold-deep: #8f6c1e;
+  --gold-soft: #fcf7ea;
+  --gold-edge: #eadfc2;
+  --flame: #c2551f;
+  --enmity: #a6362f;
+  --error: #9a3b2a;
+  --field-border: #d5cec1;
+  --hover: #f6f2e9;
+  --page-max: 1100px;
+  --gutter: 18px;
+  --radius: 2px;
+  --font: "Segoe UI", "Candara", "Gill Sans", "Trebuchet MS", sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--text);
+  background:
+    radial-gradient(1200px 500px at 50% -80px, #fff9e8 0%, transparent 55%),
+    linear-gradient(180deg, #faf7f1 0%, var(--bg) 40%, #f1ebe1 100%);
+}
+
+.page {
+  width: min(100% - 32px, var(--page-max));
+  margin: 0 auto;
+  padding: 14px 0 24px;
+}
+
+/* ---------- header ---------- */
+
+.site-header {
+  margin-bottom: 12px;
+}
+
+.brand {
+  margin: 0;
+  font-size: 1.55rem;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  color: var(--text);
+}
+
+.subtitle {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.secondary-links {
+  margin-top: 6px;
+  font-size: 0.85rem;
+}
+
+.secondary-links a {
+  color: var(--gold-deep);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+}
+
+.secondary-links a:hover,
+.secondary-links a:focus-visible {
+  border-bottom-color: var(--gold);
+}
+
+.link-sep {
+  margin: 0 0.45em;
+  color: var(--muted);
+}
+
+/* ---------- tabs ---------- */
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 0;
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
+  background: var(--tab-idle);
+  color: var(--muted);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tab img {
+  flex-shrink: 0;
+}
+
+.tab.is-active {
+  background: var(--panel);
+  color: var(--text);
+  box-shadow: inset 0 -3px 0 var(--gold);
+  position: relative;
+  z-index: 1;
+}
+
+.tab:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+/* ---------- views / cards ---------- */
+
+.view[hidden] {
+  display: none !important;
+}
+
+.page-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 0 4px 4px 4px;
+  padding: 12px 16px 14px;
+}
+
+.page-heading {
+  margin-bottom: 10px;
+}
+
+.page-heading h2 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.page-heading p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+/* ---------- panels ---------- */
+
+.panel {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 0 10px;
+  background: var(--panel);
+}
+
+.panel + .panel {
+  margin-top: 10px;
+}
+
+.panel-title {
+  margin: 0;
+  padding: 0 var(--gutter);
+  font-size: 0.8rem;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.panel-rule {
+  height: 1px;
+  margin: 6px var(--gutter) 6px;
+  background: var(--rule);
+}
+
+.derived-rule {
+  margin-top: 8px;
+}
+
+/* ---------- fields ---------- */
+
+.field-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 88px 18px;
+  align-items: center;
+  gap: 8px;
+  padding: 3px var(--gutter);
+  min-height: 30px;
+}
+
+.field-row label {
+  min-width: 0;
+  color: var(--text);
+  font-size: 0.95rem;
+}
+
+.field-row input[type="text"] {
+  width: 100%;
+  min-height: 28px;
+  padding: 3px 8px;
+  border: 1px solid var(--field-border);
+  border-radius: var(--radius);
+  background: #fff;
+  color: var(--text);
+  font: inherit;
+  text-align: right;
+}
+
+.field-row input[type="text"]:focus {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 1px var(--gold);
+}
+
+.field-row .suffix {
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.field-row.has-icon {
+  grid-template-columns: 22px minmax(0, 1fr) 72px 18px;
+}
+
+.field-row .slot-icon {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 28px;
+  padding: 2px var(--gutter);
+  cursor: pointer;
+  user-select: none;
+}
+
+.check-row input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--gold-deep);
+  flex-shrink: 0;
+}
+
+.derived-line {
+  margin: 0;
+  padding: 2px var(--gutter);
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.field-error {
+  margin: 4px var(--gutter) 0;
+  color: var(--error);
+  font-size: 0.85rem;
+}
+
+.field-error[hidden] {
+  display: none;
+}
+
+/* ---------- calculator layout ---------- */
+
+.calc-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  align-items: start;
+}
+
+.calc-results-col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.result-block {
+  padding: 6px var(--gutter) 8px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.result-block-last {
+  border-bottom: none;
+}
+
+.result-label {
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.result-value {
+  margin-top: 1px;
+  font-size: 1.45rem;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  color: var(--text);
+  line-height: 1.15;
+}
+
+.result-flame {
+  color: var(--flame);
+}
+
+.result-enmity {
+  color: var(--enmity);
+}
+
+.results-note {
+  margin: 10px var(--gutter) 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.control-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* ---------- breakdown ---------- */
+
+.breakdown-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  align-items: start;
+}
+
+.jewel-row-wrap {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px;
+  padding-right: 10px;
+}
+
+.jewel-row-wrap .field-row {
+  padding-right: 0;
+}
+
+.btn-remove-jewel {
+  min-width: 36px;
+  min-height: 32px;
+  padding: 4px 8px;
+  border: 1px solid var(--field-border);
+  border-radius: var(--radius);
+  background: #fff;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.btn-remove-jewel:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+
+.add-jewel-wrap {
+  padding: 10px var(--gutter) 0;
+}
+
+.total-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 10px;
+  padding: 8px var(--gutter);
+  background: var(--gold-soft);
+  border: 1px solid var(--gold-edge);
+}
+
+.total-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 650;
+  font-size: 1rem;
+}
+
+.total-value {
+  font-size: 1.55rem;
+  font-weight: 650;
+  color: var(--gold);
+  white-space: nowrap;
+}
+
+.breakdown-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.info-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  margin-left: auto;
+  max-width: 280px;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.info-note img {
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+/* ---------- buttons ---------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 6px 14px;
+  border-radius: var(--radius);
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.btn img {
+  flex-shrink: 0;
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+.btn-accent {
+  background: var(--gold);
+  border-color: var(--gold-deep);
+  color: #fff;
+}
+
+.btn-accent:hover {
+  background: var(--gold-deep);
+}
+
+.btn-outline {
+  background: #fff;
+  border-color: var(--gold-edge);
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px var(--field-border);
+}
+
+.btn-outline:hover {
+  background: var(--hover);
+}
+
+/* ---------- footer ---------- */
+
+.site-footer {
+  margin-top: 16px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.site-footer p {
+  margin: 0;
+}
+
+.footer-meta {
+  margin-top: 4px !important;
+}
+
+/* ---------- mobile ---------- */
+
+@media (max-width: 800px) {
+  .page {
+    width: min(100% - 20px, var(--page-max));
+    padding: 14px 0 28px;
+  }
+
+  .brand {
+    font-size: 1.45rem;
+  }
+
+  .tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+  }
+
+  .tab {
+    justify-content: center;
+    min-height: 48px;
+    padding: 10px 8px;
+    font-size: 0.88rem;
+    border-radius: 0;
+  }
+
+  .tab:first-child {
+    border-radius: 4px 0 0 0;
+  }
+
+  .tab:last-child {
+    border-radius: 0 4px 0 0;
+    border-left: none;
+  }
+
+  .page-card {
+    padding: 14px 12px 18px;
+    border-radius: 0 0 4px 4px;
+  }
+
+  .calc-grid,
+  .breakdown-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .field-row {
+    grid-template-columns: minmax(0, 1fr) 96px 18px;
+    gap: 10px;
+    min-height: 44px;
+    padding: 6px 12px;
+  }
+
+  .field-row.has-icon {
+    grid-template-columns: 22px minmax(0, 1fr) 80px 18px;
+  }
+
+  .field-row input[type="text"] {
+    min-height: 40px;
+    font-size: 1rem;
+  }
+
+  .check-row {
+    min-height: 44px;
+    padding: 6px 12px;
+  }
+
+  .panel-title,
+  .derived-line,
+  .field-error,
+  .result-block,
+  .results-note {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .panel-rule {
+    margin-left: 12px;
+    margin-right: 12px;
+  }
+
+  .result-value {
+    font-size: 1.55rem;
+  }
+
+  .btn {
+    min-height: 44px;
+  }
+
+  .breakdown-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .breakdown-actions .btn {
+    width: 100%;
+  }
+
+  .info-note {
+    margin-left: 0;
+    max-width: none;
+  }
+
+  .total-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .total-value {
+    font-size: 1.65rem;
+  }
+
+  .add-jewel-wrap {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+}
+
+@media (max-width: 420px) {
+  .field-row label,
+  .check-row span {
+    font-size: 0.9rem;
+  }
+
+  .tab {
+    font-size: 0.8rem;
+    gap: 5px;
+  }
+}

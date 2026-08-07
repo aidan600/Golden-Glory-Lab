@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Golden Glory Calculator</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <link rel="icon" type="image/png" href="./assets/icons/sun_large.png" />
+  </head>
+  <body>
+    <div class="page">
+      <header class="site-header">
+        <h1 class="brand">Golden Glory Calculator</h1>
+        <p class="subtitle">
+          Path of Exile Luminary / Mercenary planning calculator
+        </p>
+        <nav class="secondary-links" aria-label="Project links">
+          <a
+            href="https://github.com/aidan600/Golden-Glory-Lab/releases/latest"
+            rel="noopener noreferrer"
+            >Windows download</a
+          >
+          <span class="link-sep" aria-hidden="true">·</span>
+          <a
+            href="https://github.com/aidan600/Golden-Glory-Lab"
+            rel="noopener noreferrer"
+            >Source on GitHub</a
+          >
+        </nav>
+      </header>
+
+      <div class="tabs" role="tablist" aria-label="Calculator views">
+        <button
+          type="button"
+          class="tab is-active"
+          role="tab"
+          id="tab-calculator"
+          aria-controls="view-calculator"
+          aria-selected="true"
+          data-view="calculator"
+        >
+          <img src="./assets/icons/calculator.png" alt="" width="18" height="18" />
+          Calculator
+        </button>
+        <button
+          type="button"
+          class="tab"
+          role="tab"
+          id="tab-breakdown"
+          aria-controls="view-breakdown"
+          aria-selected="false"
+          data-view="breakdown"
+        >
+          <img src="./assets/icons/sun.png" alt="" width="18" height="18" />
+          Light Radius Breakdown
+        </button>
+      </div>
+
+      <main>
+        <!-- Calculator view -->
+        <section
+          id="view-calculator"
+          class="view is-active"
+          role="tabpanel"
+          aria-labelledby="tab-calculator"
+        >
+          <div class="page-card">
+            <header class="page-heading">
+              <h2>1. Calculator</h2>
+              <p>
+                Manual entry for the Luminary and the active permanent Mercenary.
+                Results update as you type.
+              </p>
+            </header>
+
+            <div class="calc-grid">
+              <div class="calc-inputs">
+                <section class="panel" aria-labelledby="luminary-title">
+                  <h3 id="luminary-title" class="panel-title">Luminary</h3>
+                  <div class="panel-rule"></div>
+                  <div class="field-row">
+                    <label for="maximum-life">Maximum Life</label>
+                    <input
+                      id="maximum-life"
+                      name="maximumLife"
+                      type="text"
+                      inputmode="decimal"
+                      autocomplete="off"
+                      spellcheck="false"
+                    />
+                    <span class="suffix" aria-hidden="true"></span>
+                  </div>
+                  <div class="field-row">
+                    <label for="light-radius">Increased Light Radius Modifier</label>
+                    <input
+                      id="light-radius"
+                      name="increasedLightRadiusPct"
+                      type="text"
+                      inputmode="decimal"
+                      autocomplete="off"
+                      spellcheck="false"
+                    />
+                    <span class="suffix">%</span>
+                  </div>
+                  <div class="field-row">
+                    <label for="other-link">Other Link Skill Buff Effect</label>
+                    <input
+                      id="other-link"
+                      name="otherLinkSkillBuffEffectPct"
+                      type="text"
+                      inputmode="decimal"
+                      autocomplete="off"
+                      spellcheck="false"
+                    />
+                    <span class="suffix">%</span>
+                  </div>
+                  <div class="field-row">
+                    <label for="flame-link-level">Flame Link Level</label>
+                    <input
+                      id="flame-link-level"
+                      name="flameLinkLevel"
+                      type="text"
+                      inputmode="numeric"
+                      autocomplete="off"
+                      spellcheck="false"
+                    />
+                    <span class="suffix" aria-hidden="true"></span>
+                  </div>
+                  <label class="check-row">
+                    <input
+                      type="checkbox"
+                      id="golden-glory"
+                      name="goldenGloryAllocated"
+                    />
+                    <span>Golden Glory Allocated</span>
+                  </label>
+                  <label class="check-row">
+                    <input
+                      type="checkbox"
+                      id="powerful-bond"
+                      name="powerfulBondActive"
+                    />
+                    <span>Powerful Bond Active (Notable)</span>
+                  </label>
+                  <label class="check-row">
+                    <input
+                      type="checkbox"
+                      id="inspiring-bond"
+                      name="inspiringBondActive"
+                    />
+                    <span>Inspiring Bond Active (Notable)</span>
+                  </label>
+                </section>
+
+                <section class="panel" aria-labelledby="enmity-title">
+                  <h3 id="enmity-title" class="panel-title">Mercenary / Enmity</h3>
+                  <div class="panel-rule"></div>
+                  <div class="field-row">
+                    <label for="gear-fire-res">Total Fire Resistance on Gear</label>
+                    <input
+                      id="gear-fire-res"
+                      name="totalFireResistanceOnGear"
+                      type="text"
+                      inputmode="decimal"
+                      autocomplete="off"
+                      spellcheck="false"
+                    />
+                    <span class="suffix">%</span>
+                  </div>
+                  <div class="field-row">
+                    <label for="aura-fire-res"
+                      >Fire Resistance from Luminary Aura</label
+                    >
+                    <input
+                      id="aura-fire-res"
+                      name="luminaryAuraFireResistance"
+                      type="text"
+                      inputmode="decimal"
+                      autocomplete="off"
+                      spellcheck="false"
+                    />
+                    <span class="suffix">%</span>
+                  </div>
+                  <div class="field-row">
+                    <label for="enmity-reduced"
+                      >Enmity Reduced Fire Resistance</label
+                    >
+                    <input
+                      id="enmity-reduced"
+                      name="enmityReducedFireResistance"
+                      type="text"
+                      inputmode="decimal"
+                      autocomplete="off"
+                      spellcheck="false"
+                    />
+                    <span class="suffix">%</span>
+                  </div>
+                  <div class="field-row">
+                    <label for="maximum-fire-res">Maximum Fire Resistance</label>
+                    <input
+                      id="maximum-fire-res"
+                      name="maximumFireResistance"
+                      type="text"
+                      inputmode="decimal"
+                      autocomplete="off"
+                      spellcheck="false"
+                    />
+                    <span class="suffix">%</span>
+                  </div>
+                  <label class="check-row">
+                    <input type="checkbox" id="enmity-equipped" name="enmityEquipped" />
+                    <span>Enmity Equipped</span>
+                  </label>
+                  <div class="panel-rule derived-rule"></div>
+                  <p class="derived-line" id="pre-enmity-display">
+                    Pre-Enmity Fire Resistance: —
+                  </p>
+                  <p class="derived-line" id="final-uncapped-display">
+                    Final Uncapped Fire Resistance: —
+                  </p>
+                  <p class="derived-line" id="overcapped-display">
+                    Overcapped Fire Resistance: —
+                  </p>
+                  <p class="field-error" id="enmity-section-error" hidden></p>
+                </section>
+              </div>
+
+              <div class="calc-results-col">
+                <section class="panel results-panel" aria-labelledby="results-title">
+                  <h3 id="results-title" class="panel-title">Results</h3>
+                  <div class="panel-rule"></div>
+                  <div class="result-block">
+                    <div class="result-label">Effective Link Skill Buff Effect</div>
+                    <div class="result-value" id="result-net-effect">—</div>
+                  </div>
+                  <div class="result-block">
+                    <div class="result-label">Link Effect Multiplier</div>
+                    <div class="result-value" id="result-multiplier">—</div>
+                  </div>
+                  <div class="result-block">
+                    <div class="result-label">Flame Link Added Fire Damage</div>
+                    <div class="result-value result-flame" id="result-flame-link">
+                      —
+                    </div>
+                    <p class="field-error" id="flame-error" hidden></p>
+                  </div>
+                  <div class="result-block result-block-last">
+                    <div class="result-label">Enmity Fire Penetration</div>
+                    <div class="result-value result-enmity" id="result-enmity">—</div>
+                    <p class="field-error" id="enmity-error" hidden></p>
+                  </div>
+                  <p class="results-note">
+                    Flame Link Added Fire Damage is the modelled damage granted to
+                    the linked Mercenary. It is not DPS.
+                  </p>
+                </section>
+
+                <div class="control-row">
+                  <button type="button" class="btn btn-outline" id="btn-reset-calculator">
+                    <img src="./assets/icons/refresh.png" alt="" width="16" height="16" />
+                    Reset
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Light Radius Breakdown view -->
+        <section
+          id="view-breakdown"
+          class="view"
+          role="tabpanel"
+          aria-labelledby="tab-breakdown"
+          hidden
+        >
+          <div class="page-card">
+            <header class="page-heading">
+              <h2>2. Light Radius Breakdown</h2>
+              <p>
+                Optional detailed entry. Totals here feed the Calculator page.
+              </p>
+            </header>
+
+            <div class="breakdown-grid">
+              <section class="panel" aria-labelledby="equipment-title">
+                <h3 id="equipment-title" class="panel-title">
+                  Equipment and Passives
+                </h3>
+                <div class="panel-rule"></div>
+                <div id="slot-rows"></div>
+              </section>
+
+              <section class="panel" aria-labelledby="jewels-title">
+                <h3 id="jewels-title" class="panel-title">Jewels</h3>
+                <div class="panel-rule"></div>
+                <div id="jewel-rows"></div>
+                <div class="add-jewel-wrap">
+                  <button type="button" class="btn btn-outline" id="btn-add-jewel">
+                    <img src="./assets/icons/plus.png" alt="" width="16" height="16" />
+                    Add Jewel
+                  </button>
+                </div>
+              </section>
+            </div>
+
+            <div class="total-bar" aria-live="polite">
+              <div class="total-label">
+                <img
+                  src="./assets/icons/sun_large.png"
+                  alt=""
+                  width="28"
+                  height="28"
+                />
+                <span>Total Increased Light Radius Modifier</span>
+              </div>
+              <div class="total-value" id="breakdown-total">0%</div>
+            </div>
+
+            <div class="breakdown-actions">
+              <button type="button" class="btn btn-accent" id="btn-apply-total">
+                <img
+                  src="./assets/icons/check_light.png"
+                  alt=""
+                  width="16"
+                  height="16"
+                />
+                Apply Total to Calculator
+              </button>
+              <button type="button" class="btn btn-outline" id="btn-reset-breakdown">
+                <img src="./assets/icons/refresh.png" alt="" width="16" height="16" />
+                Reset Breakdown
+              </button>
+              <p class="info-note">
+                <img src="./assets/icons/info.png" alt="" width="14" height="14" />
+                You can also ignore this page and enter the total directly on the
+                Calculator tab.
+              </p>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="site-footer">
+        <p>
+          Independent community project. Not affiliated with Grinding Gear Games.
+        </p>
+        <p class="footer-meta">Path of Exile 1 — mechanics target 3.29.x</p>
+      </footer>
+    </div>
+
+    <script type="module" src="./app.mjs"></script>
+  </body>
+</html>
