@@ -1,5 +1,6 @@
 /**
  * One-off screenshot helper using system Edge + CDP (no project deps).
+ * Populates approved synthetic sample data before capture — production startup is blank.
  * Usage: node web/scripts/capture-screenshots.mjs
  */
 
@@ -9,6 +10,7 @@ import { createServer } from "node:http";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { setTimeout as sleep } from "node:timers/promises";
+import { POPULATE_SAMPLE_EXPRESSION } from "./sample-data.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, "..");
@@ -31,7 +33,7 @@ const shots = [
     width: 1280,
     height: 900,
     urlPath: "/?view=breakdown",
-    waitText: "Apply Total to Calculator",
+    waitText: "254%",
   },
   {
     name: "mobile-calculator.png",
@@ -45,7 +47,7 @@ const shots = [
     width: 390,
     height: 844,
     urlPath: "/?view=breakdown",
-    waitText: "Apply Total to Calculator",
+    waitText: "254%",
   },
 ];
 
@@ -131,6 +133,25 @@ async function waitForText(ws, sessionId, text, timeoutMs = 15000) {
   throw new Error(`Timed out waiting for text: ${text}`);
 }
 
+async function waitReady(ws, sessionId) {
+  const start = Date.now();
+  while (Date.now() - start < 15000) {
+    const result = await cdp(
+      ws,
+      "Runtime.evaluate",
+      {
+        expression:
+          '!!(document.getElementById("slot-helmet") && document.getElementById("jewel-1") && document.getElementById("result-flame-link"))',
+        returnByValue: true,
+      },
+      sessionId,
+    );
+    if (result.result?.value === true) return;
+    await sleep(200);
+  }
+  throw new Error("Timed out waiting for calculator ready");
+}
+
 async function main() {
   await mkdir(outDir, { recursive: true });
   const { server, port } = await startStaticServer();
@@ -189,16 +210,28 @@ async function main() {
         targetId,
         flatten: true,
       });
-      await cdp(browserWs, "Emulation.setDeviceMetricsOverride", {
-        width: shot.width,
-        height: shot.height,
-        deviceScaleFactor: 1,
-        mobile: shot.width < 800,
-      }, sessionId);
+      await cdp(
+        browserWs,
+        "Emulation.setDeviceMetricsOverride",
+        {
+          width: shot.width,
+          height: shot.height,
+          deviceScaleFactor: 1,
+          mobile: shot.width < 800,
+        },
+        sessionId,
+      );
       await cdp(browserWs, "Page.enable", {}, sessionId);
       await cdp(browserWs, "Runtime.enable", {}, sessionId);
       const url = `http://127.0.0.1:${port}${shot.urlPath}`;
       await cdp(browserWs, "Page.navigate", { url }, sessionId);
+      await waitReady(browserWs, sessionId);
+      await cdp(
+        browserWs,
+        "Runtime.evaluate",
+        { expression: POPULATE_SAMPLE_EXPRESSION, returnByValue: true },
+        sessionId,
+      );
       await waitForText(browserWs, sessionId, shot.waitText);
       await sleep(300);
       const shotResult = await cdp(

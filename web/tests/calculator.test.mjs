@@ -51,8 +51,8 @@ test("A. Flame Link known vector", () => {
   assert.equal(result.flameLinkError, null);
   assert.equal(result.netLinkSkillBuffEffectPct, "40");
   assert.equal(result.linkEffectMultiplier, "1.40");
-  assert.equal(result.flameLinkMin, 671);
-  assert.equal(result.flameLinkMax, 830);
+  assert.equal(result.flameLinkMin, 671n);
+  assert.equal(result.flameLinkMax, 830n);
 });
 
 test("B. Larger Flame Link vector", () => {
@@ -67,8 +67,8 @@ test("B. Larger Flame Link vector", () => {
   assert.equal(result.flameLinkError, null);
   assert.equal(result.netLinkSkillBuffEffectPct, "160");
   assert.equal(result.linkEffectMultiplier, "2.60");
-  assert.equal(result.flameLinkMin, 1692);
-  assert.equal(result.flameLinkMax, 1988);
+  assert.equal(result.flameLinkMin, 1692n);
+  assert.equal(result.flameLinkMax, 1988n);
 });
 
 test("C. Enmity truncation regression", () => {
@@ -84,7 +84,7 @@ test("C. Enmity truncation regression", () => {
   assert.equal(result.preEnmityFireResistance, "633");
   assert.equal(result.finalUncappedFireResistance, "246");
   assert.equal(result.overcappedFireResistance, "170");
-  assert.equal(result.enmityPenetration, 170);
+  assert.equal(result.enmityPenetration, 170n);
   assert.equal(result.enmityError, null);
 });
 
@@ -92,7 +92,7 @@ test("D. Enmity cap at 200", () => {
   const result = evaluateManualCalculator(fields(), levelTable);
   assert.equal(result.finalUncappedFireResistance, "320");
   assert.equal(result.overcappedFireResistance, "235");
-  assert.equal(result.enmityPenetration, 200);
+  assert.equal(result.enmityPenetration, 200n);
 });
 
 test("E. Golden Glory off excludes Light Radius", () => {
@@ -125,7 +125,7 @@ test("G. Light Radius Breakdown behavior", () => {
   assert.equal(breakdown.jewels.length, INITIAL_JEWEL_COUNT);
   assert.ok(breakdown.total().isZero());
 
-  assert.equal(breakdown.addJewel(), true);
+  breakdown.addJewel();
   assert.equal(breakdown.jewels.length, INITIAL_JEWEL_COUNT + 1);
   assert.equal(breakdown.canRemoveJewel(INITIAL_JEWEL_COUNT), true);
   assert.equal(breakdown.canRemoveJewel(0), false);
@@ -139,7 +139,6 @@ test("G. Light Radius Breakdown behavior", () => {
   assert.equal(breakdown.jewels.length, INITIAL_JEWEL_COUNT);
   assert.equal(breakdown.total().toLexeme(), "15");
 
-  // Apply Total semantics: total lexeme is what Calculator field receives.
   const applied = breakdown.total().formatNetPct();
   assert.equal(applied, "15");
 
@@ -149,6 +148,23 @@ test("G. Light Radius Breakdown behavior", () => {
   for (const name of FIXED_LIGHT_RADIUS_SLOTS) {
     assert.ok(breakdown.slots[name].isZero());
   }
+});
+
+test("G2. More than 10 jewel rows allowed", () => {
+  const breakdown = new LightRadiusBreakdown();
+  for (let i = 0; i < 12; i++) {
+    breakdown.addJewel();
+  }
+  assert.equal(breakdown.jewels.length, INITIAL_JEWEL_COUNT + 12);
+  breakdown.jewels[10] = Dec.fromString("3");
+  breakdown.jewels[14] = Dec.fromString("4");
+  assert.equal(breakdown.total().toLexeme(), "7");
+  assert.equal(breakdown.canRemoveJewel(10), true);
+  breakdown.removeJewel(10);
+  assert.equal(breakdown.jewels.length, INITIAL_JEWEL_COUNT + 11);
+  assert.equal(breakdown.total().toLexeme(), "4");
+  breakdown.reset();
+  assert.equal(breakdown.jewels.length, INITIAL_JEWEL_COUNT);
 });
 
 test("H. Signed and fractional parsing accepted", () => {
@@ -172,6 +188,81 @@ test("H. Signed and fractional parsing accepted", () => {
   assert.equal(result.linkEffectMultiplier, "1.31");
 });
 
+test("I. Exact /100 preserves >64 fractional digits", () => {
+  // 70 significant fractional digits — old DIV_SCALE=64 would truncate.
+  const frac = "1".repeat(70);
+  assert.ok(frac.length > 64);
+  const value = Dec.fromString(`0.${frac}`);
+  assert.equal(value.scale, 70);
+  const divided = value.divBy100();
+  // Exact: scale increases by 2, coeff unchanged (no truncation).
+  assert.equal(divided.coeff, value.coeff);
+  assert.equal(divided.scale, 72);
+  assert.equal(divided.toLexeme(), `0.00${frac}`);
+
+  // Link Effect Multiplier path: net.divBy100() must keep all digits before quantize.
+  const net = Dec.fromString(`40.${frac}`);
+  const dividedNet = net.divBy100();
+  assert.equal(dividedNet.coeff, net.coeff);
+  assert.equal(dividedNet.scale, net.scale + 2);
+  const multiplier = Dec.fromInt(1).add(dividedNet);
+  assert.equal(multiplier.scale, 72);
+  assert.notEqual(multiplier.coeff, Dec.fromString("0.40").add(Dec.fromInt(1)).coeff);
+  // Display still quantizes to two decimals.
+  assert.equal(multiplier.formatMultiplier(), "1.40");
+});
+
+test("J. Enmity beyond Number.MAX_SAFE_INTEGER stays exact", () => {
+  const gear = "9007199254740993";
+  const maximum = "9007199254740992";
+  // IEEE-754 Number collapses both to the same value.
+  assert.equal(Number(gear), Number(maximum));
+
+  const result = evaluateManualCalculator(
+    fields({
+      totalFireResistanceOnGear: gear,
+      luminaryAuraFireResistance: "0",
+      enmityReducedFireResistance: "0",
+      maximumFireResistance: maximum,
+      enmityEquipped: true,
+    }),
+    levelTable,
+  );
+  assert.equal(result.finalUncappedFireResistance, "9007199254740993");
+  assert.equal(result.overcappedFireResistance, "1");
+  assert.equal(result.enmityPenetration, 1n);
+  assert.equal(result.enmityError, null);
+});
+
+test("K. Link Effect Multiplier exactly 0 yields 0-0 Flame Link", () => {
+  const result = evaluateManualCalculator(
+    fields({
+      increasedLightRadiusPct: "0",
+      otherLinkSkillBuffEffectPct: "-100",
+      goldenGloryAllocated: false,
+    }),
+    levelTable,
+  );
+  assert.equal(result.flameLinkError, null);
+  assert.equal(result.linkEffectMultiplier, "0.00");
+  assert.equal(result.flameLinkMin, 0n);
+  assert.equal(result.flameLinkMax, 0n);
+});
+
+test("L. Link Effect Multiplier below 0 is unsupported", () => {
+  const result = evaluateManualCalculator(
+    fields({
+      increasedLightRadiusPct: "0",
+      otherLinkSkillBuffEffectPct: "-150",
+      goldenGloryAllocated: false,
+    }),
+    levelTable,
+  );
+  assert.equal(result.flameLinkMin, null);
+  assert.equal(result.flameLinkMax, null);
+  assert.match(result.flameLinkError || "", /unsupported/i);
+});
+
 test("Owner screenshot sample vector", () => {
   const result = evaluateManualCalculator(
     fields({
@@ -192,10 +283,10 @@ test("Owner screenshot sample vector", () => {
   );
   assert.equal(result.netLinkSkillBuffEffectPct, "254");
   assert.equal(result.linkEffectMultiplier, "3.54");
-  assert.equal(result.flameLinkMin, 3878);
-  assert.equal(result.flameLinkMax, 4423);
+  assert.equal(result.flameLinkMin, 3878n);
+  assert.equal(result.flameLinkMax, 4423n);
   assert.equal(result.preEnmityFireResistance, "687");
   assert.equal(result.finalUncappedFireResistance, "274");
   assert.equal(result.overcappedFireResistance, "196");
-  assert.equal(result.enmityPenetration, 196);
+  assert.equal(result.enmityPenetration, 196n);
 });

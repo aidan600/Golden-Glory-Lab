@@ -8,7 +8,6 @@ import {
   FIXED_LIGHT_RADIUS_SLOTS,
   INITIAL_JEWEL_COUNT,
   LightRadiusBreakdown,
-  MAXIMUM_JEWEL_ROWS,
   defaultManualCalculatorInput,
   evaluateManualCalculator,
   parseDecimalText,
@@ -31,38 +30,6 @@ const SLOT_ICONS = {
   "Passive Tree / Ascendancy": "passive_tree.png",
   "Other / Misc": "other.png",
 };
-
-/** Populated sample matching the owner's accepted desktop screenshots. */
-const SAMPLE_CALCULATOR = {
-  maximumLife: "15751",
-  increasedLightRadiusPct: "254",
-  otherLinkSkillBuffEffectPct: "0",
-  flameLinkLevel: "26",
-  goldenGloryAllocated: true,
-  powerfulBondActive: false,
-  inspiringBondActive: false,
-  totalFireResistanceOnGear: "687",
-  luminaryAuraFireResistance: "",
-  enmityReducedFireResistance: "60",
-  maximumFireResistance: "78",
-  enmityEquipped: true,
-};
-
-const SAMPLE_BREAKDOWN_SLOTS = {
-  Helmet: "76",
-  "Body Armour": "0",
-  Boots: "0",
-  "Main Hand": "50",
-  "Off Hand": "0",
-  Amulet: "68",
-  "Ring 1": "15",
-  "Ring 2": "15",
-  Belt: "0",
-  "Passive Tree / Ascendancy": "30",
-  "Other / Misc": "0",
-};
-
-const SAMPLE_JEWELS = ["0", "0", "0"];
 
 const els = {
   tabs: [...document.querySelectorAll(".tab")],
@@ -168,7 +135,7 @@ function recalculate() {
         ? `${result.linkEffectMultiplier}x`
         : DASH;
     if (result.flameLinkMin != null && result.flameLinkMax != null) {
-      els.resultFlameLink.textContent = `${result.flameLinkMin}-${result.flameLinkMax}`;
+      els.resultFlameLink.textContent = `${result.flameLinkMin.toString()}-${result.flameLinkMax.toString()}`;
       setError(els.flameError, null);
     } else {
       els.resultFlameLink.textContent = DASH;
@@ -193,7 +160,7 @@ function recalculate() {
   }`;
 
   if (result.enmityPenetration != null) {
-    els.resultEnmity.textContent = `${result.enmityPenetration}%`;
+    els.resultEnmity.textContent = `${result.enmityPenetration.toString()}%`;
     setError(els.enmityError, null);
     setError(els.enmitySectionError, null);
   } else {
@@ -331,7 +298,6 @@ function renderJewels() {
     els.jewelRows.append(wrap);
     jewelControls.push({ input, removeBtn });
   }
-  els.btnAddJewel.disabled = breakdown.jewels.length >= MAXIMUM_JEWEL_ROWS;
 }
 
 function removeJewelAt(index) {
@@ -341,7 +307,7 @@ function removeJewelAt(index) {
 }
 
 function addJewel() {
-  if (!breakdown.addJewel()) return;
+  breakdown.addJewel();
   renderJewels();
   syncBreakdownFromInputs();
   jewelControls[jewelControls.length - 1]?.input.focus();
@@ -368,21 +334,6 @@ function resetBreakdown() {
   }
   renderJewels();
   syncBreakdownFromInputs();
-}
-
-function loadSampleData() {
-  writeCalculatorFields(SAMPLE_CALCULATOR);
-  for (let i = 0; i < FIXED_LIGHT_RADIUS_SLOTS.length; i++) {
-    const name = FIXED_LIGHT_RADIUS_SLOTS[i];
-    slotInputs[i].value = SAMPLE_BREAKDOWN_SLOTS[name] ?? "0";
-  }
-  breakdown.reset();
-  for (let i = 0; i < SAMPLE_JEWELS.length; i++) {
-    breakdown.jewels[i] = Dec.fromString(SAMPLE_JEWELS[i]);
-  }
-  renderJewels();
-  syncBreakdownFromInputs();
-  recalculate();
 }
 
 function bindEvents() {
@@ -427,7 +378,9 @@ async function main() {
   renderSlots();
   renderJewels();
   bindEvents();
-  loadSampleData();
+  writeCalculatorFields(defaultManualCalculatorInput());
+  syncBreakdownFromInputs();
+  recalculate();
   const params = new URLSearchParams(window.location.search);
   const initialView =
     params.get("view") === "breakdown" ? "breakdown" : "calculator";

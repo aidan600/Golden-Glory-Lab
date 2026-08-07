@@ -8,12 +8,10 @@ const DECIMAL_RE = /^-?[0-9]+(?:\.[0-9]+)?$/;
 const DECIMAL_DIGIT_LIMIT = 128;
 const BOND_VALUE_PCT = "20";
 const LIFE_COMPONENT_FRACTION = "0.05";
-const ENMITY_CAP = 200;
+const ENMITY_CAP = 200n;
 const MINIMUM_FLAME_LINK_LEVEL = 1;
 const MAXIMUM_FLAME_LINK_LEVEL = 40;
 const INITIAL_JEWEL_COUNT = 3;
-const MAXIMUM_JEWEL_ROWS = 10;
-const DIV_SCALE = 64n;
 
 export const FIXED_LIGHT_RADIUS_SLOTS = Object.freeze([
   "Helmet",
@@ -31,7 +29,6 @@ export const FIXED_LIGHT_RADIUS_SLOTS = Object.freeze([
 
 export {
   INITIAL_JEWEL_COUNT,
-  MAXIMUM_JEWEL_ROWS,
   MINIMUM_FLAME_LINK_LEVEL,
   MAXIMUM_FLAME_LINK_LEVEL,
   ENMITY_CAP,
@@ -125,19 +122,12 @@ export class Dec {
     return new Dec(this.coeff * other.coeff, this.scale + other.scale);
   }
 
-  /** Exact division with DIV_SCALE extra fractional digits, then trim. */
-  div(other) {
-    if (other.coeff === 0n) {
-      throw new Error("division by zero");
-    }
-    // (a/10^sa) / (b/10^sb) = (a * 10^sb) / (b * 10^sa)
-    // Compute with extra DIV_SCALE digits of quotient precision.
-    const numer = this.coeff * pow10(BigInt(other.scale) + DIV_SCALE);
-    const denom = other.coeff * pow10(BigInt(this.scale));
-    let q = numer / denom;
-    // Truncate toward zero for the intermediate quotient digits;
-    // callers that need half-up use roundHalfUpInt on the result.
-    return new Dec(q, Number(DIV_SCALE));
+  /**
+   * Exact division by 100 for percentage conversion.
+   * value/100 = coeff / 10^(scale+2) — no truncation.
+   */
+  divBy100() {
+    return new Dec(this.coeff, this.scale + 2);
   }
 
   neg() {
@@ -175,29 +165,23 @@ export class Dec {
   }
 
   /**
-   * Nearest-integer HALF-UP (ties away from zero for nonnegative values).
+   * Nearest-integer HALF-UP as BigInt (ties away from zero for nonnegative).
    * Matches flame_link.round_half_up for nonnegative modelled outputs.
    */
   roundHalfUpInt() {
     if (this.isNegative()) {
       throw new Error("roundHalfUpInt supports nonnegative modelled outputs only");
     }
-    if (this.scale === 0) return Number(this.coeff);
+    if (this.scale === 0) return this.coeff;
     const factor = pow10(BigInt(this.scale));
     const whole = this.coeff / factor;
     const frac = this.coeff % factor;
-    const half = factor / 2n;
-    // .5 and above round away from zero (up for nonnegative).
-    if (frac * 2n >= factor || (factor % 2n === 0n && frac >= half)) {
-      // Standard half-up: compare frac to factor/2
-    }
     const roundUp = frac * 2n >= factor;
-    return Number(roundUp ? whole + 1n : whole);
+    return roundUp ? whole + 1n : whole;
   }
 
   /**
    * Quantize to hundredths (half-up), matching Python Decimal.quantize(0.01).
-   * Returns a Dec whose value equals the quantized amount (scale may trim).
    */
   quantize2() {
     const cents = this._roundHalfUpCents();
@@ -207,13 +191,11 @@ export class Dec {
   /** Half-up rounding of value×100 to an integer BigInt (signed). */
   _roundHalfUpCents() {
     if (!this.isNegative()) {
-      return BigInt(this.mul(Dec.fromString("100")).roundHalfUpInt());
+      return this.mul(Dec.fromString("100")).roundHalfUpInt();
     }
-    const absCents = BigInt(
-      new Dec(-this.coeff, this.scale)
-        .mul(Dec.fromString("100"))
-        .roundHalfUpInt(),
-    );
+    const absCents = new Dec(-this.coeff, this.scale)
+      .mul(Dec.fromString("100"))
+      .roundHalfUpInt();
     return -absCents;
   }
 
@@ -229,13 +211,11 @@ export class Dec {
     const split = digits.length - this.scale;
     let frac = digits.slice(split);
     let intPart = digits.slice(0, split);
-    // Strip trailing zeros in fractional display for lexeme (Python _lexeme).
     frac = frac.replace(/0+$/, "");
     const body = frac.length ? `${intPart}.${frac}` : intPart;
     return (neg ? "-" : "") + body;
   }
 
-  /** Format net %: integral as int string, else normalized f-string. */
   formatNetPct() {
     return this.toLexeme();
   }
@@ -249,11 +229,6 @@ export class Dec {
     const split = digits.length - 2;
     const body = `${digits.slice(0, split)}.${digits.slice(split)}`;
     return (neg ? "-" : "") + body;
-  }
-
-  toNumberUnsafe() {
-    // Debug only — never use in calculator math paths.
-    return Number(this.toLexeme());
   }
 }
 
@@ -293,19 +268,23 @@ function parseOptionalDecimal(text) {
   }
 }
 
+/**
+ * Exact overcap/contribution from integral BigInt uncapped and maximum.
+ * overcap = max(0, U - M); contribution = min(200, overcap).
+ */
 export function enmityOvercapContribution(uncapped, maximum) {
-  const overcap = Math.max(0, uncapped - maximum);
-  const contribution = Math.min(ENMITY_CAP, overcap);
+  const u = typeof uncapped === "bigint" ? uncapped : BigInt(uncapped);
+  const m = typeof maximum === "bigint" ? maximum : BigInt(maximum);
+  const overcap = u > m ? u - m : 0n;
+  const contribution = overcap < ENMITY_CAP ? overcap : ENMITY_CAP;
   return { overcap, contribution };
 }
 
 function formatResistancePct(value) {
-  if (value.isIntegral()) return value.toLexeme();
   return value.toLexeme();
 }
 
 /**
- * Load level rows from packaged JSON (browser or Node).
  * @param {object} tableJson
  * @returns {{ rows: Map<number,{flatMin:Dec, flatMax:Dec}>, minimumLevel:number, maximumLevel:number }}
  */
@@ -323,22 +302,6 @@ export function parseFlameLinkLevelTable(tableJson) {
     maximumLevel: tableJson.tableBounds.maximumLevel,
   };
 }
-
-/**
- * @typedef {object} ManualCalculatorInput
- * @property {string} maximumLife
- * @property {string} increasedLightRadiusPct
- * @property {string} otherLinkSkillBuffEffectPct
- * @property {string} flameLinkLevel
- * @property {boolean} goldenGloryAllocated
- * @property {boolean} powerfulBondActive
- * @property {boolean} inspiringBondActive
- * @property {string} totalFireResistanceOnGear
- * @property {string} luminaryAuraFireResistance
- * @property {string} enmityReducedFireResistance
- * @property {string} maximumFireResistance
- * @property {boolean} enmityEquipped
- */
 
 export function defaultManualCalculatorInput() {
   return {
@@ -392,7 +355,6 @@ function evaluateFlameLinkSection(fields, levelTable) {
     return emptyFlame("Enter a Flame Link level from 1 to 40");
   }
 
-  // Golden Glory contribution
   const gg = fields.goldenGloryAllocated ? lightP.value : Dec.zero();
   const direct = otherP.value;
   let conditional = Dec.zero();
@@ -404,9 +366,8 @@ function evaluateFlameLinkSection(fields, levelTable) {
   }
 
   const net = gg.add(direct).add(conditional);
-  const hundred = Dec.fromInt(100);
   const one = Dec.fromInt(1);
-  const multiplier = one.add(net.div(hundred));
+  const multiplier = one.add(net.divBy100());
 
   if (multiplier.isNegative()) {
     return {
@@ -418,7 +379,6 @@ function evaluateFlameLinkSection(fields, levelTable) {
     };
   }
 
-  // Empowered Bond inactive in ordinary manual calculator → effective = base
   const effectiveLevel = level;
   if (
     effectiveLevel < levelTable.minimumLevel ||
@@ -442,8 +402,8 @@ function evaluateFlameLinkSection(fields, levelTable) {
   let modelledMin;
   let modelledMax;
   if (multiplier.isZero()) {
-    modelledMin = 0;
-    modelledMax = 0;
+    modelledMin = 0n;
+    modelledMax = 0n;
   } else {
     modelledMin = exactMin.roundHalfUpInt();
     modelledMax = exactMax.roundHalfUpInt();
@@ -542,16 +502,15 @@ function evaluateEnmitySection(fields) {
     };
   }
 
-  // raw = pre * (1 - reduction/100)
+  // raw = pre * (1 - reduction/100) — exact /100 via scale shift
   const one = Dec.fromInt(1);
-  const hundred = Dec.fromInt(100);
-  const factor = one.sub(redP.value.div(hundred));
+  const factor = one.sub(redP.value.divBy100());
   const rawFinal = preEnmity.mul(factor);
   const finalUncapped = rawFinal.truncateTowardZero();
   const maximumTrunc = maxP.value.truncateTowardZero();
   const { overcap, contribution } = enmityOvercapContribution(
-    Number(finalUncapped.coeff),
-    Number(maximumTrunc.coeff),
+    finalUncapped.coeff,
+    maximumTrunc.coeff,
   );
 
   return {
@@ -573,10 +532,6 @@ function emptyEnmity(error) {
   };
 }
 
-/**
- * @param {ManualCalculatorInput} fields
- * @param {{ rows: Map, minimumLevel: number, maximumLevel: number }} levelTable
- */
 export function evaluateManualCalculator(fields, levelTable) {
   const flame = evaluateFlameLinkSection(fields, levelTable);
   const enmity = evaluateEnmitySection(fields);
@@ -607,9 +562,7 @@ export class LightRadiusBreakdown {
   }
 
   addJewel() {
-    if (this.jewels.length >= MAXIMUM_JEWEL_ROWS) return false;
     this.jewels.push(Dec.zero());
-    return true;
   }
 
   canRemoveJewel(index) {

@@ -1,5 +1,6 @@
 /**
  * Browser interaction smoke via Edge CDP (no project deps).
+ * Asserts blank ordinary startup, then enters values explicitly for interactions.
  */
 import { spawn } from "node:child_process";
 import { createServer } from "node:http";
@@ -7,10 +8,12 @@ import { readFile } from "node:fs/promises";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { setTimeout as sleep } from "node:timers/promises";
+import { POPULATE_SAMPLE_EXPRESSION } from "./sample-data.mjs";
 
 const siteDir = join(dirname(fileURLToPath(import.meta.url)), "../site");
 const edge =
   "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe";
+const DASH = "\u2014";
 
 function contentType(path) {
   if (path.endsWith(".html")) return "text/html";
@@ -121,118 +124,164 @@ await cdp("Page.navigate", { url: `http://127.0.0.1:${port}/` }, sessionId);
 
 for (let i = 0; i < 50; i++) {
   const ready = await evaluate(
-    '!!(document.getElementById("result-flame-link") && document.getElementById("result-flame-link").textContent.includes("3878"))',
+    '!!(document.getElementById("slot-helmet") && document.getElementById("jewel-1") && document.getElementById("result-flame-link"))',
     sessionId,
   );
   if (ready) break;
   await sleep(200);
 }
 
-const steps = [
-  [
-    "initial",
-    `({
-      flame: document.getElementById("result-flame-link").textContent,
-      lr: document.getElementById("light-radius").value,
-      jewels: document.querySelectorAll("#jewel-rows .field-row").length,
-      overflowX: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1
-    })`,
-  ],
-  [
-    "switchBreakdown",
-    `(document.getElementById("tab-breakdown").click(), {
-      active: document.getElementById("view-breakdown").classList.contains("is-active"),
-      total: document.getElementById("breakdown-total").textContent
-    })`,
-  ],
-  [
-    "addJewel",
-    `(document.getElementById("btn-add-jewel").click(), {
-      jewels: document.querySelectorAll("#jewel-rows .field-row").length,
-      removable: document.querySelectorAll(".btn-remove-jewel").length
-    })`,
-  ],
-  [
-    "removeJewel",
-    `(document.querySelector(".btn-remove-jewel").click(), {
-      jewels: document.querySelectorAll("#jewel-rows .field-row").length,
-      removable: document.querySelectorAll(".btn-remove-jewel").length
-    })`,
-  ],
-  [
-    "changeHelmetApply",
-    `(() => {
-      const helmet = document.getElementById("slot-helmet");
-      helmet.value = "99";
-      helmet.dispatchEvent(new Event("input", { bubbles: true }));
-      const total = document.getElementById("breakdown-total").textContent;
-      document.getElementById("btn-apply-total").click();
-      return {
-        total,
-        calculatorActive: document.getElementById("view-calculator").classList.contains("is-active"),
-        lr: document.getElementById("light-radius").value,
-        flame: document.getElementById("result-flame-link").textContent
-      };
-    })()`,
-  ],
-  [
-    "resetCalculator",
-    `(document.getElementById("btn-reset-calculator").click(), {
-      lr: document.getElementById("light-radius").value,
-      life: document.getElementById("maximum-life").value,
-      flame: document.getElementById("result-flame-link").textContent,
-      flameError: document.getElementById("flame-error").textContent
-    })`,
-  ],
-  [
-    "resetBreakdown",
-    `(() => {
-      document.getElementById("tab-breakdown").click();
-      document.getElementById("btn-reset-breakdown").click();
-      return {
-        total: document.getElementById("breakdown-total").textContent,
-        jewels: document.querySelectorAll("#jewel-rows .field-row").length,
-        helmet: document.getElementById("slot-helmet").value
-      };
-    })()`,
-  ],
-  [
-    "validationMessage",
-    `(() => {
-      document.getElementById("tab-calculator").click();
-      const life = document.getElementById("maximum-life");
-      life.value = "5000";
-      life.dispatchEvent(new Event("input", { bubbles: true }));
-      const lr = document.getElementById("light-radius");
-      lr.value = "40";
-      lr.dispatchEvent(new Event("input", { bubbles: true }));
-      const other = document.getElementById("other-link");
-      other.value = "0";
-      other.dispatchEvent(new Event("input", { bubbles: true }));
-      const level = document.getElementById("flame-link-level");
-      level.value = "abc";
-      level.dispatchEvent(new Event("input", { bubbles: true }));
-      return {
-        flameError: document.getElementById("flame-error").textContent,
-        flame: document.getElementById("result-flame-link").textContent
-      };
-    })()`,
-  ],
-];
-
 const report = {};
-for (const [name, expression] of steps) {
-  report[name] = await evaluate(expression, sessionId);
-}
+
+report.blankStartup = await evaluate(
+  `({
+    life: document.getElementById("maximum-life").value,
+    lr: document.getElementById("light-radius").value,
+    other: document.getElementById("other-link").value,
+    level: document.getElementById("flame-link-level").value,
+    gg: document.getElementById("golden-glory").checked,
+    powerful: document.getElementById("powerful-bond").checked,
+    inspiring: document.getElementById("inspiring-bond").checked,
+    gear: document.getElementById("gear-fire-res").value,
+    aura: document.getElementById("aura-fire-res").value,
+    reduced: document.getElementById("enmity-reduced").value,
+    maxFr: document.getElementById("maximum-fire-res").value,
+    enmity: document.getElementById("enmity-equipped").checked,
+    flame: document.getElementById("result-flame-link").textContent.trim(),
+    net: document.getElementById("result-net-effect").textContent.trim(),
+    mult: document.getElementById("result-multiplier").textContent.trim(),
+    enmityResult: document.getElementById("result-enmity").textContent.trim(),
+    flameError: document.getElementById("flame-error").textContent.trim(),
+    total: document.getElementById("breakdown-total").textContent.trim(),
+    jewels: document.querySelectorAll("#jewel-rows .field-row").length,
+    helmet: document.getElementById("slot-helmet").value,
+    overflowX: document.documentElement.scrollWidth > document.documentElement.clientWidth + 1
+  })`,
+  sessionId,
+);
+
+report.populateSample = await evaluate(POPULATE_SAMPLE_EXPRESSION, sessionId);
+
+report.switchBreakdown = await evaluate(
+  `(document.getElementById("tab-breakdown").click(), {
+    active: document.getElementById("view-breakdown").classList.contains("is-active"),
+    total: document.getElementById("breakdown-total").textContent
+  })`,
+  sessionId,
+);
+
+report.addManyJewels = await evaluate(
+  `(() => {
+    for (let i = 0; i < 12; i++) document.getElementById("btn-add-jewel").click();
+    return {
+      jewels: document.querySelectorAll("#jewel-rows .field-row").length,
+      removable: document.querySelectorAll(".btn-remove-jewel").length,
+      addDisabled: document.getElementById("btn-add-jewel").disabled
+    };
+  })()`,
+  sessionId,
+);
+
+report.removeDynamicJewel = await evaluate(
+  `(document.querySelector(".btn-remove-jewel").click(), {
+    jewels: document.querySelectorAll("#jewel-rows .field-row").length,
+    removable: document.querySelectorAll(".btn-remove-jewel").length
+  })`,
+  sessionId,
+);
+
+report.changeHelmetApply = await evaluate(
+  `(() => {
+    document.getElementById("btn-reset-breakdown").click();
+    const helmet = document.getElementById("slot-helmet");
+    helmet.value = "99";
+    helmet.dispatchEvent(new Event("input", { bubbles: true }));
+    const total = document.getElementById("breakdown-total").textContent;
+    document.getElementById("btn-apply-total").click();
+    return {
+      total,
+      calculatorActive: document.getElementById("view-calculator").classList.contains("is-active"),
+      lr: document.getElementById("light-radius").value
+    };
+  })()`,
+  sessionId,
+);
+
+report.resetCalculator = await evaluate(
+  `(document.getElementById("btn-reset-calculator").click(), {
+    lr: document.getElementById("light-radius").value,
+    life: document.getElementById("maximum-life").value,
+    flame: document.getElementById("result-flame-link").textContent,
+    flameError: document.getElementById("flame-error").textContent
+  })`,
+  sessionId,
+);
+
+report.resetBreakdown = await evaluate(
+  `(() => {
+    document.getElementById("tab-breakdown").click();
+    document.getElementById("btn-reset-breakdown").click();
+    return {
+      total: document.getElementById("breakdown-total").textContent,
+      jewels: document.querySelectorAll("#jewel-rows .field-row").length,
+      helmet: document.getElementById("slot-helmet").value
+    };
+  })()`,
+  sessionId,
+);
+
+report.validationMessage = await evaluate(
+  `(() => {
+    document.getElementById("tab-calculator").click();
+    const life = document.getElementById("maximum-life");
+    life.value = "5000";
+    life.dispatchEvent(new Event("input", { bubbles: true }));
+    const lr = document.getElementById("light-radius");
+    lr.value = "40";
+    lr.dispatchEvent(new Event("input", { bubbles: true }));
+    const other = document.getElementById("other-link");
+    other.value = "0";
+    other.dispatchEvent(new Event("input", { bubbles: true }));
+    const level = document.getElementById("flame-link-level");
+    level.value = "abc";
+    level.dispatchEvent(new Event("input", { bubbles: true }));
+    return {
+      flameError: document.getElementById("flame-error").textContent,
+      flame: document.getElementById("result-flame-link").textContent
+    };
+  })()`,
+  sessionId,
+);
+
 console.log(JSON.stringify(report, null, 2));
 
+const blank = report.blankStartup;
 const ok =
-  report.initial?.flame === "3878-4423" &&
-  report.initial?.overflowX === false &&
-  report.addJewel?.jewels === 4 &&
-  report.removeJewel?.jewels === 3 &&
+  blank?.life === "" &&
+  blank?.lr === "" &&
+  blank?.other === "" &&
+  blank?.level === "" &&
+  blank?.gg === false &&
+  blank?.powerful === false &&
+  blank?.inspiring === false &&
+  blank?.gear === "" &&
+  blank?.enmity === false &&
+  blank?.flame === DASH &&
+  blank?.net === DASH &&
+  blank?.mult === DASH &&
+  blank?.enmityResult === DASH &&
+  blank?.flameError === "Enter Maximum Life" &&
+  blank?.total === "0%" &&
+  blank?.jewels === 3 &&
+  blank?.helmet === "0" &&
+  blank?.overflowX === false &&
+  report.populateSample?.flame === "3878-4423" &&
+  report.addManyJewels?.jewels === 15 &&
+  report.addManyJewels?.removable === 12 &&
+  report.addManyJewels?.addDisabled === false &&
+  report.removeDynamicJewel?.jewels === 14 &&
   report.changeHelmetApply?.calculatorActive === true &&
-  report.changeHelmetApply?.lr === "277" &&
+  report.changeHelmetApply?.lr === "99" &&
   report.resetCalculator?.life === "" &&
   report.resetBreakdown?.total === "0%" &&
   report.resetBreakdown?.jewels === 3 &&

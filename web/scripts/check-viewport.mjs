@@ -4,6 +4,7 @@ import { readFile } from "node:fs/promises";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { setTimeout as sleep } from "node:timers/promises";
+import { POPULATE_SAMPLE_EXPRESSION } from "./sample-data.mjs";
 
 const siteDir = join(dirname(fileURLToPath(import.meta.url)), "../site");
 const edge =
@@ -113,7 +114,7 @@ async function inspect(view, width, height) {
       "Runtime.evaluate",
       {
         expression:
-          'document.body && (document.body.innerText.includes("3878") || document.body.innerText.includes("Apply Total"))',
+          '!!(document.getElementById("slot-helmet") && document.getElementById("jewel-1") && document.getElementById("result-flame-link"))',
         returnByValue: true,
       },
       sessionId,
@@ -121,6 +122,27 @@ async function inspect(view, width, height) {
     if (ready.result.value) break;
     await sleep(200);
   }
+
+  const blank = await cdp(
+    "Runtime.evaluate",
+    {
+      expression: `({
+        life: document.getElementById("maximum-life").value,
+        flame: document.getElementById("result-flame-link").textContent,
+        total: document.getElementById("breakdown-total").textContent,
+        jewels: document.querySelectorAll("#jewel-rows .field-row").length
+      })`,
+      returnByValue: true,
+    },
+    sessionId,
+  );
+
+  await cdp(
+    "Runtime.evaluate",
+    { expression: POPULATE_SAMPLE_EXPRESSION, returnByValue: true },
+    sessionId,
+  );
+
   const result = await cdp(
     "Runtime.evaluate",
     {
@@ -166,7 +188,10 @@ async function inspect(view, width, height) {
     },
     sessionId,
   );
-  console.log(`${view} ${width}x${height}`, JSON.stringify(result.result.value));
+  console.log(
+    `${view} ${width}x${height}`,
+    JSON.stringify({ blank: blank.result.value, ...result.result.value }),
+  );
   await cdp("Target.closeTarget", { targetId });
 }
 
