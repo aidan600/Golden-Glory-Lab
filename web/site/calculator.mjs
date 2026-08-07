@@ -192,6 +192,8 @@ export class Dec {
   /**
    * Banker's rounding of value×100 to an integer BigInt (signed).
    * Ties (.5 exactly) round to the even hundredths digit.
+   * Rounding direction uses the scaled coefficient's sign so values in
+   * (-0.01, 0) are not mis-rounded after truncation to whole=0.
    * Used only for Link Effect Multiplier display — not Flame Link damage.
    */
   _roundHalfEvenCents() {
@@ -204,17 +206,18 @@ export class Dec {
     const rem = scaled.coeff % factor;
     const absRem = rem < 0n ? -rem : rem;
     const twice = absRem * 2n;
+    const negative = scaled.coeff < 0n;
     if (twice < factor) {
       return whole;
     }
     if (twice > factor) {
-      return whole >= 0n ? whole + 1n : whole - 1n;
+      return negative ? whole - 1n : whole + 1n;
     }
     // Exact tie: round to even.
     if (whole % 2n === 0n) {
       return whole;
     }
-    return whole >= 0n ? whole + 1n : whole - 1n;
+    return negative ? whole - 1n : whole + 1n;
   }
 
   toLexeme() {
@@ -241,8 +244,9 @@ export class Dec {
   /** Always two decimal places with HALF_EVEN (desktop Decimal.quantize("0.01")). */
   formatMultiplier() {
     const cents = this._roundHalfEvenCents();
-    const neg = cents < 0n;
-    let digits = (neg ? -cents : cents).toString();
+    // Preserve Python signed-zero display for negative values that quantize to 0.
+    const neg = cents < 0n || (cents === 0n && this.isNegative());
+    let digits = (cents < 0n ? -cents : cents).toString();
     while (digits.length < 3) digits = "0" + digits;
     const split = digits.length - 2;
     const body = `${digits.slice(0, split)}.${digits.slice(split)}`;

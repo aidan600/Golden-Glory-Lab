@@ -216,6 +216,9 @@ test("H3. Multiplier display uses HALF_EVEN (not HALF_UP)", () => {
   assert.equal(Dec.fromString("1.305").formatMultiplier(), "1.30");
   // 1.315 → hundredths digit odd → rounds to 1.32
   assert.equal(Dec.fromString("1.315").formatMultiplier(), "1.32");
+  // Negative near-zero: sign must come from scaled coeff, not truncated whole=0.
+  assert.equal(Dec.fromString("-0.006").formatMultiplier(), "-0.01");
+  assert.equal(Dec.fromString("-0.005").formatMultiplier(), "-0.00");
   // Flame Link modelled damage remains HALF_UP (0.5 → up), independent of display.
   assert.equal(Dec.fromString("625.5").roundHalfUpInt(), 626n);
 });
