@@ -185,7 +185,10 @@ test("H. Signed and fractional parsing accepted", () => {
   );
   assert.equal(result.flameLinkError, null);
   assert.equal(result.netLinkSkillBuffEffectPct, "30.5");
-  assert.equal(result.linkEffectMultiplier, "1.31");
+  // Exact multiplier 1.305; desktop Decimal.quantize("0.01") is HALF_EVEN → 1.30
+  assert.equal(result.linkEffectMultiplier, "1.30");
+  assert.equal(result.flameLinkMin, 625n);
+  assert.equal(result.flameLinkMax, 774n);
 });
 
 test("H2. Blank Other Link Skill Buff Effect equals explicit 0", () => {
@@ -206,6 +209,15 @@ test("H2. Blank Other Link Skill Buff Effect equals explicit 0", () => {
   assert.equal(blanked.linkEffectMultiplier, "1.40");
   assert.equal(blanked.flameLinkMin, 671n);
   assert.equal(blanked.flameLinkMax, 830n);
+});
+
+test("H3. Multiplier display uses HALF_EVEN (not HALF_UP)", () => {
+  // 1.305 → hundredths digit even → stays 1.30
+  assert.equal(Dec.fromString("1.305").formatMultiplier(), "1.30");
+  // 1.315 → hundredths digit odd → rounds to 1.32
+  assert.equal(Dec.fromString("1.315").formatMultiplier(), "1.32");
+  // Flame Link modelled damage remains HALF_UP (0.5 → up), independent of display.
+  assert.equal(Dec.fromString("625.5").roundHalfUpInt(), 626n);
 });
 
 test("I. Exact /100 preserves >64 fractional digits", () => {

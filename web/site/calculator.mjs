@@ -181,22 +181,40 @@ export class Dec {
   }
 
   /**
-   * Quantize to hundredths (half-up), matching Python Decimal.quantize(0.01).
+   * Quantize to hundredths with ROUND_HALF_EVEN (Python Decimal default),
+   * matching manual_calculator._format_multiplier display only.
    */
   quantize2() {
-    const cents = this._roundHalfUpCents();
+    const cents = this._roundHalfEvenCents();
     return new Dec(cents, 2);
   }
 
-  /** Half-up rounding of value×100 to an integer BigInt (signed). */
-  _roundHalfUpCents() {
-    if (!this.isNegative()) {
-      return this.mul(Dec.fromString("100")).roundHalfUpInt();
+  /**
+   * Banker's rounding of value×100 to an integer BigInt (signed).
+   * Ties (.5 exactly) round to the even hundredths digit.
+   * Used only for Link Effect Multiplier display — not Flame Link damage.
+   */
+  _roundHalfEvenCents() {
+    const scaled = this.mul(Dec.fromString("100"));
+    if (scaled.scale === 0) {
+      return scaled.coeff;
     }
-    const absCents = new Dec(-this.coeff, this.scale)
-      .mul(Dec.fromString("100"))
-      .roundHalfUpInt();
-    return -absCents;
+    const factor = pow10(BigInt(scaled.scale));
+    const whole = scaled.coeff / factor; // truncates toward zero
+    const rem = scaled.coeff % factor;
+    const absRem = rem < 0n ? -rem : rem;
+    const twice = absRem * 2n;
+    if (twice < factor) {
+      return whole;
+    }
+    if (twice > factor) {
+      return whole >= 0n ? whole + 1n : whole - 1n;
+    }
+    // Exact tie: round to even.
+    if (whole % 2n === 0n) {
+      return whole;
+    }
+    return whole >= 0n ? whole + 1n : whole - 1n;
   }
 
   toLexeme() {
@@ -220,9 +238,9 @@ export class Dec {
     return this.toLexeme();
   }
 
-  /** Always two decimal places (Python quantize Decimal("0.01") then format f). */
+  /** Always two decimal places with HALF_EVEN (desktop Decimal.quantize("0.01")). */
   formatMultiplier() {
-    const cents = this._roundHalfUpCents();
+    const cents = this._roundHalfEvenCents();
     const neg = cents < 0n;
     let digits = (neg ? -cents : cents).toString();
     while (digits.length < 3) digits = "0" + digits;
