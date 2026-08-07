@@ -252,13 +252,14 @@ def _evaluate_flame_link_section(
     assert light is not None
 
     if _blank(fields.other_link_skill_buff_effect_pct):
-        return None, None, None, None, "Enter Other Link Skill Buff Effect"
-    other, other_error = _parse_optional_decimal(
-        fields.other_link_skill_buff_effect_pct
-    )
-    if other_error is not None:
-        return None, None, None, None, other_error
-    assert other is not None
+        other = Decimal(0)
+    else:
+        other, other_error = _parse_optional_decimal(
+            fields.other_link_skill_buff_effect_pct
+        )
+        if other_error is not None:
+            return None, None, None, None, other_error
+        assert other is not None
 
     if _blank(fields.flame_link_level):
         return None, None, None, None, "Enter a Flame Link level from 1 to 40"

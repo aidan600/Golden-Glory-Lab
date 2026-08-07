@@ -336,11 +336,14 @@ function evaluateFlameLinkSection(fields, levelTable) {
   const lightP = parseOptionalDecimal(fields.increasedLightRadiusPct);
   if (lightP.error) return emptyFlame(lightP.error);
 
+  let other;
   if (blank(fields.otherLinkSkillBuffEffectPct)) {
-    return emptyFlame("Enter Other Link Skill Buff Effect");
+    other = Dec.zero();
+  } else {
+    const otherP = parseOptionalDecimal(fields.otherLinkSkillBuffEffectPct);
+    if (otherP.error) return emptyFlame(otherP.error);
+    other = otherP.value;
   }
-  const otherP = parseOptionalDecimal(fields.otherLinkSkillBuffEffectPct);
-  if (otherP.error) return emptyFlame(otherP.error);
 
   if (blank(fields.flameLinkLevel)) {
     return emptyFlame("Enter a Flame Link level from 1 to 40");
@@ -356,7 +359,7 @@ function evaluateFlameLinkSection(fields, levelTable) {
   }
 
   const gg = fields.goldenGloryAllocated ? lightP.value : Dec.zero();
-  const direct = otherP.value;
+  const direct = other;
   let conditional = Dec.zero();
   if (fields.powerfulBondActive) {
     conditional = conditional.add(Dec.fromString(BOND_VALUE_PCT));

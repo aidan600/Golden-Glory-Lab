@@ -188,6 +188,26 @@ test("H. Signed and fractional parsing accepted", () => {
   assert.equal(result.linkEffectMultiplier, "1.31");
 });
 
+test("H2. Blank Other Link Skill Buff Effect equals explicit 0", () => {
+  const blanked = evaluateManualCalculator(
+    fields({ otherLinkSkillBuffEffectPct: "" }),
+    levelTable,
+  );
+  const explicit = evaluateManualCalculator(
+    fields({ otherLinkSkillBuffEffectPct: "0" }),
+    levelTable,
+  );
+  assert.equal(blanked.flameLinkError, null);
+  assert.equal(blanked.netLinkSkillBuffEffectPct, explicit.netLinkSkillBuffEffectPct);
+  assert.equal(blanked.linkEffectMultiplier, explicit.linkEffectMultiplier);
+  assert.equal(blanked.flameLinkMin, explicit.flameLinkMin);
+  assert.equal(blanked.flameLinkMax, explicit.flameLinkMax);
+  assert.equal(blanked.netLinkSkillBuffEffectPct, "40");
+  assert.equal(blanked.linkEffectMultiplier, "1.40");
+  assert.equal(blanked.flameLinkMin, 671n);
+  assert.equal(blanked.flameLinkMax, 830n);
+});
+
 test("I. Exact /100 preserves >64 fractional digits", () => {
   // 70 significant fractional digits — old DIV_SCALE=64 would truncate.
   const frac = "1".repeat(70);
