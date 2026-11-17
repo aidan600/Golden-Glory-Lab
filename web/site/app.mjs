@@ -8,11 +8,12 @@ import {
   FIXED_LIGHT_RADIUS_SLOTS,
   INITIAL_JEWEL_COUNT,
   LightRadiusBreakdown,
+  compareFlameLink,
   defaultManualCalculatorInput,
   evaluateManualCalculator,
   parseDecimalText,
   parseFlameLinkLevelTable,
-} from "./calculator.mjs";
+} from "./calculator.mjs?v=3.30.0";
 
 const DASH = "\u2014";
 const ASSET = "./assets/icons";
@@ -56,6 +57,21 @@ const els = {
   resultFlameLink: document.getElementById("result-flame-link"),
   resultEnmity: document.getElementById("result-enmity"),
   flameError: document.getElementById("flame-error"),
+  flameGameVersion: document.getElementById("flame-game-version"),
+  flameMaximumLifePercent: document.getElementById("flame-maximum-life-percent"),
+  goldenGloryLightRadiusPercent: document.getElementById(
+    "golden-glory-light-radius-percent",
+  ),
+  compareFlameLink: document.getElementById("compare-flame-link"),
+  flameComparison: document.getElementById("flame-comparison"),
+  comparisonStatus: document.getElementById("flame-comparison-status"),
+  comparisonResults: document.getElementById("flame-comparison-results"),
+  previousDamage: document.getElementById("flame-damage-329"),
+  currentDamage: document.getElementById("flame-damage-330"),
+  previousMultiplier: document.getElementById("flame-multiplier-329"),
+  currentMultiplier: document.getElementById("flame-multiplier-330"),
+  minimumChange: document.getElementById("flame-change-min"),
+  maximumChange: document.getElementById("flame-change-max"),
   enmityError: document.getElementById("enmity-error"),
   btnResetCalculator: document.getElementById("btn-reset-calculator"),
   slotRows: document.getElementById("slot-rows"),
@@ -66,8 +82,11 @@ const els = {
   btnResetBreakdown: document.getElementById("btn-reset-breakdown"),
 };
 
-/** @type {{ rows: Map, minimumLevel: number, maximumLevel: number } | null} */
+/** @type {ReturnType<typeof parseFlameLinkLevelTable> | null} */
 let levelTable = null;
+/** @type {ReturnType<typeof parseFlameLinkLevelTable> | null} */
+let previousLevelTable = null;
+let loadingPreviousTable = false;
 const breakdown = new LightRadiusBreakdown();
 /** @type {HTMLInputElement[]} */
 let slotInputs = [];
@@ -116,32 +135,80 @@ function writeCalculatorFields(fields) {
   els.enmityEquipped.checked = fields.enmityEquipped;
 }
 
+function flameDamageRange(result) {
+  return result.flameLinkMin == null || result.flameLinkMax == null
+    ? DASH
+    : `${result.flameLinkMin}-${result.flameLinkMax}`;
+}
+
+function multiplierText(multiplier) {
+  return multiplier == null ? DASH : `${multiplier}x`;
+}
+
+function comparisonChangeText(change) {
+  if (change == null) return DASH;
+  const amount = `${change.amount > 0n ? "+" : ""}${change.amount}`;
+  const percent = change.percent == null
+    ? DASH
+    : `${Number(change.percent) > 0 ? "+" : ""}${change.percent}%`;
+  return `${amount} (${percent})`.replaceAll("-", "\u2212");
+}
+
+function renderFlameLinkComparison(fields, current) {
+  const visible = els.compareFlameLink.checked;
+  els.flameComparison.hidden = !visible;
+  if (!visible) return;
+
+  if (!previousLevelTable) {
+    els.comparisonResults.hidden = true;
+    els.comparisonStatus.textContent = loadingPreviousTable
+      ? "Loading 3.29 Flame Link data…"
+      : "Could not load 3.29 data. Turn the comparison off and on to retry.";
+    return;
+  }
+
+  const { previous, minimumChange, maximumChange } = compareFlameLink(
+    fields,
+    previousLevelTable,
+    current,
+  );
+  const hasDamage = previous.flameLinkMin != null || current.flameLinkMin != null;
+  els.comparisonResults.hidden = !hasDamage;
+  if (!hasDamage) {
+    els.comparisonStatus.textContent = "Check the Flame Link inputs to compare damage.";
+    return;
+  }
+
+  els.previousDamage.textContent = flameDamageRange(previous);
+  els.currentDamage.textContent = flameDamageRange(current);
+  els.previousMultiplier.textContent = multiplierText(previous.linkEffectMultiplier);
+  els.currentMultiplier.textContent = multiplierText(current.linkEffectMultiplier);
+  els.minimumChange.textContent = comparisonChangeText(minimumChange);
+  els.maximumChange.textContent = comparisonChangeText(maximumChange);
+
+  let status = "";
+  if (previous.flameLinkError) {
+    status = `3.29 result unavailable. ${previous.flameLinkError}`;
+  } else if (current.flameLinkError) {
+    status = "3.30 result unavailable. Check the Flame Link inputs.";
+  } else if (minimumChange?.percent === null || maximumChange?.percent === null) {
+    status = "A percentage change requires nonzero 3.29 damage.";
+  }
+  els.comparisonStatus.textContent = status;
+}
+
 function recalculate() {
   if (!levelTable) return;
-  const result = evaluateManualCalculator(readCalculatorFields(), levelTable);
+  const fields = readCalculatorFields();
+  const result = evaluateManualCalculator(fields, levelTable);
 
-  if (result.flameLinkError && result.netLinkSkillBuffEffectPct == null) {
-    els.resultNetEffect.textContent = DASH;
-    els.resultMultiplier.textContent = DASH;
-    els.resultFlameLink.textContent = DASH;
-    setError(els.flameError, result.flameLinkError);
-  } else {
-    els.resultNetEffect.textContent =
-      result.netLinkSkillBuffEffectPct != null
-        ? `${result.netLinkSkillBuffEffectPct}%`
-        : DASH;
-    els.resultMultiplier.textContent =
-      result.linkEffectMultiplier != null
-        ? `${result.linkEffectMultiplier}x`
-        : DASH;
-    if (result.flameLinkMin != null && result.flameLinkMax != null) {
-      els.resultFlameLink.textContent = `${result.flameLinkMin.toString()}-${result.flameLinkMax.toString()}`;
-      setError(els.flameError, null);
-    } else {
-      els.resultFlameLink.textContent = DASH;
-      setError(els.flameError, result.flameLinkError);
-    }
-  }
+  els.resultNetEffect.textContent = result.netLinkSkillBuffEffectPct != null
+    ? `${result.netLinkSkillBuffEffectPct}%`
+    : DASH;
+  els.resultMultiplier.textContent = multiplierText(result.linkEffectMultiplier);
+  els.resultFlameLink.textContent = flameDamageRange(result);
+  setError(els.flameError, result.flameLinkError);
+  renderFlameLinkComparison(fields, result);
 
   els.preEnmityDisplay.textContent = `Pre-Enmity Fire Resistance: ${
     result.preEnmityFireResistance != null
@@ -324,6 +391,7 @@ function applyBreakdownTotal() {
 
 function resetCalculator() {
   writeCalculatorFields(defaultManualCalculatorInput());
+  els.compareFlameLink.checked = false;
   recalculate();
 }
 
@@ -362,6 +430,7 @@ function bindEvents() {
   ]) {
     box.addEventListener("change", recalculate);
   }
+  els.compareFlameLink.addEventListener("change", toggleFlameLinkComparison);
 
   els.btnResetCalculator.addEventListener("click", resetCalculator);
   els.btnAddJewel.addEventListener("click", addJewel);
@@ -369,18 +438,43 @@ function bindEvents() {
   els.btnResetBreakdown.addEventListener("click", resetBreakdown);
 }
 
-async function main() {
-  const response = await fetch("./data/flame-link-level-table-v1.json");
+async function loadFlameLinkTable(path) {
+  const response = await fetch(path);
   if (!response.ok) {
     throw new Error(`Failed to load Flame Link level table (${response.status})`);
   }
-  levelTable = parseFlameLinkLevelTable(await response.json());
+  return parseFlameLinkLevelTable(await response.json());
+}
+
+async function toggleFlameLinkComparison() {
+  if (els.compareFlameLink.checked && !previousLevelTable && !loadingPreviousTable) {
+    loadingPreviousTable = true;
+    recalculate();
+    try {
+      previousLevelTable = await loadFlameLinkTable(
+        "./data/flame-link-level-table-v1.json?v=3.30.0",
+      );
+    } catch (error) {
+      console.error(error);
+    } finally {
+      loadingPreviousTable = false;
+    }
+  }
+  recalculate();
+}
+
+async function main() {
+  levelTable = await loadFlameLinkTable("./data/flame-link-level-table-v2.json");
+  els.flameGameVersion.textContent = levelTable.gameVersion;
+  els.flameMaximumLifePercent.textContent =
+    `${levelTable.maximumLifePercent.toLexeme()}%`;
+  els.goldenGloryLightRadiusPercent.textContent =
+    `${levelTable.goldenGloryLightRadiusPercent.toLexeme()}%`;
   renderSlots();
   renderJewels();
   bindEvents();
-  writeCalculatorFields(defaultManualCalculatorInput());
+  resetCalculator();
   syncBreakdownFromInputs();
-  recalculate();
   const params = new URLSearchParams(window.location.search);
   const initialView =
     params.get("view") === "breakdown" ? "breakdown" : "calculator";

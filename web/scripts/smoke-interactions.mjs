@@ -8,7 +8,10 @@ import { readFile } from "node:fs/promises";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { setTimeout as sleep } from "node:timers/promises";
-import { POPULATE_SAMPLE_EXPRESSION } from "./sample-data.mjs";
+import {
+  POPULATE_SAMPLE_EXPRESSION,
+  SAMPLE_FLAME_LINK_DAMAGE,
+} from "./sample-data.mjs";
 
 const siteDir = join(dirname(fileURLToPath(import.meta.url)), "../site");
 const edge =
@@ -140,6 +143,8 @@ report.blankStartup = await evaluate(
     other: document.getElementById("other-link").value,
     level: document.getElementById("flame-link-level").value,
     gg: document.getElementById("golden-glory").checked,
+    compareFlameLink: document.getElementById("compare-flame-link").checked,
+    flameComparisonHidden: document.getElementById("flame-comparison").hidden,
     powerful: document.getElementById("powerful-bond").checked,
     inspiring: document.getElementById("inspiring-bond").checked,
     gear: document.getElementById("gear-fire-res").value,
@@ -151,6 +156,9 @@ report.blankStartup = await evaluate(
     net: document.getElementById("result-net-effect").textContent.trim(),
     mult: document.getElementById("result-multiplier").textContent.trim(),
     enmityResult: document.getElementById("result-enmity").textContent.trim(),
+    gameVersion: document.getElementById("flame-game-version").textContent,
+    flameLifePercent: document.getElementById("flame-maximum-life-percent").textContent,
+    goldenGloryPercent: document.getElementById("golden-glory-light-radius-percent").textContent,
     flameError: document.getElementById("flame-error").textContent.trim(),
     total: document.getElementById("breakdown-total").textContent.trim(),
     jewels: document.querySelectorAll("#jewel-rows .field-row").length,
@@ -161,6 +169,49 @@ report.blankStartup = await evaluate(
 );
 
 report.populateSample = await evaluate(POPULATE_SAMPLE_EXPRESSION, sessionId);
+
+await evaluate('document.getElementById("compare-flame-link").click()', sessionId);
+for (let i = 0; i < 50; i++) {
+  const ready = await evaluate(
+    '!document.getElementById("flame-comparison-results").hidden',
+    sessionId,
+  );
+  if (ready) break;
+  await sleep(200);
+}
+
+report.compareSample = await evaluate(
+  `({
+    hidden: document.getElementById("flame-comparison").hidden,
+    previousDamage: document.getElementById("flame-damage-329").textContent,
+    currentDamage: document.getElementById("flame-damage-330").textContent,
+    previousMultiplier: document.getElementById("flame-multiplier-329").textContent,
+    currentMultiplier: document.getElementById("flame-multiplier-330").textContent,
+    minimumChange: document.getElementById("flame-change-min").textContent,
+    maximumChange: document.getElementById("flame-change-max").textContent,
+    currentResult: document.getElementById("result-flame-link").textContent,
+  })`,
+  sessionId,
+);
+
+report.updateComparison = await evaluate(
+  `(() => {
+    const goldenGlory = document.getElementById("golden-glory");
+    goldenGlory.click();
+    const changes = {
+      minimum: document.getElementById("flame-change-min").textContent,
+      maximum: document.getElementById("flame-change-max").textContent,
+    };
+    goldenGlory.click();
+    document.getElementById("compare-flame-link").click();
+    return {
+      ...changes,
+      hidden: document.getElementById("flame-comparison").hidden,
+      currentResult: document.getElementById("result-flame-link").textContent,
+    };
+  })()`,
+  sessionId,
+);
 
 report.switchBreakdown = await evaluate(
   `(document.getElementById("tab-breakdown").click(), {
@@ -262,6 +313,8 @@ const ok =
   blank?.other === "" &&
   blank?.level === "" &&
   blank?.gg === false &&
+  blank?.compareFlameLink === false &&
+  blank?.flameComparisonHidden === true &&
   blank?.powerful === false &&
   blank?.inspiring === false &&
   blank?.gear === "" &&
@@ -275,7 +328,24 @@ const ok =
   blank?.jewels === 3 &&
   blank?.helmet === "0" &&
   blank?.overflowX === false &&
-  report.populateSample?.flame === "3878-4423" &&
+  blank?.gameVersion === "Path of Exile 1 3.30.0" &&
+  blank?.flameLifePercent === "3%" &&
+  blank?.goldenGloryPercent === "50%" &&
+  report.populateSample?.flame === SAMPLE_FLAME_LINK_DAMAGE &&
+  report.populateSample?.net === "127%" &&
+  report.populateSample?.multiplier === "2.27x" &&
+  report.compareSample?.hidden === false &&
+  report.compareSample?.previousDamage === "3878-4423" &&
+  report.compareSample?.currentDamage === SAMPLE_FLAME_LINK_DAMAGE &&
+  report.compareSample?.previousMultiplier === "3.54x" &&
+  report.compareSample?.currentMultiplier === "2.27x" &&
+  report.compareSample?.minimumChange === "−1950 (−50.3%)" &&
+  report.compareSample?.maximumChange === "−2066 (−46.7%)" &&
+  report.compareSample?.currentResult === SAMPLE_FLAME_LINK_DAMAGE &&
+  report.updateComparison?.minimum === "−246 (−22.4%)" &&
+  report.updateComparison?.maximum === "−211 (−16.9%)" &&
+  report.updateComparison?.hidden === true &&
+  report.updateComparison?.currentResult === SAMPLE_FLAME_LINK_DAMAGE &&
   report.addManyJewels?.jewels === 15 &&
   report.addManyJewels?.removable === 12 &&
   report.addManyJewels?.addDisabled === false &&

@@ -10,6 +10,7 @@ replace mechanics audits, proofs, decisions, or the product direction.
 | [BUILD-003 - manual-first Flame Link player chain](BUILD-003-player-chain-flame-link.md) | implemented (pending merge) | Manual-first Golden Glory / direct Link / conditional / level / life chain producing modelled Added Fire Damage granted; build-state v3; advisory recognition; Enmity unchanged |
 | [BUILD-004 - manual Golden Glory Calculator product reset](BUILD-004-manual-calculator-reset.md) | implemented (pending merge) | Ordinary product is a two-page manual calculator; PoB/import/review remain experimental diagnostic infrastructure |
 | [BUILD-005 - v0.1.0 publication readiness](BUILD-005-publication-readiness.md) | implemented (pending merge) | User-first README, install/release docs, Windows Setup installer, and a single-command release builder for the calculator's first public release |
+| [BUILD-006 - Covens of Umbra web calculator](BUILD-006-web-flame-link-3-30.md) | implemented | 3.30.0 Flame Link progression and Maximum Life coefficient, Golden Glory conversion, and optional same-input comparison with 3.29 |
 
 Phase 3 remains in progress. The ordinary-user product is the manual calculator.
 BUILD-002/BUILD-003 domain paths remain the calculation authority behind that

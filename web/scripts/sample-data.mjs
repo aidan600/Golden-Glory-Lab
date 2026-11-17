@@ -33,6 +33,7 @@ export const SAMPLE_BREAKDOWN_SLOTS = {
 };
 
 export const SAMPLE_JEWELS = ["0", "0", "0"];
+export const SAMPLE_FLAME_LINK_DAMAGE = "1928-2357";
 
 /** CDP Runtime.evaluate expression that fills the approved sample into the live page. */
 export const POPULATE_SAMPLE_EXPRESSION = `(() => {
@@ -79,6 +80,8 @@ export const POPULATE_SAMPLE_EXPRESSION = `(() => {
   }
   return {
     flame: document.getElementById("result-flame-link").textContent,
+    net: document.getElementById("result-net-effect").textContent,
+    multiplier: document.getElementById("result-multiplier").textContent,
     total: document.getElementById("breakdown-total").textContent,
   };
 })()`;

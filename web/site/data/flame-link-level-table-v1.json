@@ -28,6 +28,10 @@
     "notAuthorityForLiveRounding": true,
     "retainedMaterial": "Forty integer level rows with requirement level and flat min/max only; no raw effectiveness payload."
   },
+  "mechanics": {
+    "maximumLifePercent": 5,
+    "goldenGloryLightRadiusPercent": 100
+  },
   "tableBounds": {
     "minimumLevel": 1,
     "maximumLevel": 40,

@@ -18,15 +18,14 @@ ordering, audit conclusions, or settled decisions:
 
 ## Status date
 
-2026-08-06
+2026-11-17
 
 ## Current main milestone
 
-Phase 3 — first usable desktop BUILD — continues after
-[BUILD-004](builds/BUILD-004-manual-calculator-reset.md) resets the ordinary
-product shell to a manual calculator, and
-[BUILD-005](builds/BUILD-005-publication-readiness.md) prepares that
-calculator for its first public v0.1.0 release (task branch; pending merge).
+Phase 3 — first usable desktop BUILD — continues after the merge of the
+[manual calculator](builds/BUILD-004-manual-calculator-reset.md) and its
+[v0.1.0 publication preparation](builds/BUILD-005-publication-readiness.md).
+The browser calculator is also served through GitHub Pages.
 
 ## Ordinary product now
 
@@ -42,6 +41,14 @@ The default desktop application is the **Golden Glory Calculator**:
 PoB import, item mapping/review, save/open, provenance/evidence UI, and the
 diagnostic `GoldenGloryApp` remain in the repository as experimental
 infrastructure. They are not required to use the calculator.
+
+The [web calculator](https://aidan600.github.io/Golden-Glory-Lab/) also runs on
+GitHub Pages. [BUILD-006](builds/BUILD-006-web-flame-link-3-30.md) updates its
+Flame Link flat damage and Maximum Life terms and Golden Glory's Light Radius
+conversion for Path of Exile 3.30. The web calculator can also compare 3.29
+and 3.30 Flame Link damage using the same inputs. The desktop calculator and
+prior evidence pack target 3.29.x. The Enmity planner excludes the 3.30
+Mercenary area resistance penalties.
 
 ## Merged outcomes
 
@@ -140,9 +147,9 @@ imported.
 
 ## Next two planned outcomes
 
-1. Owner-test the installed and portable calculator executables; merge
-   BUILD-004/BUILD-005 when accepted; owner creates and publishes GitHub
-   Release v0.1.0 per [docs/RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md).
+1. Owner-test the installed and portable calculator executables before
+   publishing new Windows binaries per the
+   [release checklist](RELEASE_CHECKLIST.md).
 2. Optional later evidence work for live Flame Link rounding and conditional
    auto-activation; exhaustive recognition remains deferred.
 

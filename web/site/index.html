@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Golden Glory Calculator</title>
-    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./styles.css?v=3.30.0" />
     <link rel="icon" type="image/png" href="./assets/icons/sun_large.png" />
   </head>
   <body>
@@ -91,7 +91,7 @@
                     <span class="suffix" aria-hidden="true"></span>
                   </div>
                   <div class="field-row">
-                    <label for="light-radius">Increased Light Radius Modifier</label>
+                    <label for="light-radius">Net Light Radius Modifier</label>
                     <input
                       id="light-radius"
                       name="increasedLightRadiusPct"
@@ -222,6 +222,10 @@
                     Overcapped Fire Resistance: —
                   </p>
                   <p class="field-error" id="enmity-section-error" hidden></p>
+                  <p class="results-note">
+                    The Enmity estimate uses the gear and aura values you enter.
+                    Mercenary area penalties can change the in-game result.
+                  </p>
                 </section>
               </div>
 
@@ -238,11 +242,46 @@
                     <div class="result-value" id="result-multiplier">—</div>
                   </div>
                   <div class="result-block">
-                    <div class="result-label">Flame Link Added Fire Damage</div>
+                    <div class="result-label">Flame Link Added Fire Damage Granted</div>
                     <div class="result-value result-flame" id="result-flame-link">
                       —
                     </div>
                     <p class="field-error" id="flame-error" hidden></p>
+                    <label class="check-row flame-comparison-toggle">
+                      <input type="checkbox" id="compare-flame-link" aria-controls="flame-comparison" />
+                      <span>Compare with 3.29</span>
+                    </label>
+                    <div class="flame-comparison" id="flame-comparison" hidden>
+                      <p class="flame-comparison-status" id="flame-comparison-status" role="status"></p>
+                      <div id="flame-comparison-results" hidden>
+                        <table class="flame-comparison-values" aria-label="Flame Link damage by patch">
+                          <thead>
+                            <tr>
+                              <th scope="col">Patch</th>
+                              <th scope="col">Granted damage</th>
+                              <th scope="col">Link multiplier</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr>
+                              <th scope="row">3.29</th>
+                              <td id="flame-damage-329"></td>
+                              <td id="flame-multiplier-329"></td>
+                            </tr>
+                            <tr>
+                              <th scope="row">3.30</th>
+                              <td id="flame-damage-330"></td>
+                              <td id="flame-multiplier-330"></td>
+                            </tr>
+                          </tbody>
+                        </table>
+                        <dl class="flame-comparison-changes">
+                          <div><dt>Minimum change</dt><dd id="flame-change-min"></dd></div>
+                          <div><dt>Maximum change</dt><dd id="flame-change-max"></dd></div>
+                        </dl>
+                        <p class="flame-comparison-note">Both patches use the same inputs. Changes are relative to 3.29.</p>
+                      </div>
+                    </div>
                   </div>
                   <div class="result-block result-block-last">
                     <div class="result-label">Enmity Fire Penetration</div>
@@ -250,8 +289,13 @@
                     <p class="field-error" id="enmity-error" hidden></p>
                   </div>
                   <p class="results-note">
-                    Flame Link Added Fire Damage is the modelled damage granted to
-                    the linked Mercenary. It is not DPS.
+                    Flame Link in <span id="flame-game-version"></span> adds
+                    <span id="flame-maximum-life-percent"></span> of your Maximum Life to
+                    the gem's flat fire damage before Link Skill Buff Effect.
+                    If you’re linked to a Mercenary, Golden Glory applies
+                    <span id="golden-glory-light-radius-percent"></span> of your net
+                    Light Radius modifier as Link Skill Buff Effect.
+                    The model rounds to the nearest whole number, with halves rounded up.
                   </p>
                 </section>
 
@@ -312,7 +356,7 @@
                   width="28"
                   height="28"
                 />
-                <span>Total Increased Light Radius Modifier</span>
+                <span>Total Net Light Radius Modifier</span>
               </div>
               <div class="total-value" id="breakdown-total">0%</div>
             </div>
@@ -345,10 +389,9 @@
         <p>
           Independent community project. Not affiliated with Grinding Gear Games.
         </p>
-        <p class="footer-meta">Path of Exile 1 — mechanics target 3.29.x</p>
       </footer>
     </div>
 
-    <script type="module" src="./app.mjs"></script>
+    <script type="module" src="./app.mjs?v=3.30.0"></script>
   </body>
 </html>

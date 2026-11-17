@@ -329,6 +329,68 @@ body {
   color: var(--enmity);
 }
 
+.result-block .flame-comparison-toggle {
+  margin-top: 4px;
+  padding-inline: 0;
+  font-size: 0.9rem;
+}
+
+.flame-comparison {
+  margin-top: 4px;
+  padding: 8px 10px;
+  border: 1px solid var(--gold-edge);
+  border-radius: var(--radius);
+  background: var(--gold-soft);
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+}
+
+.flame-comparison-values {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.flame-comparison-values :is(th, td) {
+  padding: 4px 6px 4px 0;
+  text-align: left;
+}
+
+.flame-comparison-values thead th {
+  border-bottom: 1px solid var(--gold-edge);
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.flame-comparison-changes {
+  margin: 4px 0 0;
+  padding-top: 4px;
+  border-top: 1px solid var(--gold-edge);
+}
+
+.flame-comparison-changes div {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 8px;
+  padding: 2px 0;
+}
+
+.flame-comparison-changes dd {
+  margin: 0;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.flame-comparison-note,
+.flame-comparison-status {
+  margin: 4px 0 0;
+  color: var(--muted);
+}
+
+.flame-comparison-status:empty {
+  display: none;
+}
+
 .results-note {
   margin: 10px var(--gutter) 0;
   color: var(--muted);
@@ -492,10 +554,6 @@ body {
 
 .site-footer p {
   margin: 0;
-}
-
-.footer-meta {
-  margin-top: 4px !important;
 }
 
 /* ---------- mobile ---------- */
