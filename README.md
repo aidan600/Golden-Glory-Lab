@@ -17,8 +17,10 @@ This is a planning calculator, not a DPS calculator. It does not connect to
 your Path of Exile account, does not read or modify Path of Building, and is
 an independent community project with no affiliation to Grinding Gear Games.
 
-The browser and Windows builds implement the **same manual calculator**. No
-server receives the values you enter. No account is required.
+The browser and Windows builds share the manual workflow. The web calculator
+targets Path of Exile **3.30** for Flame Link and Golden Glory. The Windows
+calculator targets **3.29.x**. No server receives the values you enter. No
+account is required.
 
 ## Use it
 
@@ -70,8 +72,9 @@ The application has two tabs: **Calculator** and **Light Radius Breakdown**.
 ### Calculator tab
 
 1. Enter the Luminary's **Maximum Life**.
-2. Enter the total **Increased Light Radius Modifier** directly, or leave it
-   for now and build it slot-by-slot on the **Light Radius Breakdown** tab.
+2. Enter the net Light Radius percentage directly, or build it slot-by-slot
+   on the **Light Radius Breakdown** tab. Use a negative percentage for a
+   net reduction.
 3. Enter any **Other Link Skill Buff Effect** from sources besides Golden
    Glory.
 4. Enter the final **Flame Link Level**.
@@ -85,6 +88,11 @@ The application has two tabs: **Calculator** and **Light Radius Breakdown**.
    - **Maximum Fire Resistance**
    - toggle **Enmity Equipped**
 7. Read the results on the right. They update live as you type.
+
+In the web calculator, turn on **Compare with 3.29** under the Flame Link
+result to see both patches with the same inputs. The comparison shows the
+damage and Link Effect Multiplier for each patch, plus the change at each
+end of the damage range relative to 3.29.
 
 The four results shown are:
 
@@ -114,12 +122,15 @@ catalog. It does not restrict what you can type into any field.
 
 ## Calculation notes / limitations
 
-- Golden Glory applies your Light Radius increases and reductions toward Link
-  Skill Buff Effect on the Mercenary.
+- In the web calculator, allocated Golden Glory contributes 50% of the
+  Luminary's increased or reduced Light Radius to Link Skill Buff Effect on
+  the Mercenary. The Windows calculator uses the 3.29.x value of 100%.
 - Powerful Bond and Inspiring Bond each add +20% Link Buff Effect while their
   respective condition is active.
-- Flame Link adds its level-based flat Fire Damage plus 5% of the Luminary's
-  Maximum Life, then applies the Link Buff Effect on top.
+- The web calculator uses 3.30 Flame Link flat Fire Damage values for gem
+  levels 1–40 and adds 3% of the Luminary's Maximum Life to each end of the
+  range. The Windows calculator uses the 3.29.x values and 5% of Maximum
+  Life. Both builds apply the Link Effect Multiplier to the resulting range.
 - The Flame Link integer result is **modelled**. It has not been independently
   confirmed against live-client rounding, so treat it as an estimate rather
   than an exact in-game value.
@@ -128,13 +139,9 @@ catalog. It does not restrict what you can type into any field.
 - The simplified Enmity planner applies your entered Enmity Reduced Fire
   Resistance to the pre-Enmity resistance pool, then truncates the fractional
   result toward zero before the overcap is calculated — matching current
-  Path of Building's modelled behavior.
+  Path of Building's modelled behavior. The planner excludes the Mercenary's
+  3.30 area resistance penalties.
 - This calculator does not compute total character DPS.
-
-**Target game context:** Path of Exile 1, current project mechanics target
-patch **3.29.x**. This is not a guarantee of accuracy against every future
-patch — mechanics can change, and this project may lag behind a live patch
-until it is re-verified.
 
 ## Helpful external references
 
@@ -171,3 +178,18 @@ Run the repository checks with:
 The check parses every JSON file, validates the source registry against its
 repository schema, checks repository-relative Markdown links, and confirms the
 files referenced from AGENTS.md exist.
+
+### Preview the web calculator in Codex
+
+1. Open this repository as a local Codex project. In the integrated terminal,
+   start the static server from the repository root.
+
+   ```powershell
+   python -m http.server 8000 --bind 127.0.0.1 --directory web/site
+   ```
+
+2. With the terminal running, press **Ctrl+T** on Windows and open
+   [the local calculator](http://127.0.0.1:8000/). You can also ask `@Browser`
+   to open that address. [Codex browser preview guide](https://learn.chatgpt.com/docs/browser#preview-a-page)
+3. To start the server with one click next time, save the same command as a
+   **Run** action in the project's local environment. [Local environment actions](https://learn.chatgpt.com/docs/environments/local-environment#actions)

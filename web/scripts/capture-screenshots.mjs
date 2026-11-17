@@ -10,7 +10,10 @@ import { createServer } from "node:http";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { setTimeout as sleep } from "node:timers/promises";
-import { POPULATE_SAMPLE_EXPRESSION } from "./sample-data.mjs";
+import {
+  POPULATE_SAMPLE_EXPRESSION,
+  SAMPLE_FLAME_LINK_DAMAGE,
+} from "./sample-data.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = join(__dirname, "..");
@@ -26,7 +29,7 @@ const shots = [
     width: 1280,
     height: 900,
     urlPath: "/?view=calculator",
-    waitText: "3878",
+    waitText: SAMPLE_FLAME_LINK_DAMAGE,
   },
   {
     name: "desktop-breakdown.png",
@@ -40,7 +43,7 @@ const shots = [
     width: 390,
     height: 844,
     urlPath: "/?view=calculator",
-    waitText: "3878",
+    waitText: SAMPLE_FLAME_LINK_DAMAGE,
   },
   {
     name: "mobile-breakdown.png",

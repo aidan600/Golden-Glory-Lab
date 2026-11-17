@@ -1,13 +1,12 @@
 /**
  * Manual Golden Glory Calculator — browser calculation seam.
- * Ports ordinary product behavior from manual_calculator.py / flame_link.py / enmity.py.
+ * Uses the bundled patch data for Flame Link and Golden Glory.
  * Exact decimal arithmetic via BigInt (no binary float in calculator math).
  */
 
 const DECIMAL_RE = /^-?[0-9]+(?:\.[0-9]+)?$/;
 const DECIMAL_DIGIT_LIMIT = 128;
 const BOND_VALUE_PCT = "20";
-const LIFE_COMPONENT_FRACTION = "0.05";
 const ENMITY_CAP = 200n;
 const MINIMUM_FLAME_LINK_LEVEL = 1;
 const MAXIMUM_FLAME_LINK_LEVEL = 40;
@@ -306,11 +305,18 @@ function formatResistancePct(value) {
   return value.toLexeme();
 }
 
-/**
- * @param {object} tableJson
- * @returns {{ rows: Map<number,{flatMin:Dec, flatMax:Dec}>, minimumLevel:number, maximumLevel:number }}
- */
 export function parseFlameLinkLevelTable(tableJson) {
+  const { maximumLifePercent, goldenGloryLightRadiusPercent } =
+    tableJson.mechanics ?? {};
+  if (
+    !Number.isSafeInteger(maximumLifePercent) ||
+    maximumLifePercent < 0 ||
+    !Number.isSafeInteger(goldenGloryLightRadiusPercent) ||
+    goldenGloryLightRadiusPercent < 0
+  ) {
+    throw new Error("Flame Link table is missing valid patch mechanics");
+  }
+
   const rows = new Map();
   for (const raw of tableJson.rows) {
     rows.set(raw.level, {
@@ -322,6 +328,9 @@ export function parseFlameLinkLevelTable(tableJson) {
     rows,
     minimumLevel: tableJson.tableBounds.minimumLevel,
     maximumLevel: tableJson.tableBounds.maximumLevel,
+    gameVersion: tableJson.targetGameVersion,
+    maximumLifePercent: Dec.fromInt(maximumLifePercent),
+    goldenGloryLightRadiusPercent: Dec.fromInt(goldenGloryLightRadiusPercent),
   };
 }
 
@@ -353,7 +362,7 @@ function evaluateFlameLinkSection(fields, levelTable) {
   }
 
   if (blank(fields.increasedLightRadiusPct)) {
-    return emptyFlame("Enter Increased Light Radius Modifier");
+    return emptyFlame("Enter Net Light Radius Modifier");
   }
   const lightP = parseOptionalDecimal(fields.increasedLightRadiusPct);
   if (lightP.error) return emptyFlame(lightP.error);
@@ -380,7 +389,9 @@ function evaluateFlameLinkSection(fields, levelTable) {
     return emptyFlame("Enter a Flame Link level from 1 to 40");
   }
 
-  const gg = fields.goldenGloryAllocated ? lightP.value : Dec.zero();
+  const goldenGlory = fields.goldenGloryAllocated
+    ? lightP.value.mul(levelTable.goldenGloryLightRadiusPercent).divBy100()
+    : Dec.zero();
   const direct = other;
   let conditional = Dec.zero();
   if (fields.powerfulBondActive) {
@@ -390,7 +401,7 @@ function evaluateFlameLinkSection(fields, levelTable) {
     conditional = conditional.add(Dec.fromString(BOND_VALUE_PCT));
   }
 
-  const net = gg.add(direct).add(conditional);
+  const net = goldenGlory.add(direct).add(conditional);
   const one = Dec.fromInt(1);
   const multiplier = one.add(net.divBy100());
 
@@ -418,7 +429,7 @@ function evaluateFlameLinkSection(fields, levelTable) {
     return emptyFlame("Unable to calculate Flame Link result");
   }
 
-  const lifeComponent = lifeP.value.mul(Dec.fromString(LIFE_COMPONENT_FRACTION));
+  const lifeComponent = lifeP.value.mul(levelTable.maximumLifePercent).divBy100();
   const unscaledMin = row.flatMin.add(lifeComponent);
   const unscaledMax = row.flatMax.add(lifeComponent);
   const exactMin = unscaledMin.mul(multiplier);
@@ -563,6 +574,33 @@ export function evaluateManualCalculator(fields, levelTable) {
   return {
     ...flame,
     ...enmity,
+  };
+}
+
+function damageChange(previous, current) {
+  const amount = current - previous;
+  if (previous === 0n) {
+    return { amount, percent: null };
+  }
+
+  const magnitude = amount < 0n ? -amount : amount;
+  const scaledPercent = magnitude * 1000n;
+  // Round the absolute percentage to the nearest tenth before restoring its sign.
+  const tenths = (scaledPercent * 2n + previous) / (previous * 2n);
+  const percent = new Dec(amount < 0n ? -tenths : tenths, 1).toLexeme();
+  return { amount, percent };
+}
+
+export function compareFlameLink(fields, previousLevelTable, currentResult) {
+  const previous = evaluateFlameLinkSection(fields, previousLevelTable);
+  if (previous.flameLinkMin === null || currentResult.flameLinkMin === null) {
+    return { previous, minimumChange: null, maximumChange: null };
+  }
+
+  return {
+    previous,
+    minimumChange: damageChange(previous.flameLinkMin, currentResult.flameLinkMin),
+    maximumChange: damageChange(previous.flameLinkMax, currentResult.flameLinkMax),
   };
 }
 

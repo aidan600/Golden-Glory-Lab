@@ -1,0 +1,296 @@
+{
+  "schemaVersion": "2.0.0",
+  "artifactId": "flame-link-level-table-v2",
+  "artifactType": "runtime-reference",
+  "formulaVersionId": "flame-link-player-chain-v2",
+  "roundingPolicyId": "modelled-nearest-integer-half-up-v1",
+  "targetGameVersion": "Path of Exile 1 3.30.0",
+  "sourceDataVersion": "Path of Exile 1 3.30.0",
+  "versionState": "matching-source-version",
+  "verificationStatus": "supported",
+  "sourceIds": [
+    "ggg-3-30-0-covens-of-umbra-patch-notes",
+    "pob-release-2-68-0-flame-link",
+    "poedb-flame-link-3-30-0"
+  ],
+  "provenance": {
+    "derivation": "Applied the pinned Path of Building 2.68.0 Flame Link effectiveness interpolation to each gem level requirement. Verified all 40 rows against the PoEDB 3.30 display and checked the official level 1 and level 20 anchors. The refresh script reproduces the rows and coefficients from the pinned text records.",
+    "sourceCommitSha": "07fa089bf08f6a089004c5c39192d12d210a13ac",
+    "sourceCommitUrl": "https://github.com/PathOfBuildingCommunity/PathOfBuilding/commit/07fa089bf08f6a089004c5c39192d12d210a13ac",
+    "recordLocations": {
+      "skill": "src/Data/Skills/act_str.lua#L4346-L4430",
+      "interpolation": "src/Modules/CalcTools.lua#L200-L214",
+      "constants": "src/Data/Misc.lua#L30-L31",
+      "goldenGlory": "src/TreeData/3_30/tree.lua#L41460-L41478"
+    },
+    "lifeComponentBasis": "luminary-maximum-life",
+    "qualityAffectsGrantedDamage": false,
+    "notAuthorityForLiveRounding": true,
+    "retainedMaterial": "Forty integer level rows with level requirement and flat added Fire Damage only. Levels above 20 represent effective gem levels and the rows do not establish how to reach them."
+  },
+  "mechanics": {
+    "maximumLifePercent": 3,
+    "goldenGloryLightRadiusPercent": 50
+  },
+  "tableBounds": {
+    "minimumLevel": 1,
+    "maximumLevel": 40,
+    "rowCount": 40
+  },
+  "compactAnchors": [
+    {
+      "level": 1,
+      "requirementLevel": 34,
+      "flatMin": 36,
+      "flatMax": 54
+    },
+    {
+      "level": 20,
+      "requirementLevel": 70,
+      "flatMin": 219,
+      "flatMax": 329
+    }
+  ],
+  "rows": [
+    {
+      "level": 1,
+      "requirementLevel": 34,
+      "flatMin": 36,
+      "flatMax": 54
+    },
+    {
+      "level": 2,
+      "requirementLevel": 36,
+      "flatMin": 40,
+      "flatMax": 61
+    },
+    {
+      "level": 3,
+      "requirementLevel": 38,
+      "flatMin": 45,
+      "flatMax": 68
+    },
+    {
+      "level": 4,
+      "requirementLevel": 40,
+      "flatMin": 50,
+      "flatMax": 75
+    },
+    {
+      "level": 5,
+      "requirementLevel": 42,
+      "flatMin": 56,
+      "flatMax": 84
+    },
+    {
+      "level": 6,
+      "requirementLevel": 44,
+      "flatMin": 62,
+      "flatMax": 93
+    },
+    {
+      "level": 7,
+      "requirementLevel": 46,
+      "flatMin": 69,
+      "flatMax": 103
+    },
+    {
+      "level": 8,
+      "requirementLevel": 48,
+      "flatMin": 76,
+      "flatMax": 114
+    },
+    {
+      "level": 9,
+      "requirementLevel": 50,
+      "flatMin": 84,
+      "flatMax": 126
+    },
+    {
+      "level": 10,
+      "requirementLevel": 52,
+      "flatMin": 93,
+      "flatMax": 140
+    },
+    {
+      "level": 11,
+      "requirementLevel": 54,
+      "flatMin": 103,
+      "flatMax": 154
+    },
+    {
+      "level": 12,
+      "requirementLevel": 56,
+      "flatMin": 113,
+      "flatMax": 170
+    },
+    {
+      "level": 13,
+      "requirementLevel": 58,
+      "flatMin": 125,
+      "flatMax": 187
+    },
+    {
+      "level": 14,
+      "requirementLevel": 60,
+      "flatMin": 137,
+      "flatMax": 206
+    },
+    {
+      "level": 15,
+      "requirementLevel": 62,
+      "flatMin": 151,
+      "flatMax": 227
+    },
+    {
+      "level": 16,
+      "requirementLevel": 64,
+      "flatMin": 166,
+      "flatMax": 249
+    },
+    {
+      "level": 17,
+      "requirementLevel": 66,
+      "flatMin": 182,
+      "flatMax": 273
+    },
+    {
+      "level": 18,
+      "requirementLevel": 68,
+      "flatMin": 200,
+      "flatMax": 300
+    },
+    {
+      "level": 19,
+      "requirementLevel": 69,
+      "flatMin": 210,
+      "flatMax": 314
+    },
+    {
+      "level": 20,
+      "requirementLevel": 70,
+      "flatMin": 219,
+      "flatMax": 329
+    },
+    {
+      "level": 21,
+      "requirementLevel": 72,
+      "flatMin": 240,
+      "flatMax": 361
+    },
+    {
+      "level": 22,
+      "requirementLevel": 74,
+      "flatMin": 263,
+      "flatMax": 395
+    },
+    {
+      "level": 23,
+      "requirementLevel": 76,
+      "flatMin": 288,
+      "flatMax": 432
+    },
+    {
+      "level": 24,
+      "requirementLevel": 78,
+      "flatMin": 315,
+      "flatMax": 473
+    },
+    {
+      "level": 25,
+      "requirementLevel": 80,
+      "flatMin": 345,
+      "flatMax": 517
+    },
+    {
+      "level": 26,
+      "requirementLevel": 82,
+      "flatMin": 377,
+      "flatMax": 566
+    },
+    {
+      "level": 27,
+      "requirementLevel": 84,
+      "flatMin": 412,
+      "flatMax": 618
+    },
+    {
+      "level": 28,
+      "requirementLevel": 86,
+      "flatMin": 450,
+      "flatMax": 675
+    },
+    {
+      "level": 29,
+      "requirementLevel": 88,
+      "flatMin": 491,
+      "flatMax": 736
+    },
+    {
+      "level": 30,
+      "requirementLevel": 90,
+      "flatMin": 536,
+      "flatMax": 803
+    },
+    {
+      "level": 31,
+      "requirementLevel": 91,
+      "flatMin": 559,
+      "flatMax": 839
+    },
+    {
+      "level": 32,
+      "requirementLevel": 92,
+      "flatMin": 584,
+      "flatMax": 876
+    },
+    {
+      "level": 33,
+      "requirementLevel": 93,
+      "flatMin": 610,
+      "flatMax": 915
+    },
+    {
+      "level": 34,
+      "requirementLevel": 94,
+      "flatMin": 637,
+      "flatMax": 955
+    },
+    {
+      "level": 35,
+      "requirementLevel": 95,
+      "flatMin": 665,
+      "flatMax": 997
+    },
+    {
+      "level": 36,
+      "requirementLevel": 96,
+      "flatMin": 694,
+      "flatMax": 1041
+    },
+    {
+      "level": 37,
+      "requirementLevel": 97,
+      "flatMin": 724,
+      "flatMax": 1086
+    },
+    {
+      "level": 38,
+      "requirementLevel": 98,
+      "flatMin": 756,
+      "flatMax": 1134
+    },
+    {
+      "level": 39,
+      "requirementLevel": 99,
+      "flatMin": 789,
+      "flatMax": 1183
+    },
+    {
+      "level": 40,
+      "requirementLevel": 100,
+      "flatMin": 823,
+      "flatMax": 1235
+    }
+  ]
+}

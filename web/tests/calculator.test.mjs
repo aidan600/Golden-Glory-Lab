@@ -5,8 +5,6 @@
 
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { test } from "node:test";
 
 import {
@@ -14,19 +12,19 @@ import {
   FIXED_LIGHT_RADIUS_SLOTS,
   INITIAL_JEWEL_COUNT,
   LightRadiusBreakdown,
+  compareFlameLink,
   evaluateManualCalculator,
   parseDecimalText,
   parseFlameLinkLevelTable,
 } from "../site/calculator.mjs";
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const tableJson = JSON.parse(
-  readFileSync(
-    join(__dirname, "../site/data/flame-link-level-table-v1.json"),
-    "utf8",
-  ),
-);
-const levelTable = parseFlameLinkLevelTable(tableJson);
+function loadLevelTable(version) {
+  const url = new URL(`../site/data/flame-link-level-table-${version}.json`, import.meta.url);
+  return parseFlameLinkLevelTable(JSON.parse(readFileSync(url, "utf8")));
+}
+
+const levelTable = loadLevelTable("v2");
+const previousLevelTable = loadLevelTable("v1");
 
 function fields(overrides = {}) {
   return {
@@ -46,13 +44,67 @@ function fields(overrides = {}) {
   };
 }
 
+test("The bundled 3.30 table records current mechanics and flat damage anchors", () => {
+  assert.equal(levelTable.gameVersion, "Path of Exile 1 3.30.0");
+  assert.equal(levelTable.maximumLifePercent.toLexeme(), "3");
+  assert.equal(levelTable.goldenGloryLightRadiusPercent.toLexeme(), "50");
+  assert.equal(levelTable.minimumLevel, 1);
+  assert.equal(levelTable.maximumLevel, 40);
+  assert.equal(levelTable.rows.size, 40);
+  const anchors = [[1, "36", "54"], [20, "219", "329"], [40, "823", "1235"]];
+  for (const [level, min, max] of anchors) {
+    const row = levelTable.rows.get(level);
+    assert.equal(row.flatMin.toLexeme(), min);
+    assert.equal(row.flatMax.toLexeme(), max);
+  }
+});
+
 test("A. Flame Link known vector", () => {
   const result = evaluateManualCalculator(fields(), levelTable);
   assert.equal(result.flameLinkError, null);
-  assert.equal(result.netLinkSkillBuffEffectPct, "40");
-  assert.equal(result.linkEffectMultiplier, "1.40");
-  assert.equal(result.flameLinkMin, 671n);
-  assert.equal(result.flameLinkMax, 830n);
+  assert.equal(result.netLinkSkillBuffEffectPct, "20");
+  assert.equal(result.linkEffectMultiplier, "1.20");
+  assert.equal(result.flameLinkMin, 526n);
+  assert.equal(result.flameLinkMax, 698n);
+});
+
+test("Flame Link comparison uses the same loadout and the 3.29 damage as baseline", () => {
+  const input = fields({ increasedLightRadiusPct: "100", flameLinkLevel: "20" });
+  const current = evaluateManualCalculator(input, levelTable);
+  const comparison = compareFlameLink(input, previousLevelTable, current);
+  assert.equal(previousLevelTable.gameVersion, "Path of Exile 1 3.29.1");
+  assert.equal(comparison.previous.linkEffectMultiplier, "2.00");
+  assert.deepEqual([comparison.previous.flameLinkMin, comparison.previous.flameLinkMax], [838n, 1008n]);
+  assert.equal(current.linkEffectMultiplier, "1.50");
+  assert.deepEqual([current.flameLinkMin, current.flameLinkMax], [554n, 719n]);
+  assert.deepEqual(comparison.minimumChange, { amount: -284n, percent: "-33.9" });
+  assert.deepEqual(comparison.maximumChange, { amount: -289n, percent: "-28.7" });
+});
+
+test("Flame Link comparison reports gains when the higher 3.30 base dominates", () => {
+  const input = fields({ maximumLife: "0", flameLinkLevel: "1", goldenGloryAllocated: false });
+  const current = evaluateManualCalculator(input, levelTable);
+  const comparison = compareFlameLink(input, previousLevelTable, current);
+  assert.deepEqual(comparison.minimumChange, { amount: 13n, percent: "56.5" });
+  assert.deepEqual(comparison.maximumChange, { amount: 19n, percent: "54.3" });
+});
+
+test("Flame Link comparison with zero baseline omits percentage changes", () => {
+  const input = fields({ maximumLife: "0", flameLinkLevel: "1", increasedLightRadiusPct: "-100" });
+  const current = evaluateManualCalculator(input, levelTable);
+  const comparison = compareFlameLink(input, previousLevelTable, current);
+  assert.deepEqual(comparison.minimumChange, { amount: 18n, percent: null });
+  assert.deepEqual(comparison.maximumChange, { amount: 27n, percent: null });
+});
+
+test("Flame Link comparison with an unsupported baseline withholds both changes", () => {
+  const input = fields({ increasedLightRadiusPct: "-120" });
+  const current = evaluateManualCalculator(input, levelTable);
+  const comparison = compareFlameLink(input, previousLevelTable, current);
+  assert.equal(current.flameLinkError, null);
+  assert.equal(comparison.previous.flameLinkError, "Link Effect Multiplier below zero is unsupported");
+  assert.equal(comparison.minimumChange, null);
+  assert.equal(comparison.maximumChange, null);
 });
 
 test("B. Larger Flame Link vector", () => {
@@ -65,10 +117,10 @@ test("B. Larger Flame Link vector", () => {
     levelTable,
   );
   assert.equal(result.flameLinkError, null);
-  assert.equal(result.netLinkSkillBuffEffectPct, "160");
-  assert.equal(result.linkEffectMultiplier, "2.60");
-  assert.equal(result.flameLinkMin, 1692n);
-  assert.equal(result.flameLinkMax, 1988n);
+  assert.equal(result.netLinkSkillBuffEffectPct, "100");
+  assert.equal(result.linkEffectMultiplier, "2.00");
+  assert.equal(result.flameLinkMin, 1082n);
+  assert.equal(result.flameLinkMax, 1370n);
 });
 
 test("C. Enmity truncation regression", () => {
@@ -114,9 +166,9 @@ test("F. Bonds each add +20 percentage points", () => {
     fields({ inspiringBondActive: true }),
     levelTable,
   );
-  assert.equal(base.netLinkSkillBuffEffectPct, "40");
-  assert.equal(powerful.netLinkSkillBuffEffectPct, "60");
-  assert.equal(inspiring.netLinkSkillBuffEffectPct, "60");
+  assert.equal(base.netLinkSkillBuffEffectPct, "20");
+  assert.equal(powerful.netLinkSkillBuffEffectPct, "40");
+  assert.equal(inspiring.netLinkSkillBuffEffectPct, "40");
 });
 
 test("G. Light Radius Breakdown behavior", () => {
@@ -184,11 +236,40 @@ test("H. Signed and fractional parsing accepted", () => {
     levelTable,
   );
   assert.equal(result.flameLinkError, null);
-  assert.equal(result.netLinkSkillBuffEffectPct, "30.5");
-  // Exact multiplier 1.305; desktop Decimal.quantize("0.01") is HALF_EVEN → 1.30
-  assert.equal(result.linkEffectMultiplier, "1.30");
-  assert.equal(result.flameLinkMin, 625n);
-  assert.equal(result.flameLinkMax, 774n);
+  assert.equal(result.netLinkSkillBuffEffectPct, "10.25");
+  assert.equal(result.linkEffectMultiplier, "1.10");
+  assert.equal(result.flameLinkMin, 483n);
+  assert.equal(result.flameLinkMax, 642n);
+});
+
+test("Golden Glory applies half a net Light Radius reduction", () => {
+  const result = evaluateManualCalculator(
+    fields({
+      maximumLife: "0",
+      flameLinkLevel: "20",
+      increasedLightRadiusPct: "-50.5",
+    }),
+    levelTable,
+  );
+  assert.equal(result.flameLinkError, null);
+  assert.equal(result.netLinkSkillBuffEffectPct, "-25.25");
+  assert.equal(result.linkEffectMultiplier, "0.75");
+  assert.equal(result.flameLinkMin, 164n);
+  assert.equal(result.flameLinkMax, 246n);
+});
+
+test("Flame Link rounds exact ties after applying the life component", () => {
+  const result = evaluateManualCalculator(
+    fields({
+      maximumLife: "50",
+      flameLinkLevel: "1",
+      goldenGloryAllocated: false,
+    }),
+    levelTable,
+  );
+  assert.equal(result.flameLinkError, null);
+  assert.equal(result.flameLinkMin, 38n);
+  assert.equal(result.flameLinkMax, 56n);
 });
 
 test("H2. Blank Other Link Skill Buff Effect equals explicit 0", () => {
@@ -205,10 +286,10 @@ test("H2. Blank Other Link Skill Buff Effect equals explicit 0", () => {
   assert.equal(blanked.linkEffectMultiplier, explicit.linkEffectMultiplier);
   assert.equal(blanked.flameLinkMin, explicit.flameLinkMin);
   assert.equal(blanked.flameLinkMax, explicit.flameLinkMax);
-  assert.equal(blanked.netLinkSkillBuffEffectPct, "40");
-  assert.equal(blanked.linkEffectMultiplier, "1.40");
-  assert.equal(blanked.flameLinkMin, 671n);
-  assert.equal(blanked.flameLinkMax, 830n);
+  assert.equal(blanked.netLinkSkillBuffEffectPct, "20");
+  assert.equal(blanked.linkEffectMultiplier, "1.20");
+  assert.equal(blanked.flameLinkMin, 526n);
+  assert.equal(blanked.flameLinkMax, 698n);
 });
 
 test("H3. Multiplier display uses HALF_EVEN (not HALF_UP)", () => {
@@ -316,10 +397,10 @@ test("Owner screenshot sample vector", () => {
     }),
     levelTable,
   );
-  assert.equal(result.netLinkSkillBuffEffectPct, "254");
-  assert.equal(result.linkEffectMultiplier, "3.54");
-  assert.equal(result.flameLinkMin, 3878n);
-  assert.equal(result.flameLinkMax, 4423n);
+  assert.equal(result.netLinkSkillBuffEffectPct, "127");
+  assert.equal(result.linkEffectMultiplier, "2.27");
+  assert.equal(result.flameLinkMin, 1928n);
+  assert.equal(result.flameLinkMax, 2357n);
   assert.equal(result.preEnmityFireResistance, "687");
   assert.equal(result.finalUncappedFireResistance, "274");
   assert.equal(result.overcappedFireResistance, "196");
